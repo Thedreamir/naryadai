@@ -29,3 +29,4 @@
 .permit-row input{flex:1;min-width:180px;min-height:44px;border:1px solid var(--line,#d6d6d6);border-radius:10px;padding:0 12px}
 .permit-line,.receipt-line{font-size:13px;color:#444;background:#f4f4f0;border-radius:8px;padding:8px 10px}
 .pin-unlock{font-size:11px;border:1px solid var(--line,#d6d6d6);border-radius:6px;background:none;padding:2px 6px;cursor:pointer;color:#666}
+.permit-hint{color:#8a5a00;font-size:12px;flex-basis:100%}

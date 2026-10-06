@@ -8,3 +8,8 @@
 .stats-note{font-size:10px;color:#929984;margin-top:18px;margin-bottom:-14px}
 .report-dates{display:flex;align-items:flex-end;gap:15px;margin:15px 0}.report-dates label{font-size:11px}.equipment-history p{font-size:12px;line-height:1.8}.equipment-history>button{margin-top:12px}@media(max-width:760px){.report-dates{flex-wrap:wrap}.report-dates label{max-width:45%}}@media print{.report-dates{display:none}}
 @media print{.stats-note{display:none}}
+.push-toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#1c1c1e;color:#fff;padding:12px 18px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.3);z-index:9999;max-width:92vw;font-size:15px;animation:pushin .25s ease-out}
+.push-toast.push-overdue,.push-toast.push-unaccepted{background:#b3261e}
+.push-toast.push-due_soon{background:#8a5a00}
+@keyframes pushin{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}
+.btn-notif{position:fixed;bottom:16px;right:16px;z-index:9998;background:#1c1c1e;color:#fff;border:none;border-radius:999px;padding:12px 18px;font-size:15px;box-shadow:0 4px 16px rgba(0,0,0,.25)}

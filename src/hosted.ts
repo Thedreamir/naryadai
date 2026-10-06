@@ -191,6 +191,12 @@ export function watch(onChange: ()=>void) {
   return ()=>{ supabase!.removeChannel(ch) }
 }
 
+export function watchNotifications(onNew: (n:any)=>void) {
+  if (!supabase) return ()=>{}
+  const ch = supabase.channel('notifications-live').on('postgres_changes', {event:'INSERT', schema:'public', table:'notifications'}, (p:any)=>onNew(p.new)).subscribe()
+  return ()=>{ supabase!.removeChannel(ch) }
+}
+
 function translateError(msg: string): string {
   if (msg.includes('actor required')) return 'Сессия не распознана. Войдите снова.'
   if (msg.includes('invalid status transition')) return 'Недопустимый переход статуса'

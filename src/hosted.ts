@@ -131,11 +131,12 @@ async function reviewOrder(id: number, version: number) {
   }
 }
 
-export async function createOrder(x: {title:string,kind:string,equipment_id:number,assignee_id:string,priority:string,deadline:string}) {
+export async function createOrder(x: {title:string,kind:string,equipment_id:number,assignee_id:string,priority:string,deadline:string,before_photos?:string[]}) {
   const s = supabase!
   const myId = await uid()
+  const photos = (x.before_photos||[]).filter(p=>/^data:image\/(jpeg|jpg|png|webp);base64,/.test(p)).slice(0,2)
   const {error} = await s.from('orders').insert({title: x.title, kind: x.kind, equipment_id: x.equipment_id,
-    assignee_id: x.assignee_id, master_id: myId, priority: x.priority, deadline: x.deadline, status: 'issued'})
+    assignee_id: x.assignee_id, master_id: myId, priority: x.priority, deadline: x.deadline, status: 'issued', before_photos: photos})
   if (error) throw new Error(translateError(error.message))
 }
 

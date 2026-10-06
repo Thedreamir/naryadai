@@ -175,6 +175,20 @@ export async function createOrder(x: {title:string,kind:string,equipment_id:numb
   if (error) throw new Error(translateError(error.message))
 }
 
+export async function repeatCheck(id: number, asOf?: string) {
+  const s = supabase!
+  const {data, error} = await s.rpc('repeat_check', {p_order_id: id, p_as_of: asOf??new Date().toISOString()})
+  if (error) throw new Error(translateError(error.message))
+  return data
+}
+
+export async function repeatTop(since: string, until: string) {
+  const s = supabase!
+  const {data, error} = await s.rpc('repeat_top', {p_since: since, p_until: until, p_limit: 5})
+  if (error) throw new Error(translateError(error.message))
+  return data
+}
+
 export async function report(since?: string, until?: string) {
   const s = supabase!
   let q = s.from('order_report').select('*')

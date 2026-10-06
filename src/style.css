@@ -30,3 +30,8 @@
 .permit-line,.receipt-line{font-size:13px;color:#444;background:#f4f4f0;border-radius:8px;padding:8px 10px}
 .pin-unlock{font-size:11px;border:1px solid var(--line,#d6d6d6);border-radius:6px;background:none;padding:2px 6px;cursor:pointer;color:#666}
 .permit-hint{color:#8a5a00;font-size:12px;flex-basis:100%}
+.repeat-control{border:1px solid #c9a227;border-radius:10px;padding:12px;margin:10px 0;background:#fffaf0}
+.repeat-signal{color:#8a5a00;font-weight:600}
+.repeat-sim{color:#5a4a00;font-style:italic}
+.repeat-top table{width:100%;border-collapse:collapse;margin:8px 0}
+.repeat-top th,.repeat-top td{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left;font-size:13px}

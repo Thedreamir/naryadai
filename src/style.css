@@ -19,3 +19,6 @@
 .modal textarea{min-height:90px;border:1px solid var(--line,#d6d6d6);border-radius:10px;padding:10px;font:inherit;resize:vertical}
 .score-override{margin-top:10px;padding:12px;border:1px dashed var(--line,#c9c9c9);border-radius:12px;display:flex;flex-direction:column;gap:8px}
 .score-override small{color:var(--muted,#666)}
+
+.executor-report{margin-top:10px;padding:12px;border:1px solid var(--line,#d6d6d6);border-radius:12px;display:flex;flex-direction:column;gap:6px}
+.executor-report h4{margin:0;font-size:14px}

@@ -1,5 +1,5 @@
 /* v7 "Наряд в руках" tokens applied to the live app. States map 1:1 to real statuses. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+/* fonts loaded via <link> in index.html (QA-3: @import blocked render) */
 :root{
   --v7-bg:#eae8e0; --v7-surface:#fcfcf7; --v7-soft:#f0f2e9; --v7-teal:#205e59;
   --v7-teal-dark:#184943; --v7-muted:#596562; --v7-line:#d9ddd3; --v7-ink:#202b2b;
@@ -26,15 +26,16 @@ nav .active{background:#d7e7d9;color:var(--v7-teal)}
 /* status badges 1:1 with real statuses (v7 tag palette) */
 .badge{border-radius:6px;font-weight:600}
 .badge.issued{background:#f3ead3;color:#7c5914}
-.badge.queued{background:#edf0e7;color:#53605b}
+.badge.queued{background:#dde8f0;color:#37586e}
 .badge.accepted{background:#deeee8;color:#215e58}
 .badge.in_progress{background:#205e59;color:#ffffff}
-.badge.paused{background:#f3ead3;color:#7c5914}
+.badge.paused{background:#e6e1ee;color:#5b527a}
 .badge.completed{background:#e1efdd;color:#3b6231}
 .badge.ai_review{background:#f3eedb;color:#6c4e15}
 .badge.rework{background:#f9e2db;color:#9d3527}
 .badge.closed{background:#3b6231;color:#ffffff}
 .badge.rejected{background:#eceee6;color:#596562;text-decoration:line-through}
+.badge.report_seen{background:#e1efdd;color:#3b6231}
 /* accent fixes */
 .filters .selected,.view-switch .selected{background:var(--v7-teal)}
 .brand span{color:var(--v7-teal)}
@@ -100,3 +101,5 @@ nav .active{background:#d7e7d9;color:var(--v7-teal)}
 .handover h4{margin:14px 0 6px;font-size:15px}
 .handover p{font-size:14px;margin:3px 0}
 .handover .stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+
+.handover p,.v7-facts b,.repeat-top td,.order-card h3,.v7-home h2{overflow-wrap:anywhere;min-width:0;hyphens:auto}

@@ -1,0 +1,23 @@
+{
+  "verified_at": "2026-10-06T18:11:39.096Z",
+  "tests": [
+    "New order appeared in second browser context through PostgreSQL LISTEN/NOTIFY + SSE: 588 ms (local machine, not phone/network SLA)",
+    "RLS: unrelated worker cannot read new order",
+    "RLS: unrelated worker cannot mutate new order",
+    "RLS: leader cannot issue an order",
+    "Invalid status jump rejected",
+    "Unplanned closure without after-photo rejected",
+    "Stale version rejected",
+    "UI cycle: issue -> accept -> start -> completed -> review -> master closure passed",
+    "Equipment history and date-filtered report readback verified",
+    "Database readback: closed, six immutable audit events, no fabricated AI confidence"
+  ],
+  "realtime_local_ms": 588,
+  "limits": [
+    "Only local PostgreSQL, no Supabase deployment",
+    "Demo account chooser, not production auth",
+    "Rules-only review, no Gemini",
+    "Synthetic photo does not prove a repair",
+    "No Android physical-device checks yet"
+  ]
+}

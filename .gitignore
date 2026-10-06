@@ -5,3 +5,5 @@ dist/
 .local/
 test-results/
 playwright-report/
+docs/continuation.md
+tsconfig.tsbuildinfo

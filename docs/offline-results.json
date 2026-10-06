@@ -1,0 +1,10 @@
+{
+  "verified_at": "2026-10-06T18:11:44.995Z",
+  "result": "installed service worker preserves UI shell after offline reload",
+  "limits": [
+    "first visit needs connection",
+    "API actions unavailable offline",
+    "no offline queue yet",
+    "physical Android not tested"
+  ]
+}

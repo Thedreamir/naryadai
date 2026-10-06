@@ -1,0 +1,339 @@
+[
+  {
+    "id": "valid-standard",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "no-works",
+    "input": {
+      "works": "",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "rework"
+  },
+  {
+    "id": "very-short",
+    "input": {
+      "works": "починил",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "rework"
+  },
+  {
+    "id": "no-fault",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "rework"
+  },
+  {
+    "id": "no-photo",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": []
+    },
+    "expected": "rework"
+  },
+  {
+    "id": "planned-no-photo",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "planned",
+      "materials": [],
+      "photos": []
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "negative-material",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [
+        {
+          "name": "Смазка",
+          "quantity": -1
+        }
+      ],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "rework"
+  },
+  {
+    "id": "zero-material",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [
+        {
+          "name": "Смазка",
+          "quantity": 0
+        }
+      ],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "rework"
+  },
+  {
+    "id": "nan-material",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [
+        {
+          "name": "Смазка",
+          "quantity": "abc"
+        }
+      ],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "rework"
+  },
+  {
+    "id": "unnamed-material",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [
+        {
+          "name": "",
+          "quantity": 1
+        }
+      ],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "rework"
+  },
+  {
+    "id": "valid-material",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [
+        {
+          "name": "Смазка",
+          "quantity": 0.5
+        }
+      ],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "no-material",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "kazakh-text",
+    "input": {
+      "works": "Мойынтірек ауыстырылды, бекіткіш тексерілді",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "noise-text",
+    "input": {
+      "works": "Ну это поменял вроде, проверили нормально",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "ambiguous-work",
+    "input": {
+      "works": "Устранено всё как сказали, точно не помню",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "wrong-but-complete",
+    "input": {
+      "works": "Покрасили стену вместо ремонта подшипника",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "huge-material",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [
+        {
+          "name": "Смазка",
+          "quantity": 9999
+        }
+      ],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "duplicate-photo",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo",
+        "synthetic-photo"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "blurred-photo",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "blurred-synthetic"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "photo-from-gallery",
+    "input": {
+      "works": "Заменён подшипник, проверены крепления привода",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "gallery-synthetic"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "missing-two-fields",
+    "input": {
+      "works": "",
+      "fault_code": "",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "rework"
+  },
+  {
+    "id": "missing-all",
+    "input": {
+      "works": "",
+      "fault_code": "",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": []
+    },
+    "expected": "rework"
+  },
+  {
+    "id": "mixed-language",
+    "input": {
+      "works": "Подшипник ауыстырдық, alignment тексерілді",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "needs_master"
+  },
+  {
+    "id": "whitespace-works",
+    "input": {
+      "works": "                 ",
+      "fault_code": "М-02",
+      "kind": "unplanned",
+      "materials": [],
+      "photos": [
+        "synthetic-photo"
+      ]
+    },
+    "expected": "rework"
+  }
+]

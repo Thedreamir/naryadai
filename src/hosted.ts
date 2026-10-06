@@ -112,6 +112,15 @@ export async function recordPermit(id: number, x: {kind:string, note:string, ver
   if (error) throw new Error(translateError(error.message))
 }
 
+export async function savePushSubscription(sub: {endpoint:string, keys:{p256dh:string, auth:string}}) {
+  const s = supabase!
+  const myId = await uid()
+  const {error} = await s.from('push_subscriptions').upsert(
+    {user_id: myId, endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth},
+    {onConflict: 'endpoint'})
+  if (error) throw new Error('Подписка на push не сохранена: '+error.message)
+}
+
 export async function pinUnlock(email: string) {
   const s = supabase!
   const {data, error} = await s.rpc('pin_unlock', {employee_email: email})
@@ -277,7 +286,9 @@ function translateError(msg: string): string {
   if (msg.includes('after photo required')) return 'Для внепланового наряда нужно фото после'
   if (msg.includes('stale order version')) return 'Данные изменились. Обновите наряд'
   if (msg.includes('permit required')) return 'Сначала зафиксируйте допуск: «не требуется» или «подтверждён» с записью, кто и когда'
-  if (msg.includes('permit note required')) return 'Укажите, кто и когда подтвердил допуск'
+  if (msg.includes('permit note required')) return 'Укажите номер наряда-допуска и кто подтвердил (минимум 8 символов)'
+  if (msg.includes('permit number required')) return 'Нужен номер наряда-допуска (хотя бы одна цифра)'
+  if (msg.includes('permit confirmer required')) return 'Укажите, кто подтвердил допуск (текст)'
   if (msg.includes('permit already recorded')) return 'Допуск уже зафиксирован'
   if (msg.includes('permit window closed')) return 'Допуск фиксируется до начала работ'
   if (msg.includes('bad permit kind')) return 'Некорректный тип допуска'

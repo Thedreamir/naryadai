@@ -176,7 +176,39 @@ export async function report(since?: string, until?: string) {
     }
   }
   const materials = Object.values(matAgg).sort((a,b)=>b.quantity-a.quantity).slice(0,12)
-  return {rows: rows||[], ratings, materials, full_rating_formula: 'Полный балл: 40% качество мастера + 25% в срок + 20% без повторов/доработок + 10% объём + 5% без отказов.'}
+  // Downtime: pair paused -> resume (in_progress) or terminal event per order; cap open pauses at now.
+  let evQ = s.from('order_events').select('order_id,new_status,created_at').in('new_status',['paused','in_progress','completed','rework','rejected','closed']).order('created_at',{ascending:true}).limit(5000)
+  if (since) evQ = evQ.gte('created_at', since)
+  if (until) evQ = evQ.lte('created_at', until)
+  const {data: ev} = await evQ
+  const pauseStart: Record<number,string> = {}
+  const downByOrder: Record<number,number> = {}
+  let pauses = 0
+  for (const e of ev||[]) {
+    if (e.new_status==='paused') { pauseStart[e.order_id]=e.created_at; pauses++ }
+    else if (pauseStart[e.order_id]) {
+      const mins = Math.max(0,(new Date(e.created_at).getTime()-new Date(pauseStart[e.order_id]).getTime())/60000)
+      downByOrder[e.order_id]=(downByOrder[e.order_id]||0)+mins
+      delete pauseStart[e.order_id]
+    }
+  }
+  const nowIso = new Date().toISOString()
+  for (const [oid,ts] of Object.entries(pauseStart)) downByOrder[Number(oid)]=(downByOrder[Number(oid)]||0)+Math.max(0,(Date.now()-new Date(ts).getTime())/60000)
+  const downtime_minutes = Math.round(Object.values(downByOrder).reduce((a,b)=>a+b,0))
+  const downtime_top = Object.entries(downByOrder).map(([order_id,mins])=>({order_id:Number(order_id),minutes:Math.round(mins)})).sort((a,b)=>b.minutes-a.minutes).slice(0,5)
+  const anomalies = {
+    rework: (ev||[]).filter(e=>e.new_status==='rework').length,
+    rejected: (ev||[]).filter(e=>e.new_status==='rejected').length,
+    pauses,
+  }
+  return {rows: rows||[], ratings, materials, downtime_minutes, downtime_top, anomalies, full_rating_formula: 'Полный балл: 40% качество мастера + 25% в срок + 20% без повторов/доработок + 10% объём + 5% без отказов.'}
+}
+
+export async function shiftSummary(stats: any) {
+  const s = supabase!
+  const {data, error} = await s.functions.invoke('shift-summary', {body: stats})
+  if (error) throw new Error(translateError(error.message))
+  return data
 }
 
 export async function equipmentHistory(equipmentId: number) {

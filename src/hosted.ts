@@ -204,6 +204,13 @@ export async function report(since?: string, until?: string) {
   return {rows: rows||[], ratings, materials, downtime_minutes, downtime_top, anomalies, full_rating_formula: 'Полный балл: 40% качество мастера + 25% в срок + 20% без повторов/доработок + 10% объём + 5% без отказов.'}
 }
 
+export async function setHumanScore(id: number, score: number, comment: string) {
+  const s = supabase!
+  const {data, error} = await s.rpc('set_human_score', {p_order_id: id, p_score: score, p_comment: comment})
+  if (error) throw new Error(translateError(error.message))
+  return data
+}
+
 export async function shiftSummary(stats: any) {
   const s = supabase!
   const {data, error} = await s.functions.invoke('shift-summary', {body: stats})

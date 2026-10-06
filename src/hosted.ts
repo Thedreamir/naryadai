@@ -45,7 +45,7 @@ async function uid(): Promise<string> {
 export async function state() {
   const s = supabase!
   const myId = await uid()
-  const [emp, orders, events, equipment, sections, faults, materials, notifications] = await Promise.all([
+  const [emp, orders, events, equipment, sections, faults, materials, notifications, norms] = await Promise.all([
     s.from('employees').select('*'),
     s.from('orders').select('*').order('id', {ascending:false}).limit(600),
     s.from('order_events').select('*').order('id', {ascending:false}).limit(2000),
@@ -54,6 +54,7 @@ export async function state() {
     s.from('fault_codes').select('*'),
     s.from('materials').select('*'),
     s.from('notifications').select('*').order('id', {ascending:false}).limit(20),
+    s.from('work_norms').select('*'),
   ])
   for (const r of [emp,orders,equipment,sections,faults,materials]) if (r.error) throw new Error(r.error.message)
   const employees = emp.data||[]
@@ -68,7 +69,7 @@ export async function state() {
   const eventsJoined = (events.data||[]).map((e:AnyOrder)=>({...e, actor: byId[e.actor_id]?.name||'—'}))
   return {actor, orders: ordersJoined, employees, events: eventsJoined,
     equipment: Object.values(eqById), fault_codes: faults.data||[], materials: materials.data||[],
-    notifications: notifications.data||[], backend: 'Supabase · тестовый проект (синтетические данные)'}
+    notifications: notifications.data||[], work_norms: norms.data||[], backend: 'Supabase · тестовый проект (синтетические данные)'}
 }
 
 export async function transition(id: number, x: {status:string,version:number,reason?:string,human_score?:number,closure?:any}) {
@@ -94,14 +95,33 @@ export async function transition(id: number, x: {status:string,version:number,re
         storage_path: path, duplicate_order_id: dup.data?.[0]?.order_id||null,
         limits: 'Время получения сервером, не доказательство времени съёмки'})
     }
-    closure = {...closure, photo_evidence: evidence}
+    closure = {...closure, photo_evidence: evidence, client_recorded_at: new Date().toISOString()}
     if (evidence.some(p=>p.duplicate_order_id)) closure = {...closure, duplicate_warning: true}
   }
+  if (x.status === 'completed' && closure && !(closure as any).client_recorded_at) closure = {...closure, client_recorded_at: new Date().toISOString()}
   const {data, error} = await s.rpc('transition_order', {order_id: id, target_status: x.status,
     expected_version: x.version, reason_text: x.reason||'', closure_data: closure??null,
     human_score: x.human_score??null, human_comment: ''})
   if (error) throw new Error(translateError(error.message))
   return data
+}
+
+export async function recordPermit(id: number, x: {kind:string, note:string, version:number}) {
+  const s = supabase!
+  const {error} = await s.rpc('record_permit', {order_id: id, kind: x.kind, note: x.note, expected_version: x.version})
+  if (error) throw new Error(translateError(error.message))
+}
+
+export async function pinUnlock(email: string) {
+  const s = supabase!
+  const {data, error} = await s.rpc('pin_unlock', {employee_email: email})
+  if (error) throw new Error(translateError(error.message))
+  return data
+}
+
+export async function markReportSeen(id: number) {
+  const s = supabase!
+  await s.rpc('mark_report_seen', {order_id: id})
 }
 
 async function reviewOrder(id: number, version: number) {
@@ -256,6 +276,11 @@ function translateError(msg: string): string {
   if (msg.includes('closure incomplete')) return 'Закрытие неполное: работы и шифр обязательны'
   if (msg.includes('after photo required')) return 'Для внепланового наряда нужно фото после'
   if (msg.includes('stale order version')) return 'Данные изменились. Обновите наряд'
+  if (msg.includes('permit required')) return 'Сначала зафиксируйте допуск: «не требуется» или «подтверждён» с записью, кто и когда'
+  if (msg.includes('permit note required')) return 'Укажите, кто и когда подтвердил допуск'
+  if (msg.includes('permit already recorded')) return 'Допуск уже зафиксирован'
+  if (msg.includes('permit window closed')) return 'Допуск фиксируется до начала работ'
+  if (msg.includes('bad permit kind')) return 'Некорректный тип допуска'
   if (msg.includes('row-level security')) return 'Нет доступа к этой записи'
   return msg
 }

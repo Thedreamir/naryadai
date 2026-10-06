@@ -1,0 +1,205 @@
+// Hosted Supabase data layer. Same shapes the local /api server returns.
+// Active only when VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY are set at build time.
+import {createClient, SupabaseClient} from '@supabase/supabase-js'
+
+const url = import.meta.env.VITE_SUPABASE_URL as string|undefined
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string|undefined
+export const enabled = Boolean(url && key)
+export const supabase: SupabaseClient|null = enabled ? createClient(url!, key!) : null
+
+type AnyOrder = Record<string,any>
+
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const h = await crypto.subtle.digest('SHA-256', bytes as BufferSource)
+  return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')
+}
+
+function dataUrlToBytes(dataUrl: string): {bytes: Uint8Array, mime: string} {
+  const m = dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/)
+  if (!m) throw new Error('Неверный формат фото')
+  const bin = atob(m[2]); const bytes = new Uint8Array(bin.length)
+  for (let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i)
+  return {bytes, mime: m[1]}
+}
+
+export async function restoreSession(): Promise<boolean> {
+  if (!supabase) return false
+  const {data} = await supabase.auth.getSession()
+  return Boolean(data.session)
+}
+
+export async function login(email: string, password: string) {
+  if (!supabase) throw new Error('Supabase не настроен')
+  const {error} = await supabase.auth.signInWithPassword({email, password})
+  if (error) throw new Error('Вход не удался: проверьте логин и пароль')
+}
+
+export async function logout() { if (supabase) await supabase.auth.signOut() }
+
+async function uid(): Promise<string> {
+  const {data} = await supabase!.auth.getUser()
+  if (!data.user) throw new Error('Сессия истекла. Войдите снова.')
+  return data.user.id
+}
+
+export async function state() {
+  const s = supabase!
+  const myId = await uid()
+  const [emp, orders, events, equipment, sections, faults, materials, notifications] = await Promise.all([
+    s.from('employees').select('*'),
+    s.from('orders').select('*').order('id', {ascending:false}).limit(600),
+    s.from('order_events').select('*').order('id', {ascending:false}).limit(2000),
+    s.from('equipment').select('*'),
+    s.from('sections').select('*'),
+    s.from('fault_codes').select('*'),
+    s.from('materials').select('*'),
+    s.from('notifications').select('*').order('id', {ascending:false}).limit(20),
+  ])
+  for (const r of [emp,orders,equipment,sections,faults,materials]) if (r.error) throw new Error(r.error.message)
+  const employees = emp.data||[]
+  const byId: Record<string,any> = {}; employees.forEach(e=>byId[e.id]=e)
+  const secById: Record<number,string> = {}; (sections.data||[]).forEach(x=>secById[x.id]=x.name)
+  const eqById: Record<number,any> = {}; (equipment.data||[]).forEach(x=>eqById[x.id]={...x, section: secById[x.section_id]||''})
+  const actor = byId[myId]
+  if (!actor) throw new Error('У этой учётной записи нет карточки сотрудника')
+  const ordersJoined = (orders.data||[]).map((o:AnyOrder)=>({...o,
+    equipment: eqById[o.equipment_id]?.name||'—', section: eqById[o.equipment_id]?.section||'—',
+    assignee: byId[o.assignee_id]?.name||'—'}))
+  const eventsJoined = (events.data||[]).map((e:AnyOrder)=>({...e, actor: byId[e.actor_id]?.name||'—'}))
+  return {actor, orders: ordersJoined, employees, events: eventsJoined,
+    equipment: Object.values(eqById), fault_codes: faults.data||[], materials: materials.data||[],
+    notifications: notifications.data||[], backend: 'Supabase · тестовый проект (синтетические данные)'}
+}
+
+export async function transition(id: number, x: {status:string,version:number,reason?:string,human_score?:number,closure?:any}) {
+  const s = supabase!
+  if (x.status === 'ai_review') return reviewOrder(id, x.version)
+  let closure = x.closure
+  if (x.status === 'completed' && closure) {
+    const myId = await uid()
+    const evidence = []
+    const photos: string[] = closure.photos||[]
+    for (let i=0;i<photos.length;i++) {
+      const {bytes, mime} = dataUrlToBytes(photos[i])
+      if (bytes.length > 400000) throw new Error('Фото слишком большое')
+      const hash = await sha256Hex(bytes)
+      const ext = mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg'
+      const path = `${myId}/${id}-${Date.now()}-${i}.${ext}`
+      const up = await s.storage.from('repair-photos').upload(path, bytes, {contentType: mime})
+      if (up.error) throw new Error('Фото не загрузилось в хранилище: '+up.error.message)
+      const dup = await s.from('order_photos').select('order_id').eq('sha256', hash).neq('order_id', id).limit(1)
+      const ins = await s.from('order_photos').insert({order_id: id, uploaded_by: myId, sha256: hash, byte_size: bytes.length, mime_type: mime})
+      if (ins.error) throw new Error('Запись фото отклонена: '+ins.error.message)
+      evidence.push({sha256: hash, server_received_at: new Date().toISOString(), byte_size: bytes.length,
+        storage_path: path, duplicate_order_id: dup.data?.[0]?.order_id||null,
+        limits: 'Время получения сервером, не доказательство времени съёмки'})
+    }
+    closure = {...closure, photo_evidence: evidence}
+    if (evidence.some(p=>p.duplicate_order_id)) closure = {...closure, duplicate_warning: true}
+  }
+  const {data, error} = await s.rpc('transition_order', {order_id: id, target_status: x.status,
+    expected_version: x.version, reason_text: x.reason||'', closure_data: closure??null,
+    human_score: x.human_score??null, human_comment: ''})
+  if (error) throw new Error(translateError(error.message))
+  return data
+}
+
+async function reviewOrder(id: number, version: number) {
+  const s = supabase!
+  try {
+    const {data, error} = await s.functions.invoke('review-order', {body: {id, version}})
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+    return data
+  } catch (e) {
+    // Rules-only fallback, honestly labelled. Deploy/verify of the function is tracked separately.
+    const {data: o, error: readError} = await s.from('orders').select('*').eq('id', id).single()
+    if (readError || !o) throw new Error('Наряд недоступен')
+    if (o.status !== 'completed' || o.version !== version) throw new Error('Данные изменились. Обновите наряд')
+    const reasons: string[] = []
+    if (!o.closure?.works || o.closure.works.length < 12) reasons.push('Описание работ неполное')
+    if (!o.closure?.fault_code) reasons.push('Нет шифра')
+    if (o.kind === 'unplanned' && !(o.closure?.photos||[]).length) reasons.push('Нет фото после')
+    if (o.closure?.duplicate_warning) reasons.push('Фото совпадает с ранее загруженным. Мастер должен проверить источник.')
+    const result = {mode: 'rules', verdict: reasons.length ? 'rework' : 'needs_master', score: null, confidence: null,
+      reasons: reasons.length ? reasons : ['Обязательные поля заполнены. Смысл и качество фото не проверены.'],
+      limitations: ['Правила не устанавливают качество физического ремонта'],
+      fallback_reason: 'Модуль ИИ недоступен в этой сборке. Проверены только обязательные поля.'}
+    const {error: upError} = await s.from('orders').update({status: 'ai_review', ai_result: result}).eq('id', id).eq('version', version)
+    if (upError) throw new Error(translateError(upError.message))
+    return {result}
+  }
+}
+
+export async function createOrder(x: {title:string,kind:string,equipment_id:number,assignee_id:string,priority:string,deadline:string}) {
+  const s = supabase!
+  const myId = await uid()
+  const {error} = await s.from('orders').insert({title: x.title, kind: x.kind, equipment_id: x.equipment_id,
+    assignee_id: x.assignee_id, master_id: myId, priority: x.priority, deadline: x.deadline, status: 'issued'})
+  if (error) throw new Error(translateError(error.message))
+}
+
+export async function report(since?: string, until?: string) {
+  const s = supabase!
+  let q = s.from('order_report').select('*')
+  if (since) q = q.gte('created_at', since)
+  if (until) q = q.lte('created_at', until)
+  const {data: rows, error} = await q
+  if (error) throw new Error(error.message)
+  const {data: ratingsView, error: e2} = await s.from('employee_ratings').select('*')
+  if (e2) throw new Error(e2.message)
+  const {data: emps} = await s.from('employees').select('*').eq('role','worker')
+  const fullById: Record<string,any> = {}; (ratingsView||[]).forEach(r=>fullById[r.id]=r)
+  const byAssignee: Record<string,any> = {}
+  for (const r of rows||[]) {
+    if (r.status !== 'closed') continue
+    const a = byAssignee[r.assignee_id] = byAssignee[r.assignee_id] || {closed:0, on_time:0, rework:0}
+    a.closed++; if (r.on_time) a.on_time++; if (r.had_rework) a.rework++
+  }
+  const ratings = (emps||[]).map(e=>{
+    const a = byAssignee[e.id] || {closed:0,on_time:0,rework:0}
+    const score = a.closed ? Math.round((0.7*a.on_time/a.closed + 0.3*(1-a.rework/a.closed))*1000)/10 : null
+    const full = fullById[e.id]
+    return {id: e.id, name: e.name, closed: a.closed, on_time: a.on_time, rework: a.rework, score,
+      full_score: full?.full_score ?? null, returned_or_repeated: full?.returned_or_repeated ?? 0,
+      weighted_volume: full?.weighted_volume ?? 0}
+  }).sort((a,b)=>(b.score??-1)-(a.score??-1))
+  const matAgg: Record<string,{name:string,quantity:number,unit:string,orders:number}> = {}
+  for (const r of rows||[]) {
+    if (r.status !== 'closed' || !Array.isArray(r.materials)) continue
+    for (const m of r.materials as any[]) {
+      if (!m?.name) continue
+      const key = m.name
+      const a = matAgg[key] = matAgg[key] || {name: m.name, quantity: 0, unit: m.unit||'', orders: 0}
+      a.quantity += Number(m.quantity)||0; a.orders++
+    }
+  }
+  const materials = Object.values(matAgg).sort((a,b)=>b.quantity-a.quantity).slice(0,12)
+  return {rows: rows||[], ratings, materials, full_rating_formula: 'Полный балл: 40% качество мастера + 25% в срок + 20% без повторов/доработок + 10% объём + 5% без отказов.'}
+}
+
+export async function equipmentHistory(equipmentId: number) {
+  const s = supabase!
+  const {data, error} = await s.from('orders').select('id,created_at,status,closure').eq('equipment_id', equipmentId).order('created_at', {ascending:false}).limit(50)
+  if (error) throw new Error(error.message)
+  return {orders: (data||[]).map((o:AnyOrder)=>({id:o.id, created_at:o.created_at, status:o.status, fault_code:o.closure?.fault_code||null}))}
+}
+
+export function watch(onChange: ()=>void) {
+  if (!supabase) return ()=>{}
+  const ch = supabase.channel('orders-live').on('postgres_changes', {event:'*', schema:'public', table:'orders'}, ()=>onChange()).subscribe()
+  return ()=>{ supabase!.removeChannel(ch) }
+}
+
+function translateError(msg: string): string {
+  if (msg.includes('actor required')) return 'Сессия не распознана. Войдите снова.'
+  if (msg.includes('invalid status transition')) return 'Недопустимый переход статуса'
+  if (msg.includes('assigned worker required')) return 'Действие доступно только назначенному исполнителю'
+  if (msg.includes('master')) return 'Действие доступно мастеру'
+  if (msg.includes('reason required')) return 'Укажите причину'
+  if (msg.includes('closure incomplete')) return 'Закрытие неполное: работы и шифр обязательны'
+  if (msg.includes('after photo required')) return 'Для внепланового наряда нужно фото после'
+  if (msg.includes('stale order version')) return 'Данные изменились. Обновите наряд'
+  if (msg.includes('row-level security')) return 'Нет доступа к этой записи'
+  return msg
+}

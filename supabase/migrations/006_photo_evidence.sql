@@ -1,0 +1,11 @@
+create table if not exists order_photos(id bigint generated always as identity primary key,order_id bigint not null references orders(id),uploaded_by uuid not null references employees(id),sha256 text not null check(length(sha256)=64),server_received_at timestamptz not null default now(),byte_size integer not null check(byte_size>0),mime_type text not null);
+create index if not exists photos_order_idx on order_photos(order_id);
+create index if not exists photos_actor_idx on order_photos(uploaded_by);
+create index if not exists photos_hash_idx on order_photos(sha256);
+alter table order_photos enable row level security;
+drop policy if exists read_order_photos on order_photos;
+create policy read_order_photos on order_photos for select to naryad_app using(exists(select 1 from orders where id=order_id));
+drop policy if exists add_order_photos on order_photos;
+create policy add_order_photos on order_photos for insert to naryad_app with check(uploaded_by=(select current_actor()) and exists(select 1 from orders where id=order_id and assignee_id=(select current_actor())));
+grant select,insert on order_photos to naryad_app;
+grant usage,select on all sequences in schema public to naryad_app;

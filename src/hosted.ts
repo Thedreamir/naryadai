@@ -204,6 +204,16 @@ export async function report(since?: string, until?: string) {
   return {rows: rows||[], ratings, materials, downtime_minutes, downtime_top, anomalies, full_rating_formula: 'Полный балл: 40% качество мастера + 25% в срок + 20% без повторов/доработок + 10% объём + 5% без отказов.'}
 }
 
+export async function pinLogin(email: string, pin: string) {
+  const s = supabase!
+  // text/plain body keeps the request preflight-free; the function ignores content-type
+  const res = await fetch(`${url}/functions/v1/pin-login`, {method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({email, pin})})
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok || !data.token_hash) throw new Error(data.error === 'pin locked, try later' ? 'ПИН временно заблокирован после 5 ошибок' : 'ПИН не подошёл')
+  const {error: vErr} = await s.auth.verifyOtp({token_hash: data.token_hash, type: 'magiclink'})
+  if (vErr) throw new Error(translateError(vErr.message))
+}
+
 export async function setHumanScore(id: number, score: number, comment: string) {
   const s = supabase!
   const {data, error} = await s.rpc('set_human_score', {p_order_id: id, p_score: score, p_comment: comment})

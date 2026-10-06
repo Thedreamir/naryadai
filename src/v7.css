@@ -95,3 +95,8 @@ nav .active{background:#d7e7d9;color:var(--v7-teal)}
 .v7-facts b{text-align:right;font-weight:600}
 .v7-aitag{margin-left:auto;font-size:13px;background:#fff;border:1px solid #e4d5a8;color:#6c4e15;border-radius:6px;padding:3px 8px;font-weight:600}
 @media(max-width:760px){.v7-facts{grid-template-columns:1fr}}
+/* Stage D handover */
+.handover{background:var(--v7-surface);border:1px solid var(--v7-line);border-radius:15px;padding:18px;margin:0 0 18px}
+.handover h4{margin:14px 0 6px;font-size:15px}
+.handover p{font-size:14px;margin:3px 0}
+.handover .stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}

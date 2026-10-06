@@ -1,9 +1,9 @@
-node_modules/
-dist/
-.env*
 !.env.example
+.env*
 .local/
-test-results/
-playwright-report/
+dist/
 docs/continuation.md
+node_modules/
+playwright-report/
+test-results/
 tsconfig.tsbuildinfo

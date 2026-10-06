@@ -26,6 +26,8 @@ async function api(path:string,data?:any){
   if(path==='/push-subscribe')return H.savePushSubscription(data);
   if(path==='/shift-summary')return H.shiftSummary(data);
   if(path.startsWith('/equipment-history')){const p=new URLSearchParams(path.split('?')[1]||'');return H.equipmentHistory(Number(p.get('id')))}
+  const rc=path.match(/\/orders\/(\d+)\/repeat-check/);if(rc){const p=new URLSearchParams(path.split('?')[1]||'');return H.repeatCheck(Number(rc[1]),p.get('asOf')||undefined)}
+  if(path.startsWith('/repeat-top')){const p=new URLSearchParams(path.split('?')[1]||'');return H.repeatTop(p.get('since')||'',p.get('until')||'')}
   throw Error('Неизвестный вызов: '+path)
  }
  const r=await fetch('/api'+path,{method:data?'POST':'GET',headers:data?{'Content-Type':'application/json'}:undefined,body:data?JSON.stringify(data):undefined});const x=await r.json();if(!r.ok)throw Error(x.error||'Ошибка сети');return x}

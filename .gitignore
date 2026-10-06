@@ -1,5 +1,7 @@
 node_modules/
 dist/
-.env
-*.local
-docs/continuation.md
+.env*
+!.env.example
+.local/
+test-results/
+playwright-report/

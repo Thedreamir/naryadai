@@ -1,0 +1,7 @@
+import{chromium}from'@playwright/test';import{spawn}from'node:child_process';import{writeFileSync}from'node:fs';import assert from'node:assert/strict';
+const wait=ms=>new Promise(r=>setTimeout(r,ms));const p=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4273'],{stdio:['ignore','pipe','pipe']});let b;
+try{
+await wait(1000);b=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});const ctx=await b.newContext({serviceWorkers:'allow'});const page=await ctx.newPage();page.setDefaultTimeout(7000);await page.goto('http://127.0.0.1:4273');
+await page.evaluate(async()=>{await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('SW registration timeout')),7000))])});
+await page.reload();await page.waitForTimeout(500);await ctx.setOffline(true);await page.reload();await page.getByRole('heading',{name:'Наряд выдан. Смена под контролем.'}).waitFor();assert.ok(await page.locator('#root').textContent());await page.screenshot({path:'/downloads/slice-evidence/offline-shell.png'});writeFileSync('docs/offline-results.json',JSON.stringify({verified_at:new Date().toISOString(),result:'installed service worker preserves UI shell after offline reload',limits:['first visit needs connection','API actions unavailable offline','no offline queue yet','physical Android not tested']},null,2));console.log('Offline shell verified');
+}finally{if(b)await b.close();p.kill('SIGTERM')}

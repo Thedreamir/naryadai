@@ -1,31 +1,42 @@
-# НарядAI: private prototype
+# НарядAI — прототип контроля сменных нарядов
 
-Synthetic data only. No production deployment yet.
+Синтетические данные. Тестовый проект. Не продакшн.
 
-## First vertical slice
-Node 22.23.3 / npm 10.9.9. Install with `npm ci`.
+## Что это
 
-1. `npm run db:start` (isolated PostgreSQL 5433, local generated secret never committed).
-2. `npm run seed` in another terminal.
-3. `npm run server` (loopback API 3001).
-4. `npm run dev` (loopback Vite 5173).
-5. Choose a test role. This is a LOCAL DEMO ACCOUNT CHOOSER, not production login.
+PWA для мастера смены, исполнителей, руководителя и администратора: выдача нарядов, 10 статусов с обязательными причинами, серверный контроль сроков и эскалации, фото «до/после» в приватном хранилище, ИИ-проверка закрытия с карточкой оснований (решение всегда за мастером), рейтинг исполнителей с ИИ-пояснением, сводка смены, push-уведомления в приложении, PWA-офлайн-оболочка.
 
-`npm test` runs domain checks. `npm run build` creates the PWA.
-`node scripts/verify-slice.mjs` starts the services, uses system Chrome, verifies browser/API/RLS and stops services. Browser contexts are isolated; not physical devices.
+## Хостинг-демо
 
-Database statuses: Выдан, Принят в работу, В очереди, Отклонён, В работе, Приостановлен, Исполнено, Проверка ИИ, На доработку, Закрыт.
+Фронт — статический PWA (surge.sh, неиндексируемый адрес). Бэкенд — Supabase (PostgreSQL + Auth + Realtime + Storage + Edge Functions, pg_cron каждую минуту проверяет сроки).
 
-## Verified so far
-See docs/vertical-slice-results.json and docs/installed-packages.json.
-Real local PostgreSQL RLS; authoritative transition trigger; append-only event audit; optimistic versions; updates via PostgreSQL LISTEN/NOTIFY bridged to SSE; synthetic photo compression; human approval; rules-only evidence card.
+Демо-учётные записи (master / worker-a / worker-b / leader / admin) и их пароли и ПИН-коды передаются в материалах сдачи, а не в репозитории.
 
-## Not implemented or not validated yet
-Hosted Supabase Auth/Realtime/Storage, Gemini, push/Telegram, hosted timed reminders/push, complete production rating factors, cloud/physical-device E2E, offline action queue, physical Android and HTTPS camera checks.
-Do not present these as working. Rules-only review never invents AI confidence/score or claims to evaluate photo quality. Photo used in tests is a synthetic test image, not repair evidence.
+### Вход по ПИН-коду (честное раскрытие)
 
-## Dependencies / review
-Package lock records exact versions. No Prisma, yt-dlp, agent frameworks. ECC checklists used manually: database-reviewer, silent-failure-hunter, security-reviewer, not hooks or native agent execution. ExcelJS was removed after moderate audit findings through uuid. Current npm audit: 0. PDF report used instead. Private local secret and database files excluded by .gitignore.
+Для сценария общего планшета смены есть вход по 6-значному ПИНу. Это осознанно более слабый фактор, чем пароль: ПИНы хранятся bcrypt-хешами, после 5 ошибок вход блокируется на 10 минут, выдача сессии идёт через серверную Edge-функцию. Фича относится только к синтетическим демо-аккаунтам.
 
-## Added core work
-All ten states and pause/queue/reject/reissue/rework SQL branches tested. Deadline alerts dedupe tested. Seed: 520 orders over 90 days, 4 sections, 25 equipment, 15 workers; planted synthetic patterns, not plant measurements. SQL reports, preliminary transparent rating and full formula with missing-quality guard. Kanban/filters, human score, print/PDF report. Production SW offline-shell check passed. 24 frozen mandatory-field rule cases passed, not AI accuracy. Supabase adapter source remains NOT DEPLOYED.
+### ИИ (честное раскрытие)
+
+ИИ-проверка закрытия и тексты сводок — Google Gemini (модель фиксируется в конфигурации функции, бесплатный тариф). В модель уходят только синтетические данные, без ФИО исполнителей. При недоступности модели проверка честно переключается на правила, и это подписано в интерфейсе. Ответы модели кэшируются. Модель не подтверждает физический ремонт и не выставляет оценку — это написано рядом с каждым её выводом.
+
+## Запуск локально
+
+Node 22 / npm 10.
+
+1. `npm ci`
+2. Локальный срез без облака: `npm run db:start`, затем `npm run seed`, `npm run server`, `npm run dev` — выбор тестовой роли без Auth.
+3. Хостинг-сборка: `VITE_SUPABASE_URL=... VITE_SUPABASE_ANON_KEY=... npm run build` (публичные ключи, не сервисные). Результат в `dist/`, для SPA-роутинга нужен `200.html` копией `index.html`.
+4. Миграции БД — `supabase/migrations/*.sql` по порядку. Edge-функции — `supabase/functions/*` (review-order, shift-summary, pin-login), секреты (`GEMINI_API_KEY`, `GEMINI_MODEL`, `PWA_ORIGIN`) задаются в настройках функций.
+
+## Проверки
+
+`npm test` — доменные тесты локального среза. На хосте вручную проверены: сквозной цикл наряда всеми ролями, RLS-запреты (чужой исполнитель, анонимный ключ — все 12 таблиц закрыты), realtime между двумя сессиями, офлайн-оболочка, эскалации pg_cron, ИИ-проверка с фото, переоценка мастером с записью в журнал, вход по ПИНу.
+
+## Честные ограничения
+
+- Push — в приложении (звук+баннер+Notification API при разрешении); Web Push/VAPID и Telegram-бот не подключены.
+- Офлайн — только оболочка; очередь действий офлайн не реализована.
+- ИИ-пояснение рейтинга доступно в отчёте руководству; отдельного экрана рейтинга у исполнителя нет.
+- Не тестировалось на физическом Android; проверки в облачном браузере.
+- Excel/PDF-экспорт отчёта не подключён; отчёт — экран + печать.

@@ -76,7 +76,18 @@ export async function transition(id: number, x: {status:string,version:number,re
   const s = supabase!
   if (x.status === 'ai_review') return reviewOrder(id, x.version)
   let closure = x.closure
+  const uploadedPaths: string[] = []
+  const uploadedHashes: string[] = []
   if (x.status === 'completed' && closure) {
+    // Validate before any upload: a rejected closure must not leave orphan photos or order_photos rows.
+    const w = String(closure.works||'').trim()
+    if (w.length < 12) throw new Error('Опишите выполненные работы: минимум 12 символов')
+    if (!closure.fault_code) throw new Error('Укажите шифр неисправности')
+    for (const m of (closure.materials||[])) {
+      const q = Number(m?.quantity)
+      if (!isFinite(q) || q <= 0) throw new Error(`Количество материала «${m?.name||'?'}» должно быть положительным числом`)
+      if (q > 100000) throw new Error(`Количество материала «${m?.name||'?'}» слишком велико`)
+    }
     const myId = await uid()
     const evidence = []
     const photos: string[] = closure.photos||[]
@@ -91,6 +102,7 @@ export async function transition(id: number, x: {status:string,version:number,re
       const dup = await s.from('order_photos').select('order_id').eq('sha256', hash).neq('order_id', id).limit(1)
       const ins = await s.from('order_photos').insert({order_id: id, uploaded_by: myId, sha256: hash, byte_size: bytes.length, mime_type: mime})
       if (ins.error) throw new Error('Запись фото отклонена: '+ins.error.message)
+      uploadedPaths.push(path); uploadedHashes.push(hash)
       evidence.push({sha256: hash, server_received_at: new Date().toISOString(), byte_size: bytes.length,
         storage_path: path, duplicate_order_id: dup.data?.[0]?.order_id||null,
         limits: 'Время получения сервером, не доказательство времени съёмки'})
@@ -102,7 +114,12 @@ export async function transition(id: number, x: {status:string,version:number,re
   const {data, error} = await s.rpc('transition_order', {order_id: id, target_status: x.status,
     expected_version: x.version, reason_text: x.reason||'', closure_data: closure??null,
     human_score: x.human_score??null, human_comment: ''})
-  if (error) throw new Error(translateError(error.message))
+  if (error) {
+    // Garbage-collect photos uploaded for a rejected transition.
+    for (const p of uploadedPaths) { try { await s.storage.from('repair-photos').remove([p]) } catch {} }
+    for (const h of uploadedHashes) { try { await s.from('order_photos').delete().eq('order_id', id).eq('sha256', h) } catch {} }
+    throw new Error(translateError(error.message))
+  }
   return data
 }
 
@@ -141,22 +158,11 @@ async function reviewOrder(id: number, version: number) {
     if (data?.error) throw new Error(data.error)
     return data
   } catch (e) {
-    // Rules-only fallback, honestly labelled. Deploy/verify of the function is tracked separately.
-    const {data: o, error: readError} = await s.from('orders').select('*').eq('id', id).single()
-    if (readError || !o) throw new Error('Наряд недоступен')
-    if (o.status !== 'completed' || o.version !== version) throw new Error('Данные изменились. Обновите наряд')
-    const reasons: string[] = []
-    if (!o.closure?.works || o.closure.works.length < 12) reasons.push('Описание работ неполное')
-    if (!o.closure?.fault_code) reasons.push('Нет шифра')
-    if (o.kind === 'unplanned' && !(o.closure?.photos||[]).length) reasons.push('Нет фото после')
-    if (o.closure?.duplicate_warning) reasons.push('Фото совпадает с ранее загруженным. Мастер должен проверить источник.')
-    const result = {mode: 'rules', verdict: reasons.length ? 'rework' : 'needs_master', score: null, confidence: null,
-      reasons: reasons.length ? reasons : ['Обязательные поля заполнены. Смысл и качество фото не проверены.'],
-      limitations: ['Правила не устанавливают качество физического ремонта'],
-      fallback_reason: 'Модуль ИИ недоступен в этой сборке. Проверены только обязательные поля.'}
-    const {error: upError} = await s.from('orders').update({status: 'ai_review', ai_result: result}).eq('id', id).eq('version', version)
-    if (upError) throw new Error(translateError(upError.message))
-    return {result}
+    // The model/function path failed: run the same deterministic rule layer server-side.
+    // Fails closed (needs_master) and the client never writes ai_result itself.
+    const {data, error: fbError} = await s.rpc('review_fallback', {p_order_id: id, p_expected_version: version})
+    if (fbError) throw new Error(translateError(fbError.message))
+    return data
   }
 }
 

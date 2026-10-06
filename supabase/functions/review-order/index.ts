@@ -19,6 +19,8 @@ Deno.serve(async req=>{
  const norm=(s:string)=>s.toLowerCase().replace(/[^a-zа-яё0-9]+/gi,' ').replace(/\s+/g,' ').trim();
  const wN=norm(works),tN=norm(String(o.title||''));
  if(works&&works.length<30)ruleFlags.push('Правило: описание работ короче 30 символов');
+ const letterCount=(works.match(/[A-Za-zА-Яа-яЁё]/g)||[]).length;
+ if(works&&letterCount<10)ruleFlags.push('Правило: в описании работ почти нет текста (символы вместо описания)');
  if(wN&&tN&&(wN===tN||wN.includes(tN)||(tN.includes(wN)&&wN.length>10)))ruleFlags.push('Правило: текст работ повторяет формулировку проблемы');
  for(const m of (Array.isArray(o.closure?.materials)?o.closure.materials:[])){const q=Number(m?.quantity);if(!isFinite(q)||q<=0)ruleFlags.push(`Правило: количество материала «${m?.name||'?'}» не положительное`);else if(q>50)ruleFlags.push(`Правило: количество материала «${m?.name||'?'}» аномально велико (${q})`)}
  try{const admin0=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);

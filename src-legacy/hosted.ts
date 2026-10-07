@@ -104,7 +104,8 @@ export async function transition(id: number, x: {status:string,version:number,re
   if (x.status === 'ai_review') return reviewOrder(id, x.version)
   let closure = x.closure
   const uploadedPaths: string[] = []
-  const uploadedHashes: string[] = []
+  const uploadedRowIds: number[] = []
+  try {
   if (x.status === 'completed' && closure) {
     // Validate before any upload: a rejected closure must not leave orphan photos or order_photos rows.
     const w = String(closure.works||'').trim()
@@ -125,10 +126,11 @@ export async function transition(id: number, x: {status:string,version:number,re
       const path = `${myId}/${id}-${Date.now()}-${phase}-${i}.${ext}`
       const up = await s.storage.from('repair-photos').upload(path, bytes, {contentType: mime})
       if (up.error) throw new Error('Фото не загрузилось в хранилище: '+up.error.message)
+      uploadedPaths.push(path)
       const dup = await s.from('order_photos').select('order_id').eq('sha256', hash).neq('order_id', id).limit(1)
-      const ins = await s.from('order_photos').insert({order_id: id, uploaded_by: myId, sha256: hash, byte_size: bytes.length, mime_type: mime})
+      const ins = await s.from('order_photos').insert({order_id: id, uploaded_by: myId, sha256: hash, byte_size: bytes.length, mime_type: mime}).select('id').single()
       if (ins.error) throw new Error('Запись фото отклонена: '+ins.error.message)
-      uploadedPaths.push(path); uploadedHashes.push(hash)
+      uploadedRowIds.push(ins.data.id)
       return {sha256: hash, server_received_at: new Date().toISOString(), byte_size: bytes.length, phase,
         storage_path: path, duplicate_order_id: dup.data?.[0]?.order_id||null,
         limits: 'Время получения сервером, не доказательство времени съёмки'}
@@ -146,13 +148,16 @@ export async function transition(id: number, x: {status:string,version:number,re
   const {data, error} = await s.rpc('transition_order', {order_id: id, target_status: x.status,
     expected_version: x.version, reason_text: x.reason||'', closure_data: closure??null,
     human_score: x.human_score??null, human_comment: ''})
-  if (error) {
-    const cleanupErrors:string[]=[];
-    for(const p of uploadedPaths){try{const r=await s.storage.from('repair-photos').remove([p]);if(r.error)cleanupErrors.push('photo cleanup failed')}catch{cleanupErrors.push('photo cleanup unavailable')}}
-    for(const h of uploadedHashes){try{const r=await s.from('order_photos').delete().eq('order_id',id).eq('sha256',h);if(r.error)cleanupErrors.push('evidence cleanup failed')}catch{cleanupErrors.push('evidence cleanup unavailable')}}
-    throw new Error(translateError(error.message)+(cleanupErrors.length?' · Не удалось удалить все загруженные фото: сообщите мастеру, наряд не отправлен.':''))
-  }
+  if(error)throw new Error(translateError(error.message))
   return data
+  } catch(failure){
+    // Do not delete uncertain/possibly committed evidence. Current policies have no DELETE.
+    // Exact new paths and row IDs are tracked for future server-authorized orphan cleanup.
+    // A failed transition never makes client cleanup a permission to erase audit evidence.
+    const pending=uploadedPaths.length||uploadedRowIds.length;
+    if(pending)console.warn('Pending private photo cleanup',{order_id:id,paths:uploadedPaths.length,rows:uploadedRowIds.length});
+    throw new Error((failure as Error).message+(pending?' · Возможны незакреплённые фото в хранилище. Сообщите мастеру; повторная отправка требует проверки состояния наряда.':''))
+  }
 }
 
 export async function recordPermit(id: number, x: {kind:string, note:string, version:number}) {

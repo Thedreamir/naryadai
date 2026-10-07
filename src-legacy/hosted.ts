@@ -438,3 +438,20 @@ export async function reviewRepairMemory(id:number,action:'approve'|'reject'|'re
 export async function knowledgeDocs(){const {data,error}=await supabase!.from('knowledge_docs').select('*').order('id',{ascending:false});if(error)throw new Error(error.message);return data||[]}
 export async function submitKnowledge(title:string,body:string,source:string,equipment:number|null){const {data,error}=await supabase!.rpc('submit_knowledge_doc',{p_title:title,p_body:body,p_source:source,p_equipment:equipment});if(error)throw new Error(error.message);return data}
 export async function reviewKnowledge(id:number,action:string,version:number,note:string){const {error}=await supabase!.rpc('review_knowledge_doc',{p_id:id,p_action:action,p_version:version,p_note:note});if(error)throw new Error(error.message)}
+
+// Report-specific complete, bounded, ordered pagination. Never reuse the latest-600 queue.
+export async function closedReportOrders(since:string,until:string){
+ const s=supabase!;const lo=Date.parse(since),hi=Date.parse(until);
+ if(!Number.isFinite(lo)||!Number.isFinite(hi)||lo>=hi||hi-lo>91*86400000)throw Error('Недопустимый период отчёта');
+ const [eq,sec,emp]=await Promise.all([s.from('equipment').select('id,name,section_id'),s.from('sections').select('id,name'),s.from('employees').select('id,name')]);
+ for(const r of [eq,sec,emp])if(r.error)throw Error(r.error.message);
+ const equipment=new Map((eq.data||[]).map(x=>[x.id,x])),sections=new Map((sec.data||[]).map(x=>[x.id,x.name])),employees=new Map((emp.data||[]).map(x=>[x.id,x.name]));
+ const rows:any[]=[];let lastId=0;
+ for(let page=0;page<100;page++){
+  const {data,error}=await s.from('orders').select('id,title,status,kind,priority,equipment_id,assignee_id,closed_at,ai_result').eq('cancelled',false).eq('status','closed').gte('closed_at',since).lt('closed_at',until).gt('id',lastId).order('id',{ascending:true}).limit(500);
+  if(error)throw Error(error.message);if(!data?.length)return rows;
+  for(const o of data){const e=equipment.get(o.equipment_id);rows.push({...o,equipment:e?.name||'—',section:sections.get(e?.section_id)||'—',assignee:employees.get(o.assignee_id)||'—'})}
+  lastId=data[data.length-1].id;if(data.length<500)return rows;
+ }
+ throw Error('Отчёт слишком большой: экспорт остановлен, чтобы не выдавать неполные данные');
+}

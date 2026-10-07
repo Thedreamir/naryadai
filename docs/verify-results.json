@@ -1,0 +1,50 @@
+{
+  "local": true,
+  "results": [
+    {
+      "name": "static-quality",
+      "status": "PASS"
+    },
+    {
+      "name": "typecheck",
+      "status": "PASS"
+    },
+    {
+      "name": "unit",
+      "status": "PASS"
+    },
+    {
+      "name": "frozen-rules-selfcheck",
+      "status": "PASS"
+    },
+    {
+      "name": "build",
+      "status": "FAIL"
+    },
+    {
+      "name": "config-regression-vs-git-base",
+      "status": "NOT RUN",
+      "reason": "workspace lacks git metadata; requires source baseline"
+    },
+    {
+      "name": "conventional-commit",
+      "status": "NOT RUN",
+      "reason": "commit metadata required"
+    },
+    {
+      "name": "lint",
+      "status": "NOT RUN",
+      "reason": "no lint config; do not treat as passed"
+    },
+    {
+      "name": "full-database-role-RLS",
+      "status": "NOT RUN",
+      "reason": "requires full local schema harness"
+    },
+    {
+      "name": "DB-backed-phone-e2e",
+      "status": "NOT RUN",
+      "reason": "dedicated synthetic sessions/fixtures required"
+    }
+  ]
+}

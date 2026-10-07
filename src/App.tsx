@@ -4,6 +4,9 @@ import * as H from './lib/data'
 import Login from './pages/Login'
 import WorkerShell from './layouts/WorkerShell'
 import WorkerHome from './pages/worker/Home'
+import WorkerOrders from './pages/worker/Orders'
+import WorkerOrderDetail from './pages/worker/OrderDetail'
+import WorkerProfile from './pages/worker/Profile'
 export type Actor = {id:string, email:string, role:string, name:string}
 export default function App(){
   const [actor, setActor] = useState<Actor|null>(null)
@@ -17,6 +20,6 @@ export default function App(){
   })()},[])
   if(!ready) return <div className="min-h-screen grid place-items-center text-muted">Загрузка…</div>
   if(!actor) return <Login onLogin={setActor}/>
-  if(actor.role==='worker') return <WorkerShell actor={actor}><Routes><Route path="/" element={<WorkerHome actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></WorkerShell>
+  if(actor.role==='worker') return <WorkerShell actor={actor}><Routes><Route path="/" element={<WorkerHome actor={actor}/>}/><Route path="/orders" element={<WorkerOrders actor={actor}/>}/><Route path="/orders/:id" element={<WorkerOrderDetail actor={actor}/>}/><Route path="/current" element={<WorkerHome actor={actor}/>}/><Route path="/report" element={<WorkerProfile actor={actor}/>}/><Route path="/profile" element={<WorkerProfile actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></WorkerShell>
   return <div className="p-6">Роль {actor.role}: интерфейс в разработке (v8). <button className="underline" onClick={()=>{H.logout();location.reload()}}>Выйти</button></div>
 }

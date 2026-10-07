@@ -5,6 +5,7 @@ import {Card} from '../../components/ui/card'
 import {Button} from '../../components/ui/button'
 import {Badge} from '../../components/ui/badge'
 import type {Actor} from '../../App'
+import {statusOf} from '../../lib/status'
 const statusTone: Record<string,{tone:any,label:string}> = {
   issued:{tone:'teal',label:'Выдан'}, queued:{tone:'amber',label:'В очереди'}, accepted:{tone:'primary',label:'Принят'},
   in_progress:{tone:'primary',label:'В работе'}, paused:{tone:'amber',label:'Пауза'}, completed:{tone:'teal',label:'На проверке'},
@@ -38,7 +39,7 @@ export default function WorkerHome({actor}:{actor:Actor}){
     </div>
     {queue.length>0&&<div className="space-y-2">
       <div className="text-[15px] font-semibold">Мои наряды</div>
-      {queue.map((o:any)=>{const s=statusTone[o.status]||statusTone.issued
+      {queue.map((o:any)=>{const s=statusOf(o.status)
         return <Link to={'/orders/'+o.id} key={o.id}><Card className="flex items-center gap-3">
           <div className="flex-1 min-w-0"><div className="font-semibold truncate">{o.title}</div>
             <div className="text-[12px] text-muted">#{o.id} · {eqName(o.equipment_id)}</div></div>

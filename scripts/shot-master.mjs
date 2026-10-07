@@ -1,0 +1,11 @@
+import {chromium} from '@playwright/test'
+const b = await chromium.launch()
+const pg = await (await b.newContext({viewport:{width:1440,height:900}, deviceScaleFactor:1})).newPage()
+const shot=(n)=>pg.screenshot({path:'/tmp/v8m-'+n+'.png'})
+await pg.goto('http://127.0.0.1:4173/', {waitUntil:'networkidle'})
+await pg.fill('input[type=email]','master@naryadai.test')
+await pg.fill('input[type=password]',process.env.PW_MASTER)
+await pg.click('button:has-text("Войти")')
+await pg.waitForTimeout(7000); await shot('01-board')
+const link=pg.locator('a[href^="/orders/"]').first(); await link.click(); await pg.waitForTimeout(2500); await shot('03-detail')
+await b.close(); console.log('done')

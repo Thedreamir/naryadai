@@ -5,6 +5,7 @@ import {Card} from '../../components/ui/card'
 import {Button} from '../../components/ui/button'
 import {Badge} from '../../components/ui/badge'
 import type {Actor} from '../../App'
+import {statusOf} from '../../lib/status'
 export default function MasterOrderDetail({actor}:{actor:Actor}){
   const {id}=useParams(); const nav=useNavigate()
   const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
@@ -22,7 +23,7 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
     <button className="text-muted text-[14px]" onClick={()=>nav(-1)}>← Назад</button>
     <div><div className="text-[12px] text-muted">НАРЯД #{o.id} · {o.section} · {o.assignee}</div>
       <h1 className="text-[24px] font-bold">{o.title}</h1>
-      <div className="text-[14px] text-muted">{o.equipment} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · статус: {o.status}</div></div>
+      <div className="text-[14px] text-muted">{o.equipment} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · статус: {statusOf(o.status).label}</div></div>
     {(before.length>0||after.length>0)&&<Card className="space-y-3">
       <div className="flex items-center justify-between"><div className="font-semibold text-[15px]">Фото до / после</div>
         {before.length>0&&after.length>0&&<Button variant="outline" onClick={()=>setCompare(c=>!c)}>{compare?'Обычный вид':'Сравнить до/после'}</Button>}</div>
@@ -31,7 +32,7 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
           <div><div className="text-[12px] text-muted mb-1">До</div>{before.map((p,i)=><img key={i} src={p} className="rounded-[14px] w-full" alt="Фото до"/>)}</div>
           <div><div className="text-[12px] text-muted mb-1">После</div>{after.map((p,i)=><img key={i} src={p} className="rounded-[14px] w-full" alt="Фото после"/>)}</div>
         </div>:
-        <div className="flex gap-3 flex-wrap">{before.map((p,i)=><div key={'b'+i}><div className="text-[12px] text-muted mb-1">До</div><img src={p} className="h-36 rounded-[14px]" alt="Фото до"/></div>)}
+        <div className="flex gap-3 flex-wrap">{before.length===0&&after.length>0&&<div className="text-[13px] text-muted self-center">Фото до отсутствует — сравнение недоступно.</div>}{before.map((p,i)=><div key={'b'+i}><div className="text-[12px] text-muted mb-1">До</div><img src={p} className="h-36 rounded-[14px]" alt="Фото до"/></div>)}
         {after.map((p,i)=><div key={'a'+i}><div className="text-[12px] text-muted mb-1">После</div><img src={p} className="h-36 rounded-[14px]" alt="Фото после"/></div>)}</div>}
       {o.closure?.photo_evidence?.map((p:any)=><div key={p.sha256} className="text-[12px] text-muted">Фото получено сервером: {new Date(p.server_received_at).toLocaleString('ru')} · {Math.round(p.byte_size/1024)} КБ.{p.duplicate_order_id?` Совпадает с фото наряда #${p.duplicate_order_id}.`:''} Время съёмки не подтверждено.</div>)}
     </Card>}
@@ -46,7 +47,8 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
     {o.ai_result&&<Card className="space-y-2">
       <div className="flex items-center gap-2"><span className="font-semibold text-[15px]">Карточка оснований</span>
         {(o.ai_result.mode==='live'||o.ai_result.mode==='cache')&&<Badge tone="teal">Вывод ИИ · не решение</Badge>}</div>
-      <div className="font-semibold">{o.ai_result.verdict==='rework'?'Требует доработки':o.ai_result.verdict==='accepted_with_notes'?'Принято с замечаниями':'Нужна проверка мастером'}</div>
+      <div className="font-semibold">Модель считает: {o.ai_result.verdict==='rework'?'«Требует доработки»':o.ai_result.verdict==='accepted_with_notes'?'«Принято с замечаниями»':'«Нужна проверка мастером»'}</div>
+      <div className="text-[12px] text-muted">Утверждения ниже — вывод модели по описанию и фото, не подтверждённый осмотром{o.ai_result.model?' · '+o.ai_result.model:''}.</div>
       <ul className="list-disc pl-5 text-[14px] space-y-0.5">{o.ai_result.reasons.map((r:string)=><li key={r}>{r}</li>)}</ul>
       <div className="text-[12px] text-muted">{o.ai_result.mode==='live'?'Ответ языковой модели. Физический ремонт не подтверждён, оценка не калибрована.':o.ai_result.mode==='cache'?'Повторный ответ из кэша проверок.':'Проверка по правилам, модель не участвовала.'}{o.ai_result.fallback_reason?' '+o.ai_result.fallback_reason:''}</div>
     </Card>}

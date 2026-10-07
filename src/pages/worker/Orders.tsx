@@ -4,6 +4,7 @@ import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
 import {Badge} from '../../components/ui/badge'
 import type {Actor} from '../../App'
+import {statusOf} from '../../lib/status'
 const T: Record<string,{tone:any,label:string}> = {
   issued:{tone:'teal',label:'Выдан'},queued:{tone:'amber',label:'В очереди'},accepted:{tone:'primary',label:'Принят'},
   in_progress:{tone:'primary',label:'В работе'},paused:{tone:'amber',label:'Пауза'},completed:{tone:'teal',label:'На проверке'},
@@ -22,7 +23,7 @@ export default function Orders({actor}:{actor:Actor}){
         {list.map((o:any)=><Link to={'/orders/'+o.id} key={o.id}><Card className="flex items-center gap-3 active:scale-[.99] transition">
           <div className="flex-1 min-w-0"><div className="font-semibold">{o.title}</div>
             <div className="text-[12px] text-muted">#{o.id} · {o.equipment} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div></div>
-          <Badge tone={T[o.status]?.tone}>{T[o.status]?.label}</Badge></Card></Link>)}</div>})}
+          <Badge tone={statusOf(o.status).tone as any}>{statusOf(o.status).label}</Badge></Card></Link>)}</div>})}
     {!mine.length&&<Card className="text-center text-muted py-8">Нарядов нет</Card>}
   </div>
 }

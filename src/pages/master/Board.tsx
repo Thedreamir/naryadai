@@ -4,6 +4,7 @@ import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
 import {Badge} from '../../components/ui/badge'
 import {cn} from '../../lib/utils'
+import {statusOf} from '../../lib/status'
 import type {Actor} from '../../App'
 const T: Record<string,{tone:any,label:string}> = {
   issued:{tone:'teal',label:'Выдан'},queued:{tone:'amber',label:'В очереди'},accepted:{tone:'primary',label:'Принят'},
@@ -37,7 +38,7 @@ export default function Board({actor}:{actor:Actor}){
     <div className="flex gap-2">{FILTERS.map(([k,l])=><button key={k} onClick={()=>setF(k)} className={cn('h-10 px-4 rounded-full text-[14px] font-semibold',f===k?'bg-primary text-primary-ink':'bg-surface border border-border')}>{l}</button>)}</div>
     <div className="grid grid-cols-2 gap-3">
       {list.map((o:any)=><Link to={'/orders/'+o.id} key={o.id}><Card className="space-y-1 hover:border-primary/40 transition">
-        <div className="flex items-center justify-between"><span className="text-[12px] text-muted">#{o.id} · {o.section}</span><Badge tone={T[o.status]?.tone}>{T[o.status]?.label}</Badge></div>
+        <div className="flex items-center justify-between"><span className="text-[12px] text-muted">#{o.id} · {o.section}</span><Badge tone={statusOf(o.status).tone as any}>{statusOf(o.status).label}</Badge></div>
         <div className="font-semibold text-[15px]">{o.title}</div>
         <div className="text-[12px] text-muted">{o.equipment} · {o.assignee} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{new Date(o.deadline).getTime()<now&&o.status!=='closed'?' · просрочен':''}</div>
       </Card></Link>)}

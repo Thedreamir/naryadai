@@ -7,7 +7,7 @@ import type {Actor} from '../../App'
 export default function Issue({actor}:{actor:Actor}){
   const nav=useNavigate()
   const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
-  const [title,setTitle]=useState(''); const [eq,setEq]=useState(''); const [assignee,setAssignee]=useState('')
+  const [title,setTitle]=useState(''); const [eq,setEq]=useState(()=>new URLSearchParams(location.search).get('equipment')||''); const [assignee,setAssignee]=useState('')
   const [priority,setPriority]=useState('normal'); const [hours,setHours]=useState(2)
   useEffect(()=>{H.state().then(setSt).catch(e=>setErr(e.message))},[])
   if(!st) return <div className="text-muted py-10">Загрузка…</div>

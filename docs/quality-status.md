@@ -13,3 +13,5 @@ Review-order external free-text/photo branch отключён в staged source, 
 Source read: https://supabase.com/dashboard/project/pyqkstbcdxvpmtksziod/sql/735b50c0-cc6e-4999-850e-aea1e1fa030d
 
 One-active invariant: migration 056 unique partial index staged; preflight fails on existing duplicates, no silent cancellation. Two local connections test verified second start gets 23505, one active remains. Minimal schema, not final live trigger parity.
+
+F3: client catch boundary now covers upload/insert/RPC and tracks paths immediately plus exact inserted row IDs. No hash-based deletion of older evidence. F2 remains open: automatic delete intentionally not allowed until a transaction-safe server cleanup protocol protects committed/uncertain evidence. Failures surface an orphan-warning, not a successful-cleanup claim.

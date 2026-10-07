@@ -1,3 +1,4 @@
+import {useOrderState} from '../../lib/use-order-state'
 import {useEffect, useState} from 'react'
 import {Link} from 'react-router-dom'
 import * as H from '../../lib/data'
@@ -5,8 +6,8 @@ import {Card} from '../../components/ui/card'
 import {Badge} from '../../components/ui/badge'
 import type {Actor} from '../../App'
 export default function Review({actor}:{actor:Actor}){
-  const [st,setSt]=useState<any>(null)
-  useEffect(()=>{H.state().then(setSt).catch(()=>{})},[])
+  const {st,error:stateError,refresh}=useOrderState()
+  if(stateError)return <div role="alert" className="p-4 border rounded-xl">Данные недоступны: {stateError}<button className="min-h-12 block mt-2 border rounded-xl px-4" onClick={refresh}>Повторить</button></div>
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
   const list=st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status))
   return <div className="space-y-4">

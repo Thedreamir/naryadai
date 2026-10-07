@@ -1,4 +1,5 @@
-import Knowledge from '../master/Knowledge'
+import {lazy,Suspense} from 'react'
+const Knowledge=lazy(()=>import('../master/Knowledge'))
 import LanguageToggle from '../../components/LanguageToggle'
 import {kzNavigation} from '../../lib/language'
 import Equipment from '../master/Equipment'
@@ -43,7 +44,7 @@ export default function LeaderHome({actor}:{actor:Actor}){
     {menuOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setMenuOpen(false)}><section role="dialog" aria-modal="true" aria-label="Меню руководителя" className="workspace-sheet" onClick={e=>e.stopPropagation()}><button autoFocus className="sheet-close" onClick={()=>setMenuOpen(false)}>Закрыть</button><p>{actor.name} · руководитель · только чтение</p><button onClick={async()=>{await H.logout();location.reload()}}>Выйти</button></section></div>}
     <main className="workspace-main flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]">
       <div className="text-[12px] text-muted mb-3">Руководителю доступны сводный отчёт и рейтинг. Выдача, проверка и управление нарядами — функции мастера; здесь только чтение.</div>
-      <p className="text-[11px] text-muted mb-2">{kz?'Қазақша навигация: аударма жобасы. Мәтіндер RU.':'KZ: черновой перевод навигации, документы и данные RU.'}</p><Routes><Route path="/knowledge" element={import.meta.env.VITE_KNOWLEDGE_PREVIEW==='true'?<Knowledge actor={actor}/>:<Navigate to="/" replace/>}/><Route path="/equipment/:id" element={<Equipment actor={actor}/>}/><Route path="/" element={<LeaderOverview actor={actor}/>}/><Route path="/report" element={<Report actor={actor}/>}/><Route path="/memory" element={<Memory actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes>
+      <p className="text-[11px] text-muted mb-2">{kz?'Қазақша навигация: аударма жобасы. Мәтіндер RU.':'KZ: черновой перевод навигации, документы и данные RU.'}</p><Routes><Route path="/knowledge" element={import.meta.env.VITE_KNOWLEDGE_PREVIEW==='true'?<Suspense fallback={<div>Загрузка знаний…</div>}><Knowledge actor={actor}/></Suspense>:<Navigate to="/" replace/>}/><Route path="/equipment/:id" element={<Equipment actor={actor}/>}/><Route path="/" element={<LeaderOverview actor={actor}/>}/><Route path="/report" element={<Report actor={actor}/>}/><Route path="/memory" element={<Memory actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes>
     </main>
   </div>
 }

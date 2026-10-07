@@ -18,7 +18,7 @@ export default function Report({actor}:{actor:Actor}){
     if(!st) return null
     const closed=st.orders.filter((o:any)=>o.status==='closed'&&within(o.closed_at,bounds))
     const buckets: Record<string,number>={}
-    for(let i=days-1;i>=0;i--){const d=new Date(Date.now()-i*86400000);buckets[d.toLocaleDateString('ru',{day:'numeric',month:'short'})]=0}
+    for(let i=days;i>=0;i--){const d=new Date(Date.now()-i*86400000);buckets[d.toLocaleDateString('ru',{day:'numeric',month:'short'})]=0}
     closed.forEach((o:any)=>{const k=new Date(o.closed_at).toLocaleDateString('ru',{day:'numeric',month:'short'});if(k in buckets)buckets[k]++})
     const byDay=Object.entries(buckets).map(([d,n])=>({day:d,count:n}))
     const statuses=[['Закрытые',closed.length,GREEN],['Активные',st.orders.filter((o:any)=>ACTIVE_STATUSES.includes(o.status)).length,ACC],['На проверке',st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)).length,WARN]]
@@ -36,7 +36,7 @@ export default function Report({actor}:{actor:Actor}){
     <div><h1 className="text-[26px] font-bold">Отчёт и рейтинг</h1>
       <div className="text-[13px] text-muted">Выбранный период · все доступные участки · не аттестация персонала</div><label className="text-[13px] flex gap-2 items-center mt-2">Период <select aria-label="Период отчёта" value={days} onChange={e=>{const d=Number(e.target.value) as PeriodDays;setDays(d);setPeriod(d);setBounds(periodBounds(d))}} className="border border-border rounded-[10px] p-2">{[7,30,90].map(n=><option key={n} value={n}>{n} дней</option>)}</select></label><div className="text-[12px] text-muted mt-1">{new Date(bounds.since).toLocaleString('ru')} - {new Date(bounds.until).toLocaleString('ru')} · Asia/Almaty. Закрытия/оценки по дате закрытия; сигналы по дате выдачи. Активные и проверка - текущий срез, не события периода.</div></div>
     <div className="grid grid-cols-2 gap-4">
-      <Card><div className="font-semibold text-[15px] mb-3">Закрытия за {days} дней</div>
+      <Card><div className="font-semibold text-[15px] mb-3">Закрытия за {days} дней (скользящее окно)</div>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data.byDay}><XAxis dataKey="day" fontSize={11} tickLine={false}/><YAxis allowDecimals={false} fontSize={11} tickLine={false} width={24}/>
             <Tooltip/><Bar isAnimationActive={false} dataKey="count" fill={GREEN} radius={[6,6,0,0]}/></BarChart>
@@ -96,6 +96,6 @@ export default function Report({actor}:{actor:Actor}){
           <td className="font-bold">{r.avg?r.avg.toFixed(1)+' / 5':'—'}</td></tr>)}</tbody></table>
       {data.ratings.length===0&&<div className="text-[13px] text-muted py-2">Оценок пока нет</div>}
     </Card>
-    <div className="text-[12px] text-muted">Закрыто с оценкой: {data.scoredCount} из {data.closedCount}. Графики строятся на синтетических данных.</div>
+    <div className="text-[12px] text-muted">Сумма дневных столбцов: {data.byDay.reduce((n,x)=>n+x.count,0)} · закрыто в периоде: {data.closedCount}. Закрыто с оценкой: {data.scoredCount} из {data.closedCount}. Графики строятся на синтетических данных.</div>
   </div>
 }

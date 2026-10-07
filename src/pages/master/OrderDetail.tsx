@@ -9,21 +9,27 @@ import {statusOf, eventLabel} from '../../lib/status'
 export default function MasterOrderDetail({actor}:{actor:Actor}){
   const {id}=useParams(); const nav=useNavigate()
   const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
+  const [assignee,setAssignee]=useState(''); const [priority,setPriority]=useState('normal'); const [manageReason,setManageReason]=useState('')
   const [score,setScore]=useState(4); const [compare,setCompare]=useState(false)
   const load=()=>H.state().then(setSt).catch(e=>setErr(e.message))
   useEffect(()=>{load()},[id])
-  if(err) return <Card className="text-danger">{err}</Card>
+  if(err&&!st) return <Card className="text-danger">{err}</Card>
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
   const o=st.orders.find((x:any)=>x.id===Number(id))
   if(!o) return <Card>Наряд не найден.</Card>
   const go=async(status:string,reason?:string,extra?:any)=>{setBusy(true);setErr('')
     try{await H.transition(o.id,{status,version:o.version,reason,...extra});await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
+  const manage=async(action:'reassign'|'priority'|'cancel')=>{if(action==='cancel'&&!confirm('Отменить наряд? Дальнейшие действия будут заблокированы. Это не подтверждает остановку физических работ.'))return;setBusy(true);setErr('');try{await H.manageOrder(o.id,action,{assignee,priority,reason:manageReason});if(action==='cancel')nav('/');else await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
   const before:string[]=o.before_photos||[]; const after:string[]=(o.closure?.photos)||[]
-  return <div className="space-y-4 max-w-3xl">
+  return <div className="space-y-4 max-w-3xl">{err&&<Card role="alert" className="text-danger">{err}</Card>}
     <button className="text-muted text-[14px]" onClick={()=>nav(-1)}>← Назад</button>
     <div><div className="text-[12px] text-muted">НАРЯД #{o.id} · {o.section} · {o.assignee}</div>
       <h1 className="text-[24px] font-bold">{o.title}</h1>
       <div className="text-[14px] text-muted">{o.equipment} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · статус: {statusOf(o.status).label}</div></div>
+    {!['closed','completed','ai_review'].includes(o.status)&&<Card className="space-y-3"><h2 className="font-semibold text-[15px]">Управление нарядом</h2><label className="block text-[13px]">Основание<input aria-label="Основание управления" className="mt-1 border border-border rounded-[10px] p-3 w-full" value={manageReason} onChange={e=>setManageReason(e.target.value)} placeholder="Причина изменения"/></label>
+      {['issued','queued','rejected'].includes(o.status)?<div className="flex gap-2"><select aria-label="Новый исполнитель" className="border border-border rounded-[10px] p-3 flex-1 min-w-0" value={assignee} onChange={e=>setAssignee(e.target.value)}><option value="">Выберите исполнителя</option>{st.employees.filter((e:any)=>e.role==='worker'&&e.is_active&&e.id!==o.assignee_id).map((e:any)=><option key={e.id} value={e.id}>{e.name}</option>)}</select><Button disabled={busy||!assignee||manageReason.trim().length<3} onClick={()=>manage('reassign')}>Переназначить</Button></div>:<p className="text-[12px] text-muted">Переназначение недоступно после принятия: активная работа не передаётся молча.</p>}
+      <div className="flex gap-2"><select aria-label="Новый приоритет" value={priority} onChange={e=>setPriority(e.target.value)} className="border border-border rounded-[10px] p-3 flex-1">{[['normal','Обычный'],['high','Высокий'],['emergency','Аварийный'],['planned','Плановый']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select><Button disabled={busy||manageReason.trim().length<3} onClick={()=>manage('priority')}>Изменить приоритет</Button></div>
+      <Button variant="outline" disabled={busy||manageReason.trim().length<3} onClick={()=>manage('cancel')}>Отменить наряд</Button><p className="text-[12px] text-muted">Изменения записываются в журнал. Отмена убирает наряд из очередей и блокирует переходы, но не означает физическую остановку работ.</p></Card>}
     {(before.length>0||after.length>0)&&<Card className="space-y-3">
       <div className="flex items-center justify-between"><div className="font-semibold text-[15px]">Фото до / после</div>
         {before.length>0&&after.length>0&&<Button variant="outline" onClick={()=>setCompare(c=>!c)}>{compare?'Обычный вид':'Сравнить до/после'}</Button>}</div>

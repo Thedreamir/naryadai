@@ -399,3 +399,8 @@ export async function reviewRefusal(eventId:number,classification:'justified'|'u
   const r=await supabase!.rpc('review_refusal',{p_event_id:eventId,p_classification:classification,p_note:note})
   if(r.error) throw new Error(r.error.code==='23505'?'Решение уже сохранено. Обновите список; повторная запись недоступна.':r.error.message)
 }
+
+export async function manageOrder(id:number,action:'reassign'|'priority'|'cancel',options:{assignee?:string,priority?:string,reason:string}) {
+ const r=await supabase!.rpc('manage_order',{p_order_id:id,p_action:action,p_assignee:options.assignee||null,p_priority:options.priority||null,p_reason:options.reason})
+ if(r.error) throw new Error(/reassign only/.test(r.error.message)?'Переназначить можно только выданный, ожидающий или отклонённый наряд.':/cancelled/.test(r.error.message)?'Наряд уже отменён.':r.error.message)
+}

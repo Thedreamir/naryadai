@@ -418,3 +418,7 @@ export async function reviewRepairMemory(id:number,action:'approve'|'reject'|'re
   const r=await supabase!.rpc('review_repair_memory',{p_id:id,p_action:action,p_note:note,p_expected_version:expectedVersion})
   if(r.error) throw new Error(/version changed/.test(r.error.message)?'Запись изменилась. Обновите список перед решением.':/only candidate/.test(r.error.message)?'Запись уже рассмотрена. Обновите список.':/only approved/.test(r.error.message)?'Отозвать можно только утверждённую запись.':r.error.message)
 }
+
+export async function knowledgeDocs(){const {data,error}=await supabase!.from('knowledge_docs').select('*').order('id',{ascending:false});if(error)throw new Error(error.message);return data||[]}
+export async function submitKnowledge(title:string,body:string,source:string,equipment:number|null){const {data,error}=await supabase!.rpc('submit_knowledge_doc',{p_title:title,p_body:body,p_source:source,p_equipment:equipment});if(error)throw new Error(error.message);return data}
+export async function reviewKnowledge(id:number,action:string,version:number,note:string){const {error}=await supabase!.rpc('review_knowledge_doc',{p_id:id,p_action:action,p_version:version,p_note:note});if(error)throw new Error(error.message)}

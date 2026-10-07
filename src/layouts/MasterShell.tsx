@@ -35,7 +35,7 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
           <div className="min-w-0"><div className="text-[13px] font-semibold text-[#313936] truncate">{actor.name}</div><div>Демо-учётка</div></div></div>
         <button className="flex items-center gap-2 h-10 text-[13px] text-muted" onClick={async()=>{await H.logout();location.reload()}}><LogOut size={18}/>Выйти</button>
         <div className="mt-2"><strong className="text-[13px] text-[#313936]">Ptah AI</strong><br/>Помощник, не арбитр качества</div>
-        <div className="mt-1">Dreamer Labs · dreamir</div>
+        <div className="mt-1">{'dreamir | dream labs | <O>'}</div>
         <div className="mt-2">Синтетические данные · тестовое облако</div>
       </div>
     </aside>

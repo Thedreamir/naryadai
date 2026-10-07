@@ -36,7 +36,7 @@ export default function WorkerHome({actor}:{actor:Actor}){
   if(!st) return <div className="py-10 text-center" style={{color:'var(--tk-muted)'}}>Загрузка нарядов…</div>
   const eqName=(o:any)=>o.equipment||st.equipment.find((e:any)=>e.id===o.equipment_id)?.name||'—'
   const alerts=[...liveAlerts,...(st.notifications||[])].filter((n:any,i:number,arr:any[])=>arr.findIndex((x:any)=>x.id===n.id)===i).slice(0,3)
-  return <div className="space-y-3">
+  return <div className="space-y-3">{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.</div>}
     {alerts.length>0&&<div className="tk-card p-3 space-y-1.5" style={{borderLeft:'4px solid var(--color-tk-amber)'}}>
       <div className="text-[0.625rem] font-black uppercase tracking-wider inline-flex items-center gap-1.5" style={{color:'var(--tk-muted)'}}><TriangleAlert size={14} className="text-tk-amber"/>Контроль сроков</div>
       {alerts.map((n:any)=><div key={n.id} className="text-xs font-bold flex items-center justify-between gap-2"><span className="min-w-0">{n.message}</span><span className="font-mono text-[0.625rem] shrink-0" style={{color:'var(--tk-muted)'}}>{new Date(n.created_at).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})}</span></div>)}
@@ -51,7 +51,7 @@ export default function WorkerHome({actor}:{actor:Actor}){
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <button onClick={()=>nav('/orders/'+emergency.id)} className="bg-white text-tk-red font-black text-xs py-2 px-1 rounded-lg active:scale-95 uppercase leading-tight min-w-0 inline-flex items-center justify-center gap-1"><Zap size={19} strokeWidth={2.5}/>Принять срочно</button>
+        <button onClick={()=>nav('/orders/'+emergency.id)} className="bg-white text-tk-red font-black text-xs py-2 px-1 rounded-lg active:scale-95 uppercase leading-tight min-w-0 inline-flex items-center justify-center gap-1"><Zap size={19} strokeWidth={2.5}/>Открыть наряд</button>
         <button onClick={()=>dismiss(emergency.id)} className="bg-red-950 text-white font-bold text-xs py-2 px-1 rounded-lg border border-red-500/40 active:scale-95 uppercase leading-tight min-w-0 inline-flex items-center justify-center gap-1"><Clock size={19}/>Позже</button>
       </div>
     </div>}
@@ -92,8 +92,8 @@ export default function WorkerHome({actor}:{actor:Actor}){
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-tk-amber/20 text-tk-amber flex items-center justify-center border border-tk-amber/40"><Phone size={19}/></div>
         <div>
-          <div className="font-black text-xs">AI-вызов — голосовой ввод без рук</div>
-          <div className="text-[0.625rem]" style={{color:'var(--tk-muted)'}}>Говорите — ассистент отвечает текстом. Распознавание зависит от браузера.</div>
+          <div className="font-black text-xs">Голосовой ввод · черновик</div>
+          <div className="text-[0.625rem]" style={{color:'var(--tk-muted)'}}>Это не телефонный звонок. Распознавание зависит от браузера.</div>
         </div>
       </div>
       <ChevronRight size={22} style={{color:'var(--tk-muted)'}}/>

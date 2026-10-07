@@ -1,3 +1,4 @@
+import {useOrderState} from '../../lib/use-order-state'
 import {useEffect, useState} from 'react'
 import * as H from '../../lib/data'
 import {Link, useNavigate} from 'react-router-dom'
@@ -13,12 +14,11 @@ function Countdown({deadline}:{deadline:string}){
   return <span className={"font-mono font-black "+(over?'text-tk-red':'text-tk-amber')}>{over?'-':''}{hh}:{mm}:{ss}</span>
 }
 export default function WorkerHome({actor}:{actor:Actor}){
-  const [st,setSt]=useState<any>(null); const [err,setErr]=useState('')
+  const {st,error:stateError,refresh}=useOrderState(); const [err,setErr]=useState('')
   const [note,setNote]=useState<any>(null)
   const [dismissed,setDismissed]=useState<number[]>(()=>{try{return JSON.parse(sessionStorage.getItem('tk-em-dismissed')||'[]')}catch{return[]}})
   const nav=useNavigate()
   const [liveAlerts,setLiveAlerts]=useState<any[]>([])
-  useEffect(()=>{H.state().then(setSt).catch(e=>setErr(e.message))},[])
   useEffect(()=>H.watchNotifications((n:any)=>setLiveAlerts(a=>[n,...a].slice(0,3))),[])
   const mine=st?st.orders.filter((o:any)=>o.assignee_id===actor.id):[]
   const current=mine.find((o:any)=>o.status==='in_progress')
@@ -27,12 +27,13 @@ export default function WorkerHome({actor}:{actor:Actor}){
   useEffect(()=>{ // real shift note: last closure note for current order's equipment
     if(!current){setNote(null);return}
     H.equipmentHistory(current.equipment_id).then((h:any)=>{
-      const last=(h||[]).find((x:any)=>x.closure?.works)
+      const last=(h.orders||[]).find((x:any)=>x.closure?.works)
       setNote(last?{works:last.closure.works,when:last.closed_at||last.updated_at}:null)
     }).catch(()=>setNote(null))
   },[current?.id])
   const dismiss=(id:number)=>{const d=[...dismissed,id];setDismissed(d);sessionStorage.setItem('tk-em-dismissed',JSON.stringify(d))}
   if(err) return <div className="tk-card p-4 text-tk-red">{err}</div>
+  if(stateError)return <div role="alert" className="tk-card p-4">Данные недоступны: {stateError}<button className="tk-touch tk-sub w-full mt-2" onClick={refresh}>Повторить</button></div>
   if(!st) return <div className="py-10 text-center" style={{color:'var(--tk-muted)'}}>Загрузка нарядов…</div>
   const eqName=(o:any)=>o.equipment||st.equipment.find((e:any)=>e.id===o.equipment_id)?.name||'—'
   const alerts=[...liveAlerts,...(st.notifications||[])].filter((n:any,i:number,arr:any[])=>arr.findIndex((x:any)=>x.id===n.id)===i).slice(0,3)

@@ -9,12 +9,14 @@ export default function VoiceHud({actor}:{actor:Actor}){
   const [open,setOpen]=useState(false); const [listening,setListening]=useState(false)
   const [heard,setHeard]=useState(''); const [answer,setAnswer]=useState(''); const [busy,setBusy]=useState(false); const [err,setErr]=useState('')
   const [orderId,setOrderId]=useState<number|null>(null)
-  const recRef=useRef<any>(null)
+  const recRef=useRef<any>(null);const dialogRef=useRef<HTMLDivElement>(null)
   useEffect(()=>{const h=()=>setOpen(true);window.addEventListener('naryadai:open-hud',h);return()=>window.removeEventListener('naryadai:open-hud',h)},[])
   useEffect(()=>{if(!open)return
     setHeard('');setAnswer('');setErr('')
     H.state().then(st=>{const cur=st.orders.find((o:any)=>o.assignee_id===actor.id&&o.status==='in_progress');setOrderId(cur?cur.id:null)}).catch(()=>{})
   },[open,actor.id])
+  useEffect(()=>{if(!open)return;const previous=document.activeElement as HTMLElement|null;dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus();const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){recRef.current?.abort();setListening(false);setOpen(false)}if(e.key==='Tab'){const buttons=[...dialogRef.current?.querySelectorAll<HTMLButtonElement>('button')||[]];if(!buttons.length)return;const first=buttons[0],last=buttons[buttons.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};document.addEventListener('keydown',key);return()=>{document.removeEventListener('keydown',key);recRef.current?.abort();previous?.focus()}},[open]);
+  useEffect(()=>()=>{const r=recRef.current;if(r){r.onresult=null;r.onend=null;r.onerror=null;r.abort()}},[]);
   const start=()=>{
     if(!SR){setErr('Распознавание речи недоступно в этом браузере. AI-вызов принимает голос только там, где браузер его поддерживает.');return}
     const rec=new SR();rec.lang='ru-RU';rec.interimResults=false;recRef.current=rec
@@ -28,9 +30,9 @@ export default function VoiceHud({actor}:{actor:Actor}){
   const stop=()=>{recRef.current?.stop();setListening(false)}
   if(!open)return null
   return createPortal(<div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.92)'}}>
-    <div className="w-full max-w-sm rounded-2xl border p-5 flex flex-col items-center space-y-4" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
-      <div className="text-[0.625rem] font-black uppercase tracking-widest text-tk-amber">AI-вызов</div>
-      <button onClick={listening?stop:start} className={cn("w-24 h-24 rounded-full flex items-center justify-center border-4 transition",listening?'bg-tk-amber text-black border-amber-400 pulse-ring-anim':'tk-sub')}>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Голосовой ввод, не телефонный звонок" className="w-full max-w-sm rounded-2xl border p-5 flex flex-col items-center space-y-4" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
+      <div className="text-[0.625rem] font-black uppercase tracking-widest text-tk-amber">Голосовой ввод</div>
+      <button aria-label={listening?'Остановить микрофон':'Начать голосовой ввод'} onClick={listening?stop:start} className={cn("w-24 h-24 rounded-full flex items-center justify-center border-4 transition",listening?'bg-tk-amber text-black border-amber-400 pulse-ring-anim':'tk-sub text-tk-amber')}>
         {listening?<Mic size={34}/>:<MicOff size={30}/>}
       </button>
       <div className="flex items-end gap-1 h-11">{listening?[0,1,2,3,4].map(i=><div key={i} className="hud-wave-bar"/>):<div className="text-[0.6875rem] font-bold" style={{color:'var(--tk-muted)'}}>{busy?'Отправляю вопрос…':'Нажмите и говорите'}</div>}</div>
@@ -39,7 +41,7 @@ export default function VoiceHud({actor}:{actor:Actor}){
       {busy&&<div className="w-full tk-sub p-2.5 text-xs" style={{color:'var(--tk-muted)'}}>Думаю…</div>}
       {answer&&<div className="w-full tk-sub p-2.5 text-xs leading-relaxed"><span className="text-[0.5625rem] font-black uppercase block text-tk-amber">Ответ</span>{answer}</div>}
       {err&&<div className="w-full text-[0.6875rem] text-tk-red font-bold text-center">{err}</div>}
-      <button onClick={()=>{stop();setOpen(false)}} className="w-12 h-12 rounded-full bg-tk-red text-white flex items-center justify-center border border-red-400"><PhoneOff size={19}/></button>
+      <button aria-label="Закрыть голосовой ввод" onClick={()=>{stop();setOpen(false)}} className="w-12 h-12 rounded-full bg-tk-red text-white flex items-center justify-center border border-red-400"><PhoneOff size={19}/></button>
     </div>
   </div>,document.body)
 }

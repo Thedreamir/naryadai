@@ -1,4 +1,17 @@
-import {runVerifyCommand} from './verify-command.mjs';import fs from 'node:fs';const results=[];
+import {spawnSync} from 'node:child_process';
+
+// A timed-out, signaled, or unstarted command never counts as a pass.
+function runVerifyCommand(cmd, args, {timeout = 30000, stdio = 'inherit'} = {}) {
+  const result = spawnSync(cmd, args, {stdio, timeout, killSignal: 'SIGKILL'});
+  return {
+    status: result.status === 0 && !result.error && !result.signal ? 'PASS' : 'FAIL',
+    ...(result.error ? {reason: result.error.code || result.error.message} : {}),
+    ...(result.signal ? {signal: result.signal} : {}),
+    ...(result.status !== null ? {exitCode: result.status} : {}),
+  };
+}
+
+import fs from 'node:fs';const results=[];
 for(const [name,cmd,args]of [['preflight-local-only','node',['scripts/preflight.mjs']],['architecture-presence-only','node',['scripts/architecture-gates.mjs']],['static-quality','node',['scripts/static-quality.mjs']],['typecheck','node',['node_modules/typescript/bin/tsc','-b']],['unit','npm',['test']],['frozen-rules-selfcheck','node',['tests/rules-evaluation.mjs']],['build','npm',['run','build']]]){results.push({name,...runVerifyCommand(cmd,args,{timeout:name==='build'?60000:30000})})}
 results.push({name:'config-regression-vs-git-base',status:'NOT RUN',reason:'workspace lacks git metadata; requires source baseline'}, {name:'conventional-commit',status:'NOT RUN',reason:'commit metadata required'},{name:'lint',status:'NOT RUN',reason:'no lint config; do not treat as passed'},{name:'full-database-role-RLS',status:'NOT RUN',reason:'requires full local schema harness'},{name:'DB-backed-phone-e2e',status:'NOT RUN',reason:'dedicated synthetic sessions/fixtures required'});
 fs.writeFileSync('docs/verify-results.json',JSON.stringify({local:true,results},null,2));console.table(results);if(results.some(x=>x.status!=='PASS'))process.exitCode=1;

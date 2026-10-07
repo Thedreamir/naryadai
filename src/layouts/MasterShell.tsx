@@ -1,10 +1,12 @@
 import {useEffect, useState, type ReactNode} from 'react'
-import {NavLink} from 'react-router-dom'
+import {NavLink, useLocation} from 'react-router-dom'
+import {motion} from 'framer-motion'
 import {LayoutGrid, ClipboardCheck, PlusCircle, Archive, Repeat, BarChart3, LogOut} from 'lucide-react'
 import * as H from '../lib/data'
 import type {Actor} from '../App'
 import {cn} from '../lib/utils'
 export default function MasterShell({actor, children}:{actor:Actor, children:ReactNode}){
+  const loc=useLocation()
   const [reviewCount,setReviewCount]=useState(0)
   useEffect(()=>{H.state().then(st=>setReviewCount(st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)).length)).catch(()=>{})},[])
   const items=[
@@ -27,6 +29,6 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
         <div className="text-[10px] text-muted px-2">Синтетические данные · тестовое облако</div>
       </div>
     </aside>
-    <main className="flex-1 min-w-0 p-6 max-w-[1200px]">{children}</main>
+    <main className="flex-1 min-w-0 p-6 max-w-[1200px]"><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
   </div>
 }

@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {transitions,statuses} from '../server/domain.mjs';
+test('complete directed transition matrix: every illegal pair absent',()=>{const expected={issued:['accepted','queued','rejected'],queued:['accepted','rejected'],accepted:['in_progress'],in_progress:['paused','completed'],paused:['in_progress'],completed:['ai_review'],ai_review:['rework','closed'],rework:['in_progress'],rejected:['issued'],closed:[]};for(const a of Object.keys(statuses))for(const b of Object.keys(statuses))assert.equal(transitions[a].includes(b),expected[a].includes(b),a+' -> '+b)});
+// This is a graph-only self-check, NOT role/RLS/version enforcement against PostgreSQL.

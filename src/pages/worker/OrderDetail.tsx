@@ -7,10 +7,11 @@ import VoiceButton from './VoiceButton'
 import type {Actor} from '../../App'
 import {Camera, TriangleAlert, X, Check, ArrowLeft, ArrowRight, Package} from 'lucide-react'
 import {cn} from '../../lib/utils'
-const DECLS=[
+const DECLS_PERMIT=[
   'Подтверждаю лично: оборудование обесточено и заземлено согласно наряду-допуску',
   'Подтверждаю лично: блокировки и предупреждающие плакаты (LOTO) вывешены'
 ]
+const DECLS_ZONE=['Подтверждаю лично: использую средства защиты, зона работ безопасна']
 const DECL_POST='Подтверждаю лично: после работ выполнен контрольный запуск / осмотр'
 const TEMPLATES=['Узел осмотрен, заменена изношенная деталь, крепёж протянут по инструкции. Контрольный запуск выполнен — посторонних шумов нет.','Загрязнение устранено, смазка узла обновлена, работа восстановлена.','Причина — износ. Деталь заменена, люфтов и вибрации не выявлено.']
 function compress(f:File){return imageCompression(f,{maxSizeMB:0.35,maxWidthOrHeight:1600})}
@@ -44,12 +45,13 @@ export default function OrderDetail({actor}:{actor:Actor}){
     try{const url=await read(await compress(f));await H.recordIntakePhoto(o.id,url);await load()}catch(e){setErr((e as Error).message)}finally{setIntakeBusy(false)}}
   const doPermit=async()=>{setBusy(true);setErr('')
     try{await H.recordPermit(o.id,{kind:permitKind,note:permitNote,version:o.version});setPermitKind('');setPermitNote('');await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
-  const recordedPre:any[]=(o.declarations||[]).filter((d:any)=>d.phase==='pre_work')
-  const allDecl=recordedPre.length>=2?true:decl.every(Boolean)
+  const DECLS=o.permit_kind==='confirmed'?DECLS_PERMIT:DECLS_ZONE
+  const recordedPre:any[]=(o.declarations||[]).filter((d:any)=>d.phase==='pre_work'||d.phase==='pre_work_late')
+  const allDecl=recordedPre.length>=DECLS.length?true:decl.slice(0,DECLS.length).every(Boolean)
   const canSend=works.trim().length>=12&&!!fault&&(!needPhoto||after.length>0)
   const complete=async()=>{
-    const preDecls=recordedPre.length>=2?recordedPre.map((d:any)=>({phase:'pre_work',text:d.text,confirmed:true,recorded_at:d.declared_at})):DECLS.map((d,i)=>({phase:'pre_work_at_surrender',text:d,confirmed:decl[i]}))
-    if(recordedPre.length<2){try{await H.recordDeclarations(o.id,'pre_work_at_surrender',DECLS)}catch(e){}}
+    const preDecls=recordedPre.length>=DECLS.length?recordedPre.map((d:any)=>({phase:'pre_work',text:d.text,confirmed:true,recorded_at:d.declared_at})):DECLS.map((d,i)=>({phase:'pre_work_at_surrender',text:d,confirmed:decl[i]}))
+    if(recordedPre.length<DECLS.length){try{await H.recordDeclarations(o.id,'pre_work_at_surrender',DECLS)}catch(e){}}
     go('completed',undefined,{works,fault_code:fault,materials:materials?[{name:materials,quantity:1}]:[],photos:after,safety_declarations:[...preDecls,{phase:'post_work',text:DECL_POST,confirmed:declPost}]})}
   const addPh=async(f:File|null|undefined)=>{if(!f)return;const url=await read(await compress(f));setAfter(p=>[...p,url])}
   const steps=['Безопасность','Отчёт','Фото']
@@ -76,7 +78,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
           <Camera size={15}/>{intakeBusy?'Загрузка…':o.status==='accepted'?'Снять фото приёмки (до начала работ)':'Снять фото состояния (работы уже начаты)'}
           <input type="file" accept="image/*" capture="environment" className="hidden" disabled={intakeBusy} onChange={e=>{doIntake(e.target.files?.[0]);e.target.value=''}}/></label>
         <div className="text-[10px] mt-1" style={{color:'var(--tk-muted)'}}>{o.status==='accepted'
-          ?'Фиксируется с отметкой времени сервера как фото до начала работ; после сдачи наряда добавить нельзя.'
+          ?'Фото, полученное до начала работ по процессу (загружено при статусе «принят»); после сдачи наряда добавить нельзя.'
           :'Работы уже начаты: снимок будет помечен «после начала работ» и НЕ считается фото до.'} Время съёмки сервером не подтверждается.</div>
       </div>}
       {intake.length>0&&<div className="text-[10px] space-y-0.5" style={{color:'var(--tk-muted)'}}>{intake.map((p:any,i:number)=><div key={i}>
@@ -101,21 +103,31 @@ export default function OrderDetail({actor}:{actor:Actor}){
         <button className="tk-touch tk-sub uppercase" disabled={busy} onClick={()=>go('queued','В очередь после текущего')}>В очередь</button>
         <button className="tk-touch tk-sub text-tk-red uppercase" disabled={busy} onClick={()=>{const r=prompt('Причина отказа');if(r)go('rejected',r)}}>Не могу</button>
       </div></div>}
-    {o.status==='accepted'&&<div className="tk-card p-3.5 space-y-2.5">
+    {(o.status==='accepted'||(o.status==='in_progress'&&recordedPre.length<DECLS.length))&&<div className="tk-card p-3.5 space-y-2.5">
       <div className="text-[13px] font-black uppercase tracking-wide">Перед началом работ</div>
       <div className="bg-tk-red/10 border border-tk-red/40 rounded-lg p-2.5 text-[11px] flex gap-2">
         <TriangleAlert size={14} className="text-tk-red shrink-0 mt-0.5"/>
-        <span>Личные подтверждения исполнителя — фиксируются сейчас, до начала работ, с отметкой времени сервера. Это декларация работника, а не проверка электросостояния системой.</span>
+        <span>{o.status==='in_progress'?'Работы уже начаты: подтверждения фиксируются сейчас и будут помечены как сделанные после начала работ.':'Личные подтверждения исполнителя — фиксируются сейчас, до начала работ, с отметкой времени сервера.'} Это декларация работника, а не проверка электросостояния системой.{o.permit_kind==='not_required'?' Наряд-допуск для этой задачи не требуется — пункты по обесточиванию и LOTO не применяются.':''}</span>
       </div>
       {DECLS.map((d,i)=><label key={i} className={cn("tk-sub p-3 flex items-start gap-2.5 cursor-pointer transition",startDecl[i]&&'border-tk-green')}>
         <input type="checkbox" checked={startDecl[i]} onChange={()=>setStartDecl(p=>p.map((v,j)=>j===i?!v:v))} className="mt-0.5 w-5 h-5 accent-tk-green shrink-0"/>
         <span className="text-xs font-bold leading-snug">{d}</span>
       </label>)}
       {err&&<div className="text-xs text-tk-red font-bold">{err}</div>}
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={busy||startBusy||!startDecl.every(Boolean)} onClick={async()=>{
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={busy||startBusy||!startDecl.slice(0,DECLS.length).every(Boolean)} onClick={async()=>{
         setStartBusy(true);setErr('')
-        try{if(!(o.declarations||[]).some((d:any)=>d.phase==='pre_work'))await H.recordDeclarations(o.id,'pre_work',DECLS);await go('in_progress')}catch(e){setErr((e as Error).message)}finally{setStartBusy(false)}
-      }}>{startBusy?'Фиксация…':'Подтвердить и начать работу'}</button>
+        try{
+          if(o.status==='accepted'){
+            await H.transition(o.id,{status:'in_progress',version:o.version})
+            if(!(o.declarations||[]).some((d:any)=>d.phase==='pre_work'||d.phase==='pre_work_late')){
+              try{await H.recordDeclarations(o.id,'pre_work',DECLS)}catch(e){setErr('Наряд начат, но подтверждения не записались — зафиксируйте ниже, будет отмечено «после начала».')}
+            }
+            await load();window.scrollTo(0,0)
+          }else{
+            await H.recordDeclarations(o.id,'pre_work_late',DECLS);await load()
+          }
+        }catch(e){setErr((e as Error).message)}finally{setStartBusy(false)}
+      }}>{startBusy?'Фиксация…':o.status==='accepted'?'Подтвердить и начать работу':'Зафиксировать (после начала)'}</button>
     </div>}
     {o.status==='queued'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={busy} onClick={()=>go('accepted')}>Принять из очереди</button>}
     {o.status==='in_progress'&&<>
@@ -148,17 +160,17 @@ export default function OrderDetail({actor}:{actor:Actor}){
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
-          {step===0&&recordedPre.length>=2&&<div className="space-y-2.5">
+          {step===0&&recordedPre.length>=DECLS.length&&<div className="space-y-2.5">
             <div className="bg-tk-green/10 border border-tk-green/40 rounded-lg p-2.5 text-[11px] flex gap-2">
               <Check size={14} className="text-tk-green shrink-0 mt-0.5"/>
-              <span>Подтверждения безопасности зафиксированы при начале работ: {new Date(recordedPre[0].declared_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} (время сервера).</span>
+              <span>Подтверждения безопасности {recordedPre[0].phase==='pre_work_late'?'зафиксированы после начала работ':'зафиксированы при начале работ'}: {new Date(recordedPre[0].declared_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} (время сервера).</span>
             </div>
             {recordedPre.map((d:any,i:number)=><div key={i} className="tk-card p-3 flex items-start gap-2.5 border-tk-green">
               <Check size={16} className="text-tk-green shrink-0 mt-0.5"/>
               <span className="text-xs font-bold leading-snug">{d.text}</span>
             </div>)}
           </div>}
-          {step===0&&recordedPre.length<2&&<div className="space-y-2.5">
+          {step===0&&recordedPre.length<DECLS.length&&<div className="space-y-2.5">
             <div className="bg-tk-amber/10 border border-tk-amber/40 rounded-lg p-2.5 text-[11px] flex gap-2">
               <TriangleAlert size={14} className="text-tk-amber shrink-0 mt-0.5"/>
               <span>Эти подтверждения не были зафиксированы при начале работ (наряд начат раньше) — подтверждаются сейчас, при сдаче. Это декларация работника, а не проверка электросостояния системой.</span>
@@ -196,7 +208,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
           </div>}
           {step===2&&<div className="space-y-3">
             {masterBefore.length>0?<div>
-              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото до (зафиксировано до начала работ)</div>
+              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото до (получено до начала работ)</div>
               <div className="flex gap-2 overflow-x-auto no-scrollbar">{masterBefore.map((p,i)=><img key={i} src={p} className="h-24 rounded-lg" alt="До"/>)}</div>
             </div>:<div className="tk-sub p-2.5 text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует — приёмочное фото снимается до начала работ, здесь его добавить нельзя.</div>}
             <div>

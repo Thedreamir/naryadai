@@ -14,6 +14,7 @@ const T: Record<string,{tone:any,label:string}> = {
   ai_review:{tone:'teal',label:'Проверка ИИ'},closed:{tone:'gray',label:'Закрыт'}}
 const FILTERS=[['all','Все'],['active','Активные'],['review','Проверка'],['closed','Закрытые']] as const
 export default function Board({actor}:{actor:Actor}){
+  const [filterOpen,setFilterOpen]=useState(false); const [section,setSection]=useState('all'); const [priority,setPriority]=useState('all')
   const [st,setSt]=useState<any>(null); const [f,setF]=useState<string>('all'); const [rep,setRep]=useState<any[]|null>(null); const [view,setView]=useState<'list'|'kanban'>('list'); const [pres,setPres]=useState(savedPresentation())
   useEffect(()=>{H.state().then(setSt).catch(()=>{})
     H.repeatTop(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setRep).catch(()=>setRep([]))},[])
@@ -21,7 +22,8 @@ export default function Board({actor}:{actor:Actor}){
   const now=Date.now()
   const visible=pres?st.orders.filter((o:any)=>!isTechnicalTitle(o.title)):st.orders
   const hiddenN=st.orders.length-visible.length
-  const list = visible.filter((o:any)=>f==='all'?o.status!=='closed':f==='active'?ACTIVE_STATUSES.includes(o.status):f==='review'?['completed','ai_review'].includes(o.status):o.status==='closed')
+  const scoped=visible.filter((o:any)=>(section==='all'||o.section===section)&&(priority==='all'||o.priority===priority))
+  const list = scoped.filter((o:any)=>f==='all'?o.status!=='closed':f==='active'?ACTIVE_STATUSES.includes(o.status):f==='review'?['completed','ai_review'].includes(o.status):o.status==='closed')
   const overdue = visible.filter((o:any)=>o.status!=='closed'&&new Date(o.deadline).getTime()<now)
   const counts={active:visible.filter((o:any)=>ACTIVE_STATUSES.includes(o.status)).length,
     work:visible.filter((o:any)=>o.status==='in_progress').length,
@@ -41,7 +43,7 @@ export default function Board({actor}:{actor:Actor}){
     ['review','Выполненные',(o:any)=>['completed','ai_review'].includes(o.status)],
     ['overdue','Просроченные',(o:any)=>o.status!=='closed'&&o.status!=='rejected'&&new Date(o.deadline).getTime()<now],
   ]
-  return <div className="space-y-5">
+  return <div className="board space-y-5">
     <div className="flex items-end justify-between"><div><h1 className="text-[26px] font-bold">Наряды смены</h1>
       <div className="text-[13px] text-muted">Каждый переход фиксируется в журнале.</div></div>
       <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-[13px] text-muted"><input type="checkbox" checked={pres} onChange={e=>{setPres(e.target.checked);setPresentation(e.target.checked)}}/>Скрыть технические{pres&&hiddenN>0?` (${hiddenN})`:''}</label><Link to="/issue" className="bg-primary text-primary-ink h-11 px-5 rounded-[13px] font-semibold inline-flex items-center">+ Выдать наряд</Link></div></div>
@@ -72,7 +74,9 @@ export default function Board({actor}:{actor:Actor}){
           <span className="text-[11px] text-muted ml-auto shrink-0">{w.stt.label}</span></div>)}
       </div>
     </Card>
-    <div className="flex gap-2 items-center flex-wrap">{FILTERS.map(([k,l])=><button key={k} onClick={()=>setF(k)} className={cn('h-10 px-4 rounded-full text-[14px] font-semibold',f===k?'bg-primary text-primary-ink':'bg-surface border border-border')}>{l}</button>)}
+    <button className="mobile-filter-button" onClick={()=>setFilterOpen(true)}>Фильтры · {FILTERS.find(x=>x[0]===f)?.[1]} · {list.length}</button>
+    {filterOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setFilterOpen(false)}><section className="workspace-sheet" role="dialog" aria-modal="true" aria-label="Фильтры нарядов" onClick={e=>e.stopPropagation()}><h2>Фильтры нарядов</h2><button autoFocus className="sheet-close" onClick={()=>setFilterOpen(false)}>Закрыть</button><label>Статус<select aria-label="Статус" value={f} onChange={e=>setF(e.target.value)}>{FILTERS.map(([k,l])=><option value={k} key={k}>{l}</option>)}</select></label><label>Участок<select aria-label="Участок" value={section} onChange={e=>setSection(e.target.value)}><option value="all">Все участки</option>{[...new Set(visible.map((o:any)=>String(o.section)))].map((x:any)=><option value={x} key={x}>{x}</option>)}</select></label><label>Приоритет<select aria-label="Приоритет" value={priority} onChange={e=>setPriority(e.target.value)}><option value="all">Все</option><option value="normal">Обычный</option><option value="urgent">Срочный</option><option value="emergency">Аварийный</option></select></label><button onClick={()=>{setF('all');setSection('all');setPriority('all')}}>Сбросить</button><button className="filter-apply" onClick={()=>setFilterOpen(false)}>Показать {list.length} нарядов</button></section></div>}
+    <div className="board-filter-tabs flex gap-2 items-center flex-wrap">{FILTERS.map(([k,l])=><button key={k} onClick={()=>setF(k)} className={cn('h-10 px-4 rounded-full text-[14px] font-semibold',f===k?'bg-primary text-primary-ink':'bg-surface border border-border')}>{l}</button>)}
       <button onClick={()=>setView(view==='list'?'kanban':'list')} className="h-10 px-4 rounded-full text-[14px] font-semibold bg-surface border border-border ml-auto">{view==='list'?'Канбан':'Список'}</button></div>
     {view==='list'?<div className="grid grid-cols-2 gap-3">
       {list.map((o:any)=><Link to={'/orders/'+o.id} key={o.id}><Card className="space-y-1 hover:border-primary/40 transition">
@@ -81,7 +85,7 @@ export default function Board({actor}:{actor:Actor}){
         <div className="text-[12px] text-muted">{o.equipment} · {o.assignee} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{new Date(o.deadline).getTime()<now&&o.status!=='closed'?' · просрочен':''}</div>
       </Card></Link>)}
     </div>:<div className="grid grid-cols-3 gap-3 items-start">
-      {KCOLS.map(([k,label,match])=>{const col=visible.filter((o:any)=>{if(o.status==='closed'||o.status==='rejected')return false;const isOD=new Date(o.deadline).getTime()<now;return k==='overdue'?isOD:(!isOD&&match(o))})
+      {KCOLS.map(([k,label,match])=>{const col=scoped.filter((o:any)=>{if(o.status==='closed'||o.status==='rejected')return false;const isOD=new Date(o.deadline).getTime()<now;return k==='overdue'?isOD:(!isOD&&match(o))})
         return <div key={k} className="space-y-2">
         <div className={cn('text-[12px] font-semibold uppercase tracking-wide',k==='overdue'?'text-warn':'text-muted')}>{label} · {col.length}</div>
         {col.slice(0,12).map((o:any)=><Link to={'/orders/'+o.id} key={k+o.id}><Card className={cn('space-y-1 !p-3 hover:border-primary/40 transition mb-2',k==='overdue'&&'border-warn/50')}>

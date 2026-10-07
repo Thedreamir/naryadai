@@ -207,7 +207,8 @@ async function reviewOrder(id: number, version: number) {
 export async function createOrder(x: {title:string,kind:string,equipment_id:number,assignee_id:string,priority:string,deadline:string,before_photos?:string[]}) {
   const s = supabase!
   const myId = await uid()
-  const photos = (x.before_photos||[]).filter(p=>/^data:image\/(jpeg|jpg|png|webp);base64,/.test(p)).slice(0,2)
+  if((x.before_photos||[]).length>5)throw Error('До 5 фото неисправности');
+  const photos:string[]=[];for(const photo of (x.before_photos||[])){if(!/^data:image\/(jpeg|jpg|png|webp);base64,/.test(photo))throw Error('Неверный формат фото');photos.push(await sanitizeDataUrl(photo))}
   const {error} = await s.from('orders').insert({title: x.title, kind: x.kind, equipment_id: x.equipment_id,
     assignee_id: x.assignee_id, master_id: myId, priority: x.priority, deadline: x.deadline, status: 'issued', before_photos: photos})
   if (error) throw new Error(translateError(error.message))
@@ -288,7 +289,7 @@ export async function report(since?: string, until?: string) {
     rejected: (ev||[]).filter(e=>e.new_status==='rejected').length,
     pauses,
   }
-  return {rows: rows||[], ratings, materials, downtime_minutes, downtime_top, anomalies, full_rating_formula: 'Полный балл: 40% качество мастера + 25% в срок + 20% без повторов/доработок + 10% объём + 5% без отказов.'}
+  return {rows: rows||[], ratings, materials, downtime_minutes, downtime_top, anomalies, full_rating_formula: 'Полный балл: 30% качество мастера + 25% в срок + 20% без повторов/доработок + 15% объём + 10% без отказов.'}
 }
 
 export async function pinLogin(email: string, pin: string) {

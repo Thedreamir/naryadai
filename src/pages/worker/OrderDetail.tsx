@@ -35,18 +35,20 @@ export default function OrderDetail({actor}:{actor:Actor}){
   if(!o||o.assignee_id!==actor.id) return <div className="tk-card p-4">Наряд не найден или назначен другому исполнителю.</div>
   const needPhoto=o.kind==='unplanned'
   const intake:any[]=Array.isArray(o.intake_photos)?o.intake_photos:[]
-  const masterBefore:string[]=[...(o.before_photos||[]),...intake.map((p:any)=>p.url).filter(Boolean)]
+  const intakeBefore=intake.filter((p:any)=>p.phase==='before_intake')
+  const intakeLate=intake.filter((p:any)=>p.phase!=='before_intake')
+  const masterBefore:string[]=[...(o.before_photos||[]),...intakeBefore.map((p:any)=>p.url).filter(Boolean)]
   const intakeAllowed=['accepted','in_progress','rework','paused'].includes(o.status)
   const doIntake=async(f:File|null|undefined)=>{if(!f||intakeBusy)return;setIntakeBusy(true);setErr('')
     try{const url=await read(await compress(f));await H.recordIntakePhoto(o.id,url);await load()}catch(e){setErr((e as Error).message)}finally{setIntakeBusy(false)}}
   const doPermit=async()=>{setBusy(true);setErr('')
     try{await H.recordPermit(o.id,{kind:permitKind,note:permitNote,version:o.version});setPermitKind('');setPermitNote('');await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
   const allDecl=decl.every(Boolean)
-  const canSend=works.trim().length>=12&&!!fault&&declPost&&(!needPhoto||after.length>0)
+  const canSend=works.trim().length>=12&&!!fault&&(!needPhoto||after.length>0)
   const complete=()=>go('completed',undefined,{works,fault_code:fault,materials:materials?[{name:materials,quantity:1}]:[],photos:after,safety_declarations:[...DECLS.map((d,i)=>({phase:'pre_work',text:d,confirmed:decl[i]})),{phase:'post_work',text:DECL_POST,confirmed:declPost}]})
   const addPh=async(f:File|null|undefined)=>{if(!f)return;const url=await read(await compress(f));setAfter(p=>[...p,url])}
   const steps=['Безопасность','Отчёт','Фото']
-  const stepOk=[allDecl,works.trim().length>=12&&!!fault&&declPost,(!needPhoto||after.length>0)]
+  const stepOk=[allDecl,works.trim().length>=12&&!!fault,(!needPhoto||after.length>0)]
   return <div className="space-y-3">
     <button className="text-xs font-bold" style={{color:'var(--tk-muted)'}} onClick={()=>nav(-1)}>← Назад</button>
     <div className="tk-card p-3.5 space-y-2.5">
@@ -66,11 +68,16 @@ export default function OrderDetail({actor}:{actor:Actor}){
       {masterBefore.length===0&&<div className="text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует.</div>}
       {intakeAllowed&&<div>
         <label className={cn("tk-sub w-full h-12 flex items-center justify-center gap-2 cursor-pointer text-xs font-black uppercase",intakeBusy&&'opacity-50')}>
-          <Camera size={15}/>{intakeBusy?'Загрузка…':'Снять фото приёмки (до начала работ)'}
+          <Camera size={15}/>{intakeBusy?'Загрузка…':o.status==='accepted'?'Снять фото приёмки (до начала работ)':'Снять фото состояния (работы уже начаты)'}
           <input type="file" accept="image/*" capture="environment" className="hidden" disabled={intakeBusy} onChange={e=>{doIntake(e.target.files?.[0]);e.target.value=''}}/></label>
-        <div className="text-[10px] mt-1" style={{color:'var(--tk-muted)'}}>Фиксируется с отметкой времени сервера; после сдачи наряда добавить нельзя. Время съёмки сервером не подтверждается.</div>
+        <div className="text-[10px] mt-1" style={{color:'var(--tk-muted)'}}>{o.status==='accepted'
+          ?'Фиксируется с отметкой времени сервера как фото до начала работ; после сдачи наряда добавить нельзя.'
+          :'Работы уже начаты: снимок будет помечен «после начала работ» и НЕ считается фото до.'} Время съёмки сервером не подтверждается.</div>
       </div>}
-      {intake.length>0&&<div className="text-[10px]" style={{color:'var(--tk-muted)'}}>{intake.map((p:any)=>'Получено сервером '+new Date(p.server_received_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})).join(' · ')}</div>}
+      {intake.length>0&&<div className="text-[10px] space-y-0.5" style={{color:'var(--tk-muted)'}}>{intake.map((p:any,i:number)=><div key={i}>
+        {p.phase==='before_intake'?'Фото до (приёмка)':'Снято после начала работ (статус: '+(p.status_at_upload||'?')+')'} · получено сервером {new Date(p.server_received_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
+      </div>)}</div>}
+      {intakeLate.length>0&&<div className="flex gap-2 overflow-x-auto no-scrollbar">{intakeLate.map((p:any,i:number)=>p.url&&<img key={i} src={p.url} className="h-24 rounded-lg opacity-80" alt="Снято после начала работ"/>)}</div>}
     </div>
     {!o.permit_kind&&['issued','accepted','queued'].includes(o.status)&&<div className="tk-card p-3.5 space-y-2.5">
       <div className="text-[13px] font-black uppercase tracking-wide">Допуск к работе</div>
@@ -154,12 +161,12 @@ export default function OrderDetail({actor}:{actor:Actor}){
             </div>
             <label className={cn("tk-card p-3 flex items-start gap-2.5 cursor-pointer transition",declPost&&'border-tk-green')}>
               <input type="checkbox" checked={declPost} onChange={()=>setDeclPost(v=>!v)} className="mt-0.5 w-5 h-5 accent-tk-green shrink-0"/>
-              <span className="text-xs font-bold leading-snug">{DECL_POST}</span>
+              <span className="text-xs font-bold leading-snug">{DECL_POST} <span className="font-normal" style={{color:'var(--tk-muted)'}}>(если применимо к этой работе — не для всех нарядов требуется)</span></span>
             </label>
           </div>}
           {step===2&&<div className="space-y-3">
             {masterBefore.length>0?<div>
-              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото до (зафиксировано при выдаче/приёмке)</div>
+              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото до (зафиксировано до начала работ)</div>
               <div className="flex gap-2 overflow-x-auto no-scrollbar">{masterBefore.map((p,i)=><img key={i} src={p} className="h-24 rounded-lg" alt="До"/>)}</div>
             </div>:<div className="tk-sub p-2.5 text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует — приёмочное фото снимается до начала работ, здесь его добавить нельзя.</div>}
             <div>

@@ -3,7 +3,7 @@ import * as H from '../../lib/data'
 import {Send, Mic, MicOff, Bot, UserRound} from 'lucide-react'
 import type {Actor} from '../../App'
 import {cn} from '../../lib/utils'
-type Msg={from:'me'|'ai';text:string;mode?:string}
+type Msg={from:'me'|'ai';text:string;mode?:string;sources?:string[]}
 const SR:any=(window as any).SpeechRecognition||(window as any).webkitSpeechRecognition
 export default function Assistant({actor}:{actor:Actor}){
   const [msgs,setMsgs]=useState<Msg[]>([{from:'ai',text:'Задайте вопрос по наряду или оборудованию. Отвечаю только по данным системы и демо-документации — если данных нет, скажу прямо.'}])
@@ -15,7 +15,7 @@ export default function Assistant({actor}:{actor:Actor}){
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:'smooth'})},[msgs])
   const send=async(text:string)=>{const t=text.trim();if(!t||busy)return
     setMsgs(m=>[...m,{from:'me',text:t}]);setInput('');setBusy(true);setErr('')
-    try{const r=await H.assistantChat(t,orderId??undefined);setMsgs(m=>[...m,{from:'ai',text:r.answer,mode:r.mode}])}
+    try{const r=await H.assistantChat(t,orderId??undefined);setMsgs(m=>[...m,{from:'ai',text:r.answer,mode:r.mode,sources:r.sources}])}
     catch(e){setErr((e as Error).message);setMsgs(m=>[...m,{from:'ai',text:'Не удалось получить ответ. Проверьте связь и попробуйте ещё раз.'}])}
     finally{setBusy(false)}}
   const toggleMic=()=>{
@@ -39,7 +39,8 @@ export default function Assistant({actor}:{actor:Actor}){
           {m.from==='me'?<UserRound size={13}/>:<Bot size={13}/>}</div>
         <div className={cn("rounded-xl px-3 py-2 text-xs max-w-[80%] leading-relaxed",m.from==='me'?'bg-tk-slate text-white':'tk-card')}>
           {m.text}
-          {m.mode&&<div className="text-[9px] mt-1 opacity-60">{m.mode==='live'?'ответ модели Gemini (демо, бесплатный тариф)':'ответ по правилам без модели'}</div>}
+          {m.sources&&m.sources.length>0&&<div className="text-[9px] mt-1 opacity-70">Источник: {m.sources.join('; ')}</div>}
+          {m.mode&&<div className="text-[9px] mt-1 opacity-60">{m.mode==='live'?'ответ модели Gemini (демо, бесплатный тариф)':'ответ по правилам без модели'} · учебная документация — не применять на реальном оборудовании</div>}
         </div>
       </div>)}
       {busy&&<div className="flex gap-2"><div className="w-7 h-7 rounded-lg bg-tk-amber text-black flex items-center justify-center"><Bot size={13}/></div>

@@ -25,3 +25,15 @@ create policy intake_insert on public.order_intake_photos for insert to authenti
 comment on table public.order_intake_photos is 'Before-photos captured at intake, before work starts. Insert-only before completion; closure displays these read-only.';
 grant select, insert on public.order_intake_photos to authenticated;
 grant select on public.order_intake_photos to service_role;
+-- phase truth: intake baseline only in 'accepted'; later uploads labeled after-start, with status preserved
+create or replace function public.set_intake_phase() returns trigger language plpgsql security definer set search_path = public as $$
+declare v_status text;
+begin
+  select status into v_status from public.orders where id = new.order_id;
+  new.phase := case when v_status = 'accepted' then 'before_intake' else 'baseline_after_start' end;
+  new.status_at_upload := v_status;
+  return new;
+end $$;
+alter table public.order_intake_photos add column if not exists status_at_upload text;
+drop trigger if exists intake_phase on public.order_intake_photos;
+create trigger intake_phase before insert on public.order_intake_photos for each row execute function public.set_intake_phase();

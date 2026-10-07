@@ -1,0 +1,374 @@
+[
+ {
+  "name": "good: conveyor belt replace",
+  "label": "good",
+  "kind": "planned",
+  "works": "Заменил конвейерную ленту, отцентрировал барабаны, проверил натяжение и прогнал узел под нагрузкой 15 минут, биения нет.",
+  "materials": [
+   {
+    "name": "Ремень приводной",
+    "quantity": 12
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "good: pump seal",
+  "label": "good",
+  "kind": "planned",
+  "works": "Разобрал насос, заменил торцевое уплотнение и прокладки, собрал, проверил на утечки под давлением, работает сухо.",
+  "materials": [
+   {
+    "name": "Сальник",
+    "quantity": 1
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "good: crusher bearing",
+  "label": "good",
+  "kind": "unplanned",
+  "photo": true,
+  "works": "Заменил подшипник вала дробилки, выставил зазоры по шаблону, сделал контрольный пуск, вибрация в норме.",
+  "materials": [
+   {
+    "name": "Подшипник 6308",
+    "quantity": 2
+   }
+  ],
+  "fault": "Г-01"
+ },
+ {
+  "name": "good: motor rewind check",
+  "label": "good",
+  "kind": "planned",
+  "works": "Проверил сопротивление изоляции обмоток двигателя мегаомметром, зачистил контакты, затянул клеммы по моменту, пуск нормальный.",
+  "fault": "Г-01"
+ },
+ {
+  "name": "good: gearbox oil",
+  "label": "good",
+  "kind": "planned",
+  "works": "Слил отработанное масло редуктора, промыл картер, залил свежее масло до метки, проверил подтёки после часа работы.",
+  "materials": [
+   {
+    "name": "Масло гидравлическое",
+    "quantity": 18
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "good: screen mesh",
+  "label": "good",
+  "kind": "planned",
+  "works": "Заменил изношенное сито грохота, проверил крепление рамы и амортизаторы, регулировку амплитуды выполнил по карте.",
+  "materials": [
+   {
+    "name": "Сетка фильтра",
+    "quantity": 1
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "good: kz closure text",
+  "label": "good",
+  "kind": "planned",
+  "works": "Насосты разобрали, тығыздағышты ауыстырдык, заменили прокладки, собрали и проверили под давлением, утечек нет.",
+  "materials": [
+   {
+    "name": "Сальник",
+    "quantity": 1
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "good: fan balance",
+  "label": "good",
+  "kind": "planned",
+  "works": "Отбалансировал рабочее колесо вентилятора на стенде, заменил опорные подшипники, вибрация снизилась до 2.1 мм/с.",
+  "materials": [
+   {
+    "name": "Подшипник 6310",
+    "quantity": 2
+   }
+  ],
+  "fault": "Г-01"
+ },
+ {
+  "name": "good: cable insulation",
+  "label": "good",
+  "kind": "planned",
+  "works": "Нашёл повреждение изоляции кабеля в муфте, заменил участок, восстановил броню, замерил сопротивление, протокол приложил.",
+  "fault": "Г-01"
+ },
+ {
+  "name": "good: valve service",
+  "label": "good",
+  "kind": "planned",
+  "works": "Разобрал запорный клапан, притёр седло, заменил сальниковую набивку, проверил ход штока и герметичность.",
+  "materials": [
+   {
+    "name": "Герметик",
+    "quantity": 0.4
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "good: elevator belt",
+  "label": "good",
+  "kind": "planned",
+  "works": "Заменил три ковша элеватора и подтянул ленту, проверил люфт барабана и работу датчика схода ленты.",
+  "materials": [
+   {
+    "name": "Хомут",
+    "quantity": 3
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "good: compressor valve",
+  "label": "good",
+  "kind": "unplanned",
+  "photo": true,
+  "works": "Заменил клапанную группу второй ступени компрессора, проверил пружины, опрессовал, нагнетание восстановлено.",
+  "materials": [
+   {
+    "name": "Клапан шаровый",
+    "quantity": 1
+   }
+  ],
+  "fault": "Г-01"
+ },
+ {
+  "name": "good: liner bolts",
+  "label": "good",
+  "kind": "planned",
+  "works": "Протянул болты футеровки мельницы по моменту из карты, заменил шесть сорванных болтов, осмотрел броню.",
+  "materials": [
+   {
+    "name": "Болт М12",
+    "quantity": 6
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "good: sensor replace",
+  "label": "good",
+  "kind": "planned",
+  "works": "Заменил датчик вибрации на приводе, настроил пороги сигнализации, проверил передачу сигнала на пульт.",
+  "materials": [
+   {
+    "name": "Датчик давления",
+    "quantity": 1
+   }
+  ],
+  "fault": "Г-01"
+ },
+ {
+  "name": "good: weld crack",
+  "label": "good",
+  "kind": "unplanned",
+  "photo": true,
+  "works": "Зачистил трещину рамы, заварил с подогревом по технологии, проверил шов визуально и керном, дефектов нет.",
+  "materials": [
+   {
+    "name": "Электрод",
+    "quantity": 1.2
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "vague: всё сделал",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Всё сделал как надо",
+  "fault": "М-02"
+ },
+ {
+  "name": "vague: отремонтировал",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Отремонтировал нормально",
+  "fault": "М-02"
+ },
+ {
+  "name": "vague: посмотрел",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Посмотрел, вроде работает",
+  "fault": "М-02"
+ },
+ {
+  "name": "vague: мелкий ремонт",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Сделал мелкий ремонт узла",
+  "fault": "М-02"
+ },
+ {
+  "name": "vague: kz only short",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Жөндедім, бары жақсы",
+  "fault": "М-02"
+ },
+ {
+  "name": "repeat title conveyor",
+  "label": "bad",
+  "kind": "planned",
+  "title": "Заменить ленту конвейера К-3 и проверить натяжение",
+  "works": "Заменить ленту конвейера К-3 и проверить натяжение",
+  "fault": "М-02"
+ },
+ {
+  "name": "repeat title pump",
+  "label": "bad",
+  "kind": "planned",
+  "title": "Отремонтировать уплотнение насоса Н-4 после течи",
+  "works": "Отремонтировать уплотнение насоса Н-4 после течи",
+  "fault": "М-02"
+ },
+ {
+  "name": "digits only",
+  "label": "bad",
+  "kind": "planned",
+  "works": "123456 7890 123456 7890",
+  "fault": "М-02"
+ },
+ {
+  "name": "symbols only",
+  "label": "bad",
+  "kind": "planned",
+  "works": "+++---+++---++++----",
+  "fault": "М-02"
+ },
+ {
+  "name": "material qty zero",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Заменил подшипник привода, проверил соосность и затяжку, прогнал под нагрузкой, люфтов нет.",
+  "materials": [
+   {
+    "name": "Смазка",
+    "quantity": 0
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "material qty negative",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Заменил подшипник привода, проверил соосность и затяжку, прогнал под нагрузкой, люфтов нет.",
+  "materials": [
+   {
+    "name": "Смазка",
+    "quantity": -2
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "material qty 999",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Заменил прокладку фланца и затянул шпильки крест-накрест с контролем момента, утечки устранены.",
+  "materials": [
+   {
+    "name": "Смазка",
+    "quantity": 999
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "material qty 500",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Протянул болты футеровки по карте моментов и заменил изношенные шайбы на опоре номер два.",
+  "materials": [
+   {
+    "name": "Болт М12",
+    "quantity": 500
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "guard: works under 12",
+  "label": "guard",
+  "kind": "planned",
+  "works": "Готово.",
+  "fault": "М-02"
+ },
+ {
+  "name": "guard: no fault code",
+  "label": "guard",
+  "kind": "planned",
+  "works": "Заменил торцевое уплотнение насоса, собрал узел, проверил под давлением, течи нет, сдал мастеру."
+ },
+ {
+  "name": "guard: unplanned no photo",
+  "label": "guard",
+  "kind": "unplanned",
+  "works": "Аварийно заменил сгоревшую обмотку пускателя, восстановил схему управления, проверил пуск три раза.",
+  "fault": "Г-01"
+ },
+ {
+  "name": "guard: wrong fault code",
+  "label": "guard",
+  "kind": "planned",
+  "works": "Заменил ремень привода вентилятора, отцентрировал шкивы, проверил натяжение по прогибу.",
+  "fault": "ХХ-99"
+ },
+ {
+  "name": "vague: сделал всё по наряду",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Сделал всё по наряду, замечаний нет",
+  "fault": "М-02"
+ },
+ {
+  "name": "vague: kz mixed symbols",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Жұмыс 111 222 333 дайын",
+  "fault": "М-02"
+ },
+ {
+  "name": "repeat title crusher",
+  "label": "bad",
+  "kind": "planned",
+  "title": "Осмотреть дробилку Д-2 и заменить изношенные плиты",
+  "works": "Осмотреть дробилку Д-2 и заменить изношенные плиты",
+  "fault": "М-02"
+ },
+ {
+  "name": "material qty 100 grease",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Провёл смазку всех опор конвейера через пресс-маслёнки до выхода свежей смазки из уплотнений.",
+  "materials": [
+   {
+    "name": "Смазка",
+    "quantity": 100
+   }
+  ],
+  "fault": "М-02"
+ },
+ {
+  "name": "vague: работа выполнена",
+  "label": "bad",
+  "kind": "planned",
+  "works": "Работа выполнена полностью",
+  "fault": "М-02"
+ }
+]

@@ -1,0 +1,12 @@
+import {chromium} from '@playwright/test'
+const b=await chromium.launch()
+const pg=await (await b.newContext()).newPage()
+pg.on('console',m=>console.log('CON:',m.type(),m.text().slice(0,200)))
+pg.on('pageerror',e=>console.log('ERR:',String(e).slice(0,300)))
+pg.on('requestfailed',r=>console.log('REQFAIL:',r.url().slice(0,90),r.failure()?.errorText))
+await pg.goto('http://127.0.0.1:4199/index.html',{waitUntil:'networkidle',timeout:60000})
+await pg.waitForTimeout(3000)
+console.log('tailwind?',await pg.evaluate(()=>typeof window.tailwind))
+console.log('bodyClass:',await pg.evaluate(()=>document.body.className))
+console.log('cardBg:',await pg.evaluate(()=>{const el=document.querySelector('.app-card');return el?getComputedStyle(el).backgroundColor:'none'}))
+await b.close()

@@ -90,24 +90,29 @@ export async function transition(id: number, x: {status:string,version:number,re
     }
     const myId = await uid()
     const evidence = []
-    const photos: string[] = closure.photos||[]
-    for (let i=0;i<photos.length;i++) {
-      const {bytes, mime} = dataUrlToBytes(photos[i])
+    const uploadOne = async (dataUrl: string, i: number, phase: string) => {
+      const {bytes, mime} = dataUrlToBytes(dataUrl)
       if (bytes.length > 400000) throw new Error('Фото слишком большое')
       const hash = await sha256Hex(bytes)
       const ext = mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg'
-      const path = `${myId}/${id}-${Date.now()}-${i}.${ext}`
+      const path = `${myId}/${id}-${Date.now()}-${phase}-${i}.${ext}`
       const up = await s.storage.from('repair-photos').upload(path, bytes, {contentType: mime})
       if (up.error) throw new Error('Фото не загрузилось в хранилище: '+up.error.message)
       const dup = await s.from('order_photos').select('order_id').eq('sha256', hash).neq('order_id', id).limit(1)
       const ins = await s.from('order_photos').insert({order_id: id, uploaded_by: myId, sha256: hash, byte_size: bytes.length, mime_type: mime})
       if (ins.error) throw new Error('Запись фото отклонена: '+ins.error.message)
       uploadedPaths.push(path); uploadedHashes.push(hash)
-      evidence.push({sha256: hash, server_received_at: new Date().toISOString(), byte_size: bytes.length,
+      return {sha256: hash, server_received_at: new Date().toISOString(), byte_size: bytes.length, phase,
         storage_path: path, duplicate_order_id: dup.data?.[0]?.order_id||null,
-        limits: 'Время получения сервером, не доказательство времени съёмки'})
+        limits: 'Время получения сервером, не доказательство времени съёмки'}
     }
+    const photos: string[] = closure.photos||[]
+    for (let i=0;i<photos.length;i++) evidence.push(await uploadOne(photos[i], i, 'after'))
+    const beforePhotos: string[] = closure.before_photos||[]
+    const beforeEvidence = []
+    for (let i=0;i<beforePhotos.length;i++) beforeEvidence.push(await uploadOne(beforePhotos[i], i, 'before'))
     closure = {...closure, photo_evidence: evidence, client_recorded_at: new Date().toISOString()}
+    if (beforeEvidence.length) closure = {...closure, before_photos: undefined, before_photo_evidence: beforeEvidence}
     if (evidence.some(p=>p.duplicate_order_id)) closure = {...closure, duplicate_warning: true}
   }
   if (x.status === 'completed' && closure && !(closure as any).client_recorded_at) closure = {...closure, client_recorded_at: new Date().toISOString()}
@@ -315,4 +320,12 @@ function translateError(msg: string): string {
   if (msg.includes('bad permit kind')) return 'Некорректный тип допуска'
   if (msg.includes('row-level security')) return 'Нет доступа к этой записи'
   return msg
+}
+
+export async function assistantChat(message: string, orderId?: number): Promise<{answer:string,sources:string[],mode:string,knowledge_used:boolean,fallback_reason?:string}> {
+  const s = supabase!
+  const {data, error} = await s.functions.invoke('assistant-chat', {body: {message, order_id: orderId ?? null}})
+  if (error) throw new Error(translateError(error.message))
+  if (data?.error) throw new Error(data.error)
+  return data
 }

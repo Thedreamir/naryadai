@@ -3,6 +3,8 @@
 @import "@fontsource/inter/500.css";
 @import "@fontsource/inter/600.css";
 @import "@fontsource/inter/700.css";
+@import "@fontsource/inter/800.css";
+@import "@fontsource/inter/900.css";
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
   --color-bg: #F2F2EF;
@@ -18,6 +20,47 @@
   --color-info: #0E7C6B;
   --radius-card: 18px;
   --radius-btn: 14px;
+  /* Tekton signal colors (constant across themes) */
+  --color-tk-amber: #D97706;
+  --color-tk-green: #0D7D4D;
+  --color-tk-red: #DC2626;
+  --color-tk-blue: #2563EB;
+  --color-tk-slate: #334155;
+  /* Tekton semantic tokens — flipped by body.theme-dark / body.theme-light */
+  --color-tk-bg: var(--tk-bg);
+  --color-tk-card: var(--tk-card);
+  --color-tk-sub: var(--tk-sub);
+  --color-tk-border: var(--tk-border);
+  --color-tk-ink: var(--tk-ink);
+  --color-tk-muted: var(--tk-muted);
+}
+body.theme-dark {
+  --tk-bg: #12161E; --tk-card: #1C222E; --tk-sub: #12161E;
+  --tk-border: rgba(255,255,255,0.12); --tk-ink: #E2E8F0; --tk-muted: #94A3B8;
+}
+body.theme-light {
+  --tk-bg: #F2F4F7; --tk-card: #FFFFFF; --tk-sub: #F8FAFC;
+  --tk-border: #334155; --tk-ink: #0F172A; --tk-muted: #475569;
 }
 html{background:var(--color-bg)}
-body{font-family:var(--font-sans);color:var(--color-ink);background:var(--color-bg);-webkit-font-smoothing:antialiased}
+body{font-family:var(--color-ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html.fs-130{font-size:18.88px}
+html.fs-160{font-size:21.6px}
+/* Tekton shared pieces */
+.tk-card{background:var(--tk-card);border:1px solid var(--tk-border);border-radius:0.75rem}
+body.theme-light .tk-card{border-width:2px;box-shadow:0 2px 4px rgba(0,0,0,0.04)}
+.tk-sub{background:var(--tk-sub);border:1px solid var(--tk-border);border-radius:0.5rem}
+body.theme-light .tk-sub{border-width:1.5px;border-color:#CBD5E1}
+.tk-touch{min-height:56px;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;border-radius:0.75rem;transition:transform .06s ease,opacity .06s ease}
+.tk-touch:active{transform:scale(.98);opacity:.9}
+body.glove-mode .tk-touch{min-height:74px !important;font-size:1.2rem !important;border-width:3px !important}
+.tk-input{background:var(--tk-sub);border:1px solid var(--tk-border);color:var(--tk-ink);border-radius:0.75rem;outline:none}
+.tk-input:focus{border-color:var(--color-tk-amber)}
+@keyframes pulse-ring{0%{transform:scale(.92);opacity:.8}50%{transform:scale(1.08);opacity:1}100%{transform:scale(.92);opacity:.8}}
+.pulse-ring-anim{animation:pulse-ring 2s infinite ease-in-out}
+@keyframes wave-bar{0%,100%{height:10px}50%{height:42px}}
+.hud-wave-bar{width:6px;border-radius:3px;background-color:#D97706;animation:wave-bar .8s infinite ease-in-out}
+.hud-wave-bar:nth-child(1){animation-delay:0s}.hud-wave-bar:nth-child(2){animation-delay:.15s}.hud-wave-bar:nth-child(3){animation-delay:.3s}.hud-wave-bar:nth-child(4){animation-delay:.45s}.hud-wave-bar:nth-child(5){animation-delay:.6s}
+.no-scrollbar::-webkit-scrollbar{display:none}
+.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}

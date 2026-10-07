@@ -110,3 +110,4 @@ body.glove-mode .tk-touch{min-height:88px !important;font-size:1.2rem !important
 }
 @media print{.workspace-bottom,.workspace-mobile-header,.leader-glance,.mobile-filter-button{display:none!important}.workspace{padding:0}}
 .workspace button{min-height:44px}.board-filter-tabs button{min-height:44px}
+.language-toggle{min-height:44px;min-width:44px;font-size:11px;padding:6px 8px;border:1px solid #e3e8e3;border-radius:10px;color:#174b35}.workspace-mobile-header .language-toggle{margin-left:0;min-width:48px;font-size:10px}.workspace-mobile-header span{display:none}

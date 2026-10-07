@@ -53,7 +53,11 @@ export default function OrderDetail({actor}:{actor:Actor}){
     const preDecls=recordedPre.length>=DECLS.length?recordedPre.map((d:any)=>({phase:'pre_work',text:d.text,confirmed:true,recorded_at:d.declared_at})):DECLS.map((d,i)=>({phase:'pre_work_at_surrender',text:d,confirmed:decl[i]}))
     if(recordedPre.length<DECLS.length){try{await H.recordDeclarations(o.id,'pre_work_at_surrender',DECLS)}catch(e){}}
     go('completed',undefined,{works,fault_code:fault,materials:materials?[{name:materials,quantity:1}]:[],photos:after,safety_declarations:[...preDecls,{phase:'post_work',text:DECL_POST,confirmed:declPost}]})}
-  const addPh=async(f:File|null|undefined)=>{if(!f)return;const url=await read(await compress(f));setAfter(p=>[...p,url])}
+  const addPh=async(f:File|null|undefined)=>{if(!f)return
+    // Compression must never block a field report: on slow/unsupported pipelines fall back to the original file.
+    let file=f
+    try{file=await Promise.race([compress(f),new Promise<File>((_,rej)=>setTimeout(()=>rej(new Error('compress timeout')),8000))])}catch(e){console.warn('photo compress fallback',e)}
+    try{const url=await read(file);setAfter(p=>[...p,url])}catch(e){setErr('Фото не прочиталось, попробуйте другое.')}}
   const steps=['Безопасность','Отчёт','Фото']
   const stepOk=[allDecl,works.trim().length>=12&&!!fault,(!needPhoto||after.length>0)]
   return <div className="space-y-3">

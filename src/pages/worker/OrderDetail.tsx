@@ -38,7 +38,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
       <div className="text-[15px] font-semibold">Допуск к работе</div>
       <div className="text-[13px] text-muted">Отметьте допуск перед началом работ — запись уходит в журнал.</div>
       <div className="grid grid-cols-2 gap-2">{[['permit','Допуск оформлен'],['briefing','Инструктаж пройден'],['loto','Блокировки LOTO'],['not_required','Не требуется']].map(([k,l])=>
-        <button key={k} onClick={()=>setPermitKind(k)} className={"h-14 rounded-[14px] border text-[14px] font-semibold "+(permitKind===k?'bg-primary text-primary-ink border-primary':'bg-surface border-border')}>{l}</button>)}</div>
+        <button key={k} onClick={()=>setPermitKind(k)} className={"h-14 rounded-[14px] border text-[14px] font-semibold px-3 leading-tight "+(permitKind===k?'bg-primary text-primary-ink border-primary':'bg-surface border-border')}>{l}</button>)}</div>
       <input className="w-full h-12 px-3 rounded-[14px] border border-border bg-bg text-[15px]" placeholder="Примечание (необязательно)" value={permitNote} onChange={e=>setPermitNote(e.target.value)}/>
       <Button size="big" className="w-full" disabled={!permitKind||busy} onClick={doPermit}>Отметить допуск</Button>
     </Card>}

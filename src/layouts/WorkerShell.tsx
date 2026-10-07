@@ -11,7 +11,7 @@ const tabs = [
   {to:'/profile', icon:User, label:'Профиль'},
 ]
 export default function WorkerShell({actor, children}:{actor:Actor, children:ReactNode}){
-  return <div className="min-h-screen pb-24">
+  return <div className="min-h-screen pb-32">
     <header className="sticky top-0 z-10 bg-bg/90 backdrop-blur border-b border-border px-4 h-14 flex items-center justify-between">
       <span className="font-bold text-[17px]">НарядAI</span>
       <span className="text-[13px] text-muted">{actor.name}</span>

@@ -20,12 +20,14 @@ create policy crews_read on public.crews for select to authenticated using (true
 -- When a factor has no data it is excluded and weights renormalize; explanation says so.
 create or replace function public.worker_rating(since timestamptz, until timestamptz)
 returns table(worker_id uuid, name text, closed bigint, on_time bigint, rework bigint,
-  complexity bigint, rejects bigint, quality_avg numeric, quality_n bigint,
+  complexity bigint, rejects_unjustified bigint, rejects_unclassified bigint, quality_avg numeric, quality_n bigint,
+  incomplete_window bigint,
   f_quality numeric, f_ontime numeric, f_rework numeric, f_volume numeric, f_rejects numeric,
   total numeric, factors_available int, explanation text)
 language plpgsql security definer set search_path=public,pg_temp as $$
-declare maxc bigint;
+declare maxc bigint; myrole text:=current_actor_role(); myid uuid:=current_actor();
 begin
+  if myrole is null then raise exception 'actor required'; end if;
   select greatest(1, sum(case o.priority when 'emergency' then 3 when 'high' then 2 else 1 end))
     into maxc
     from orders o where o.status='closed' and o.closed_at >= since and o.closed_at < until
@@ -34,48 +36,57 @@ begin
   return query
   with cl as (
     select o.* from orders o where o.status='closed' and o.closed_at >= since and o.closed_at < until
+      and (myrole in ('master','leader','admin') or o.assignee_id=myid)
   ), rw as (
-    -- factor 3: rework event OR repeat failure on same equipment within 7 days; each closed order counted once
+    -- factor 3: rework event OR repeat failure = SAME fault code on SAME equipment within 7 days.
+    -- each closed order counted once; closures <7 days old have an incomplete observation window.
     select c.id from cl c
     where exists (select 1 from order_events e where e.order_id=c.id and e.new_status='rework')
        or exists (select 1 from orders o2 where o2.equipment_id=c.equipment_id and o2.id<>c.id
-                  and o2.kind='unplanned' and o2.created_at>c.closed_at and o2.created_at<=c.closed_at+interval '7 days')
+                  and o2.kind='unplanned' and o2.created_at>c.closed_at and o2.created_at<=c.closed_at+interval '7 days'
+                  and (o2.closure->>'fault_code') is not null and (o2.closure->>'fault_code')=(c.closure->>'fault_code'))
   ), base as (
     select c.assignee_id wid,
       count(*) c,
       count(*) filter (where c.closed_at <= c.deadline) ot,
       count(*) filter (where c.id in (select id from rw)) rw,
+      count(*) filter (where c.closed_at > until - interval '7 days') iw,
       sum(case c.priority when 'emergency' then 3 when 'high' then 2 else 1 end) cx,
       avg(nullif(c.ai_result->>'human_score','')::numeric) qavg,
       count(nullif(c.ai_result->>'human_score','')) qn
     from cl c
     group by c.assignee_id
   ), rej as (
-    -- factor 5: refusals WITHOUT a valid reason only. Valid reasons (PDF 5.3.2): no materials/parts, no permit, busy with emergency.
-    select e.actor_id wid, count(*) rj from order_events e
-    join orders o2 on o2.id=e.order_id
+    -- factor 5 grounded in event actor, not current assignee (survives reassignment).
+    -- justified = explicit reason code (no_materials/no_permit/busy_emergency/wrong_specialty) or legacy keyword match.
+    -- unclassified (other code, unknown, legacy free text) is NOT a penalty; reported separately.
+    -- unjustified = reject with no reason at all.
+    select e.actor_id wid,
+      count(*) filter (where coalesce(e.reason,'')='') unj,
+      count(*) filter (where coalesce(e.reason,'')<>'' and coalesce(e.reason,'') !~* '^(no_materials|no_permit|busy_emergency|wrong_specialty):' and coalesce(e.reason,'') !~* '(материал|запчаст|допуск|авари|занят|нет доступа|не моя|специальност)') unc
+    from order_events e
     where e.new_status='rejected' and e.created_at >= since and e.created_at < until
-      and o2.assignee_id=e.actor_id
-      and coalesce(e.reason,'') !~* '(материал|запчаст|допуск|авари|занят|нет доступа|не моя|специальност)'
     group by e.actor_id
   )
-  select b.wid, emp.name, b.c, b.ot, b.rw, b.cx, coalesce(r.rj,0), round(b.qavg,2), b.qn,
+  select b.wid, emp.name, b.c, b.ot, b.rw, b.cx, coalesce(r.unj,0), coalesce(r.unc,0), round(b.qavg,2), b.qn, b.iw,
     case when b.qn>0 then round(b.qavg/5*100,1) end,
     round(b.ot::numeric/b.c*100,1),
     round((1-b.rw::numeric/b.c)*100,1),
     round(b.cx::numeric/maxc*100,1),
-    greatest(0,100-coalesce(r.rj,0)*25)::numeric,
+    greatest(0,100-coalesce(r.unj,0)*25)::numeric,
     round((
       coalesce(case when b.qn>0 then b.qavg/5*100 end,0)*case when b.qn>0 then 30 else 0 end
       + b.ot::numeric/b.c*100*25
       + (1-b.rw::numeric/b.c)*100*20
       + b.cx::numeric/maxc*100*15
-      + greatest(0,100-coalesce(r.rj,0)*25)*10
+      + greatest(0,100-coalesce(r.unj,0)*25)*10
     )/(case when b.qn>0 then 100 else 70 end),1),
     case when b.qn>0 then 5 else 4 end,
-    'Закрыто '||b.c||'; в срок '||round(b.ot::numeric/b.c*100)||'% ('||b.ot||'/'||b.c||'); доработки или повторы за 7 дн: '
-      ||b.rw||'; баллы сложности '||b.cx||' (аварийный=3, высокий=2, обычный/плановый=1); отказов без уважительной причины: '
-      ||coalesce(r.rj,0)||case when b.qn>0 then '; качество '||round(b.qavg,1)||'/5 по '||b.qn||' оценкам мастера'
+    'Закрыто '||b.c||'; в срок '||round(b.ot::numeric/b.c*100)||'% ('||b.ot||'/'||b.c||'); доработка или повтор того же шифра на том же оборудовании за 7 дн: '
+      ||b.rw||case when b.iw>0 then ' (у '||b.iw||' закрытий окно повторов неполное)' else '' end
+      ||'; сложность '||b.cx||' балла (приближение по приоритету: аварийный=3, высокий=2, прочий=1 — не замеренная трудоёмкость); отказы без причины: '
+      ||coalesce(r.unj,0)||case when coalesce(r.unc,0)>0 then '; отказов с неклассифицированной причиной (в балл не входят): '||r.unc else '' end
+      ||case when b.qn>0 then '; качество '||round(b.qavg,1)||'/5 по '||b.qn||' оценкам мастера'
       else '; оценок качества нет — фактор исключён, веса перенормированы (4/5)' end
   from base b
   join employees emp on emp.id=b.wid

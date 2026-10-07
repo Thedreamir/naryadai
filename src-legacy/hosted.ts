@@ -404,3 +404,15 @@ export async function manageOrder(id:number,action:'reassign'|'priority'|'cancel
  const r=await supabase!.rpc('manage_order',{p_order_id:id,p_action:action,p_assignee:options.assignee||null,p_priority:options.priority||null,p_reason:options.reason})
  if(r.error) throw new Error(/reassign only/.test(r.error.message)?'Переназначить можно только выданный, ожидающий или отклонённый наряд.':/cancelled/.test(r.error.message)?'Наряд уже отменён.':r.error.message)
 }
+
+export async function repairMemory() {
+  const r=await supabase!.from('repair_memory')
+    .select('id,order_id,equipment_id,title,body,status,version,review_note,reviewed_at,created_at,author:employees!repair_memory_author_id_fkey(name),reviewer:employees!repair_memory_reviewed_by_fkey(name),order:orders!repair_memory_order_id_fkey(title),equipment:equipment!repair_memory_equipment_id_fkey(name)')
+    .order('created_at',{ascending:false}).limit(200)
+  if(r.error) throw r.error
+  return r.data||[]
+}
+export async function reviewRepairMemory(id:number,action:'approve'|'reject'|'revoke',note:string) {
+  const r=await supabase!.rpc('review_repair_memory',{p_id:id,p_action:action,p_note:note})
+  if(r.error) throw new Error(/only candidate/.test(r.error.message)?'Запись уже рассмотрена. Обновите список.':/only approved/.test(r.error.message)?'Отозвать можно только утверждённую запись.':r.error.message)
+}

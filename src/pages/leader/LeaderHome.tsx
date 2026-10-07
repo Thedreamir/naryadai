@@ -1,7 +1,8 @@
 import {NavLink} from 'react-router-dom'
-import {BarChart3, LayoutGrid, LogOut} from 'lucide-react'
+import {BarChart3, LayoutGrid, Brain, LogOut} from 'lucide-react'
 import * as H from '../../lib/data'
 import Report from '../master/Report'
+import Memory from '../master/Memory'
 import LeaderOverview from './LeaderOverview'
 import type {Actor} from '../../App'
 import {Routes, Route, Navigate} from 'react-router-dom'
@@ -18,6 +19,8 @@ export default function LeaderHome({actor}:{actor:Actor}){
           <LayoutGrid size={22} strokeWidth={1.5}/>Обзор</NavLink>
         <NavLink to="/report" className={({isActive})=>('flex items-center gap-3 px-[13px] py-4 rounded-[13px] mb-[7px] text-[15px] '+(isActive?'bg-[#edf1ee] text-[#174b35] font-bold':'text-[#69726e] hover:bg-black/[0.03]'))}>
           <BarChart3 size={22} strokeWidth={1.5}/>Отчёт и рейтинг</NavLink>
+        <NavLink to="/memory" className={({isActive})=>('flex items-center gap-3 px-[13px] py-4 rounded-[13px] mb-[7px] text-[15px] '+(isActive?'bg-[#edf1ee] text-[#174b35] font-bold':'text-[#69726e] hover:bg-black/[0.03]'))}>
+          <Brain size={22} strokeWidth={1.5}/>Память ремонтов</NavLink>
       </nav>
       <div className="mt-auto text-[11px] text-[#78807d] leading-[1.9]">
         <div className="flex items-center gap-2 mb-2"><div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#e9eee9] to-[#d4ded5] text-[#4d6758] grid place-items-center font-bold text-[14px]">{actor.name?.split(' ').map((w:string)=>w[0]).slice(-2).join('')}</div>
@@ -30,7 +33,7 @@ export default function LeaderHome({actor}:{actor:Actor}){
     </aside>
     <main className="flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]">
       <div className="text-[12px] text-muted mb-3">Руководителю доступны сводный отчёт и рейтинг. Выдача, проверка и управление нарядами — функции мастера; здесь только чтение.</div>
-      <Routes><Route path="/" element={<LeaderOverview actor={actor}/>}/><Route path="/report" element={<Report actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes>
+      <Routes><Route path="/" element={<LeaderOverview actor={actor}/>}/><Route path="/report" element={<Report actor={actor}/>}/><Route path="/memory" element={<Memory actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes>
     </main>
   </div>
 }

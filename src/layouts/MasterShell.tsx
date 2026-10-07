@@ -1,14 +1,15 @@
 import {useEffect, useState, type ReactNode} from 'react'
 import {NavLink, useLocation} from 'react-router-dom'
 import {motion} from 'framer-motion'
-import {LayoutGrid, ClipboardCheck, PlusCircle, Archive, Repeat, BarChart3, LogOut} from 'lucide-react'
+import {LayoutGrid, ClipboardCheck, PlusCircle, Archive, Repeat, BarChart3, Brain, LogOut} from 'lucide-react'
 import * as H from '../lib/data'
 import type {Actor} from '../App'
 import {cn} from '../lib/utils'
 export default function MasterShell({actor, children}:{actor:Actor, children:ReactNode}){
   const loc=useLocation()
   const [reviewCount,setReviewCount]=useState(0)
-  useEffect(()=>{H.state().then(st=>setReviewCount(st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)).length)).catch(()=>{})},[])
+  const [memoryCount,setMemoryCount]=useState(0)
+  useEffect(()=>{H.state().then(st=>setReviewCount(st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)).length)).catch(()=>{});H.repairMemory().then(d=>setMemoryCount((d as any[]).filter(e=>e.status==='candidate').length)).catch(()=>{})},[])
   const items=[
     {to:'/', icon:LayoutGrid, label:'Наряды'},
     {to:'/review', icon:ClipboardCheck, label:'Проверка', badge:reviewCount},
@@ -16,6 +17,7 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
     {to:'/closed', icon:Archive, label:'Закрытые'},
     {to:'/handover', icon:Repeat, label:'Передача смены'},
     {to:'/report', icon:BarChart3, label:'Отчёт и рейтинг'},
+    {to:'/memory', icon:Brain, label:'Память ремонтов', badge:memoryCount},
   ]
   return <div className="min-h-screen flex bg-bg">
     <aside className="w-[248px] shrink-0 bg-white/70 border-r border-border flex flex-col px-[22px] py-8 sticky top-0 h-screen">

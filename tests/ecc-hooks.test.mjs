@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {spawnSync} from 'node:child_process';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
+const settings=JSON.parse(fs.readFileSync('.claude/settings.json','utf8'));
+function run(index,payload){return spawnSync(settings.hooks.PreToolUse[index].hooks[0].command,{shell:true,encoding:'utf8',input:JSON.stringify(payload),env:{...process.env,CLAUDE_PROJECT_DIR:process.cwd()}})}
+test('actual portable ECC no-verify hook blocks bypass, permits ordinary commit',()=>{assert.equal(run(0,{tool_input:{command:'git commit --no-verify -m test'}}).status,2);assert.equal(run(0,{tool_input:{command:'git commit -m test'}}).status,0)});
+test('actual ECC config hook blocks existing lint config edit',()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ecc-test-'));const file=path.join(dir,'eslint.config.mjs');fs.writeFileSync(file,'export default []');try{assert.equal(run(1,{tool_input:{file_path:file}}).status,2)}finally{fs.rmSync(dir,{recursive:true})}});

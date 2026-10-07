@@ -27,33 +27,33 @@ export default function Assistant({actor}:{actor:Actor}){
     rec.onerror=()=>{setListening(false);setErr('Микрофон недоступен или распознавание прервано — введите текст.')}
     setListening(true);try{rec.start()}catch{setListening(false)}
   }
-  return <div className="flex flex-col" style={{height:'calc(100dvh - 8.5rem)'}}>
-    <div className="tk-card p-2.5 mb-2 text-[10px] font-bold flex items-center gap-2" style={{color:'var(--tk-muted)'}}>
-      <Info size={13} className="text-tk-amber shrink-0"/>
+  return <div className="flex flex-col" style={{height:'calc(100dvh - 10rem)'}}>
+    <div className="tk-card p-2.5 mb-2 text-[0.625rem] font-bold flex items-center gap-2 flex-wrap" style={{color:'var(--tk-muted)'}}>
+      <Info size={19} className="text-tk-amber shrink-0"/>
       Текстовый ассистент. Отвечает только по данным наряда и демо-документации (синтетической, не заводской); без данных отвечает «нет данных». Ничего не меняет в нарядах.
       {orderId&&<span className="text-tk-amber">· контекст: наряд #{orderId}</span>}
     </div>
     <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">
       {msgs.map((m,i)=><div key={i} className={cn('flex gap-2',m.from==='me'&&'flex-row-reverse')}>
         <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0",m.from==='me'?'bg-tk-slate text-white':'bg-tk-amber text-black')}>
-          {m.from==='me'?<UserRound size={13}/>:<Headset size={13}/>}</div>
+          {m.from==='me'?<UserRound size={19}/>:<Headset size={19}/>}</div>
         <div className={cn("rounded-xl px-3 py-2 text-xs max-w-[80%] leading-relaxed",m.from==='me'?'bg-tk-slate text-white':'tk-card')}>
           {m.text}
-          {m.sources&&m.sources.length>0&&<div className="text-[9px] mt-1 opacity-70 inline-flex items-center gap-1"><BookOpen size={10}/>Источник: {m.sources.join('; ')}</div>}
-          {m.mode&&<div className="text-[9px] mt-1 opacity-60">{m.mode==='live'?'ответ модели Gemini (демо, бесплатный тариф)':'ответ по правилам без модели'} · учебная документация — не применять на реальном оборудовании</div>}
+          {m.sources&&m.sources.length>0&&<div className="text-[0.5625rem] mt-1 opacity-70 inline-flex items-center gap-1"><BookOpen size={22}/>Источник: {m.sources.join('; ')}</div>}
+          {m.mode&&<div className="text-[0.5625rem] mt-1 opacity-60">{m.mode==='live'?'ответ модели Gemini (демо, бесплатный тариф)':'ответ по правилам без модели'} · учебная документация — не применять на реальном оборудовании</div>}
         </div>
       </div>)}
-      {busy&&<div className="flex gap-2"><div className="w-7 h-7 rounded-lg bg-tk-amber text-black flex items-center justify-center"><Headset size={13}/></div>
+      {busy&&<div className="flex gap-2"><div className="w-7 h-7 rounded-lg bg-tk-amber text-black flex items-center justify-center"><Headset size={19}/></div>
         <div className="tk-card px-3 py-2 text-xs" style={{color:'var(--tk-muted)'}}>Думаю…</div></div>}
       <div ref={bottomRef}/>
     </div>
-    {err&&<div className="text-[11px] text-tk-red font-bold py-1">{err}</div>}
+    {err&&<div className="text-[0.6875rem] text-tk-red font-bold py-1">{err}</div>}
     <div className="pt-2 flex gap-2">
-      <input className="tk-input flex-1 h-12 px-3 text-sm" placeholder="Например: что известно об этом узле?" value={input}
+      <input className="tk-input flex-1 min-w-0 h-12 px-3 text-sm" placeholder="Например: что известно об этом узле?" value={input}
         onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send(input)}/>
-      <button onClick={toggleMic} className={cn("w-12 h-12 rounded-xl flex items-center justify-center border transition",listening?'bg-tk-red text-white border-red-400 pulse-ring-anim':'tk-sub')} title={SR?'Голосовой ввод':'Распознавание недоступно'}>
-        {listening?<MicOff size={17}/>:<Mic size={17}/>}</button>
-      <button onClick={()=>send(input)} disabled={!input.trim()||busy} className="w-12 h-12 rounded-xl bg-tk-amber text-black flex items-center justify-center disabled:opacity-40 border border-amber-600"><Send size={17}/></button>
+      <button onClick={toggleMic} className={cn("w-12 h-12 shrink-0 rounded-xl flex items-center justify-center border transition",listening?'bg-tk-red text-white border-red-400 pulse-ring-anim':'tk-sub')} title={SR?'Голосовой ввод':'Распознавание недоступно'}>
+        {listening?<MicOff size={19}/>:<Mic size={19}/>}</button>
+      <button onClick={()=>send(input)} disabled={!input.trim()||busy} className="w-12 h-12 shrink-0 rounded-xl bg-tk-amber text-black flex items-center justify-center disabled:opacity-40 border border-amber-600"><Send size={19}/></button>
     </div>
   </div>
 }

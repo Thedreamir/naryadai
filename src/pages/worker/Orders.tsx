@@ -19,24 +19,24 @@ export default function WorkerOrders({actor}:{actor:Actor}){
     <div className="flex items-start justify-between gap-2">
       <div className="min-w-0">
         <h3 className="font-black text-xs leading-tight">{o.title}</h3>
-        <p className="text-[11px] mt-0.5" style={{color:'var(--tk-muted)'}}>№ {o.id} · {eqName(o)}</p>
+        <p className="text-[0.6875rem] mt-0.5" style={{color:'var(--tk-muted)'}}>№ {o.id} · {eqName(o)}</p>
       </div>
-      <span className="text-[10px] font-black whitespace-nowrap uppercase" style={{color:'var(--tk-muted)'}}>{stLabel[o.status]||o.status}</span>
+      <span className="text-[0.625rem] font-black whitespace-nowrap uppercase" style={{color:'var(--tk-muted)'}}>{stLabel[o.status]||o.status}</span>
     </div>
-    <div className="flex items-center justify-between text-[10px]">
-      <PriorChip p={o.priority} className="text-[10px]"/>
-      <span className="font-bold inline-flex items-center gap-1" style={{color:'var(--tk-muted)'}}><Timer size={11} strokeWidth={2.5}/>{new Date(o.deadline).toLocaleDateString('ru',{day:'numeric',month:'short'})}</span>
-      <ChevronRight size={13} style={{color:'var(--tk-muted)'}}/>
+    <div className="flex items-center justify-between text-[0.625rem]">
+      <PriorChip p={o.priority} className="text-[0.625rem]"/>
+      <span className="font-bold inline-flex items-center gap-1" style={{color:'var(--tk-muted)'}}><Timer size={19} strokeWidth={2.5}/>{new Date(o.deadline).toLocaleDateString('ru',{day:'numeric',month:'short'})}</span>
+      <ChevronRight size={19} style={{color:'var(--tk-muted)'}}/>
     </div>
   </Link>
   return <div className="space-y-3">
     {mine.length===0&&<div className="tk-card p-6 text-center" style={{color:'var(--tk-muted)'}}>Нет активных нарядов</div>}
     {active.length>0&&<div className="space-y-2">
-      <div className="text-[11px] font-black uppercase tracking-wider px-1" style={{color:'var(--tk-muted)'}}>В работе</div>
+      <div className="text-[0.6875rem] font-black uppercase tracking-wider px-1" style={{color:'var(--tk-muted)'}}>В работе</div>
       {active.map(o=>row(o,true))}
     </div>}
     {queue.length>0&&<div className="space-y-2">
-      <div className="text-[11px] font-black uppercase tracking-wider px-1" style={{color:'var(--tk-muted)'}}>Очередь</div>
+      <div className="text-[0.6875rem] font-black uppercase tracking-wider px-1" style={{color:'var(--tk-muted)'}}>Очередь</div>
       {queue.map(o=>row(o,false))}
     </div>}
   </div>

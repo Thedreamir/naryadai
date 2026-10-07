@@ -13,13 +13,13 @@ export default function Profile({actor}:{actor:Actor}){
   return <div className="space-y-3">
     <div className="tk-card p-3.5 flex items-center gap-3">
       <div className="w-12 h-12 rounded-full bg-tk-slate text-white flex items-center justify-center text-lg font-black">{actor.name?.[0]||'?'}</div>
-      <div><div className="font-black text-sm">{actor.name}</div><div className="text-[11px]" style={{color:'var(--tk-muted)'}}>Исполнитель · {actor.email}</div></div>
+      <div><div className="font-black text-sm">{actor.name}</div><div className="text-[0.6875rem]" style={{color:'var(--tk-muted)'}}>Исполнитель · {actor.email}</div></div>
     </div>
     <div className="grid grid-cols-3 gap-2">
       {[[closed.length,'закрыто'],[closed.length?Math.round(inTime/closed.length*100)+'%':'—','в срок'],[avg,'оценка мастера']].map(([v,l])=>
-        <div key={String(l)} className="tk-card p-3 text-center"><div className="text-xl font-black text-tk-amber">{v}</div><div className="text-[10px] font-bold uppercase" style={{color:'var(--tk-muted)'}}>{l}</div></div>)}
+        <div key={String(l)} className="tk-card p-3 text-center"><div className="text-xl font-black text-tk-amber">{v}</div><div className="text-[0.625rem] font-bold uppercase" style={{color:'var(--tk-muted)'}}>{l}</div></div>)}
     </div>
-    <div className="tk-card p-3 text-[10px]" style={{color:'var(--tk-muted)'}}>Статистика по доступной истории демо-базы — не аттестация и не рейтинг персонала.</div>
-    <button onClick={async()=>{await H.logout();location.reload()}} className="tk-touch tk-sub w-full text-tk-red uppercase text-sm"><LogOut size={15} className="inline mr-1.5"/>Выйти</button>
+    <div className="tk-card p-3 text-[0.625rem]" style={{color:'var(--tk-muted)'}}>Статистика по доступной истории демо-базы — не аттестация и не рейтинг персонала.</div>
+    <button onClick={async()=>{await H.logout();location.reload()}} className="tk-touch tk-sub w-full text-tk-red uppercase text-sm"><LogOut size={19} className="inline mr-1.5"/>Выйти</button>
   </div>
 }

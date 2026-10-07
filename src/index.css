@@ -52,9 +52,9 @@ html.fs-160{font-size:21.6px}
 body.theme-light .tk-card{border-width:2px;box-shadow:0 2px 4px rgba(0,0,0,0.04)}
 .tk-sub{background:var(--tk-sub);border:1px solid var(--tk-border);border-radius:0.5rem}
 body.theme-light .tk-sub{border-width:1.5px;border-color:#CBD5E1}
-.tk-touch{min-height:56px;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;border-radius:0.75rem;padding-left:0.9rem;padding-right:0.9rem;transition:transform .06s ease,opacity .06s ease}
+.tk-touch{min-height:64px;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;border-radius:0.75rem;padding-left:0.9rem;padding-right:0.9rem;transition:transform .06s ease,opacity .06s ease}
 .tk-touch:active{transform:scale(.98);opacity:.9}
-body.glove-mode .tk-touch{min-height:74px !important;font-size:1.2rem !important;border-width:3px !important}
+body.glove-mode .tk-touch{min-height:88px !important;font-size:1.2rem !important;border-width:3px !important}
 .tk-input{background:var(--tk-sub);border:1px solid var(--tk-border);color:var(--tk-ink);border-radius:0.75rem;outline:none}
 .tk-input:focus{border-color:var(--color-tk-amber)}
 @keyframes pulse-ring{0%{transform:scale(.92);opacity:.8}50%{transform:scale(1.08);opacity:1}100%{transform:scale(.92);opacity:.8}}

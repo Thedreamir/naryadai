@@ -28,17 +28,17 @@ export default function VoiceHud({actor}:{actor:Actor}){
   if(!open)return null
   return createPortal(<div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.92)'}}>
     <div className="w-full max-w-sm rounded-2xl border p-5 flex flex-col items-center space-y-4" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
-      <div className="text-[10px] font-black uppercase tracking-widest text-tk-amber">AI-вызов</div>
+      <div className="text-[0.625rem] font-black uppercase tracking-widest text-tk-amber">AI-вызов</div>
       <button onClick={listening?stop:start} className={cn("w-24 h-24 rounded-full flex items-center justify-center border-4 transition",listening?'bg-tk-amber text-black border-amber-400 pulse-ring-anim':'tk-sub')}>
         {listening?<Mic size={34}/>:<MicOff size={30}/>}
       </button>
-      <div className="flex items-end gap-1 h-11">{listening?[0,1,2,3,4].map(i=><div key={i} className="hud-wave-bar"/>):<div className="text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>{busy?'Отправляю вопрос…':'Нажмите и говорите'}</div>}</div>
-      <div className="w-full text-[10px] text-center font-bold" style={{color:'var(--tk-muted)'}}>Голос превращается в вопрос — ассистент отвечает текстом, не озвучкой.</div>
-      {heard&&<div className="w-full tk-sub p-2.5 text-xs"><span className="text-[9px] font-black uppercase block" style={{color:'var(--tk-muted)'}}>Вы сказали</span>{heard}</div>}
+      <div className="flex items-end gap-1 h-11">{listening?[0,1,2,3,4].map(i=><div key={i} className="hud-wave-bar"/>):<div className="text-[0.6875rem] font-bold" style={{color:'var(--tk-muted)'}}>{busy?'Отправляю вопрос…':'Нажмите и говорите'}</div>}</div>
+      <div className="w-full text-[0.625rem] text-center font-bold" style={{color:'var(--tk-muted)'}}>Голос превращается в вопрос — ассистент отвечает текстом, не озвучкой.</div>
+      {heard&&<div className="w-full tk-sub p-2.5 text-xs"><span className="text-[0.5625rem] font-black uppercase block" style={{color:'var(--tk-muted)'}}>Вы сказали</span>{heard}</div>}
       {busy&&<div className="w-full tk-sub p-2.5 text-xs" style={{color:'var(--tk-muted)'}}>Думаю…</div>}
-      {answer&&<div className="w-full tk-sub p-2.5 text-xs leading-relaxed"><span className="text-[9px] font-black uppercase block text-tk-amber">Ответ</span>{answer}</div>}
-      {err&&<div className="w-full text-[11px] text-tk-red font-bold text-center">{err}</div>}
-      <button onClick={()=>{stop();setOpen(false)}} className="w-12 h-12 rounded-full bg-tk-red text-white flex items-center justify-center border border-red-400"><PhoneOff size={17}/></button>
+      {answer&&<div className="w-full tk-sub p-2.5 text-xs leading-relaxed"><span className="text-[0.5625rem] font-black uppercase block text-tk-amber">Ответ</span>{answer}</div>}
+      {err&&<div className="w-full text-[0.6875rem] text-tk-red font-bold text-center">{err}</div>}
+      <button onClick={()=>{stop();setOpen(false)}} className="w-12 h-12 rounded-full bg-tk-red text-white flex items-center justify-center border border-red-400"><PhoneOff size={19}/></button>
     </div>
   </div>,document.body)
 }

@@ -28,13 +28,13 @@ export default function PushButton(){
       setSt('subscribed')
     }catch(e){setErrMsg((e as Error).message);setSt('error')}finally{setBusy(false)}}
   if(st==='checking')return null
-  if(st==='unsupported')return <div className="text-[13px] text-muted">Уведомления: этот браузер не поддерживает push.</div>
-  if(st==='subscribed')return <div className="text-[13px] text-muted">Уведомления включены на этом устройстве. Доставка зависит от браузера и ОС.</div>
-  if(st==='denied')return <div className="text-[13px] text-muted">Уведомления заблокированы браузером. Включить можно только в настройках сайта в браузере.</div>
+  if(st==='unsupported')return <div className="text-[0.8125rem] text-muted">Уведомления: этот браузер не поддерживает push.</div>
+  if(st==='subscribed')return <div className="text-[0.8125rem] text-muted">Уведомления включены на этом устройстве. Доставка зависит от браузера и ОС.</div>
+  if(st==='denied')return <div className="text-[0.8125rem] text-muted">Уведомления заблокированы браузером. Включить можно только в настройках сайта в браузере.</div>
   return <div className="space-y-1">
-    <button onClick={enable} disabled={busy} className="w-full h-14 rounded-[14px] border border-border bg-surface font-semibold text-[15px]">{busy?'Включаю…':st==='error'?'Попробовать ещё раз':'Включить уведомления'}</button>
-    {st==='error'&&<div className="text-[13px] text-danger">Не получилось включить: {errMsg}. Нажмите «Попробовать ещё раз».</div>}
-    {st==='ready'&&Notification.permission==='granted'&&<div className="text-[12px] text-muted">Разрешение уже дано; нажмите кнопку, чтобы завершить подписку.</div>}
-    <div className="text-[12px] text-muted">Push приходит о новых нарядах. Доставка зависит от браузера и ОС; в демо не гарантируется.</div>
+    <button onClick={enable} disabled={busy} className="w-full h-14 rounded-[14px] border border-border bg-surface font-semibold text-[0.9375rem]">{busy?'Включаю…':st==='error'?'Попробовать ещё раз':'Включить уведомления'}</button>
+    {st==='error'&&<div className="text-[0.8125rem] text-danger">Не получилось включить: {errMsg}. Нажмите «Попробовать ещё раз».</div>}
+    {st==='ready'&&Notification.permission==='granted'&&<div className="text-[0.75rem] text-muted">Разрешение уже дано; нажмите кнопку, чтобы завершить подписку.</div>}
+    <div className="text-[0.75rem] text-muted">Push приходит о новых нарядах. Доставка зависит от браузера и ОС; в демо не гарантируется.</div>
   </div>
 }

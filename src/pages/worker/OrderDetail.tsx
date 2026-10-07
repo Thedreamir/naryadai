@@ -57,10 +57,10 @@ export default function OrderDetail({actor}:{actor:Actor}){
   const steps=['Безопасность','Отчёт','Фото']
   const stepOk=[allDecl,works.trim().length>=12&&!!fault,(!needPhoto||after.length>0)]
   return <div className="space-y-3">
-    <button className="text-xs font-bold inline-flex items-center gap-1" style={{color:'var(--tk-muted)'}} onClick={()=>nav(-1)}><ArrowLeft size={13}/>Назад</button>
+    <button className="text-xs font-bold inline-flex items-center gap-1" style={{color:'var(--tk-muted)'}} onClick={()=>nav(-1)}><ArrowLeft size={19}/>Назад</button>
     <div className="tk-card p-3.5 space-y-2.5">
       <div className="flex items-center justify-between">
-        <span className={"text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider "+(o.priority==='emergency'?'bg-tk-red text-white':o.priority==='high'?'bg-tk-amber text-black':'tk-sub')}>
+        <span className={"text-[0.625rem] font-black px-2 py-0.5 rounded uppercase tracking-wider "+(o.priority==='emergency'?'bg-tk-red text-white':o.priority==='high'?'bg-tk-amber text-black':'tk-sub')}>
           <PriorChip p={o.priority} inherit/> · {o.kind==='planned'?'Плановый':'Внеплановый'}
         </span>
         <span className="text-xs font-mono font-bold" style={{color:'var(--tk-muted)'}}>№ {o.id}</span>
@@ -70,43 +70,43 @@ export default function OrderDetail({actor}:{actor:Actor}){
       {err&&<div className="text-xs text-tk-red font-bold">{err}</div>}
     </div>
     <div className="tk-card p-3 space-y-2">
-      <div className="text-[11px] font-black uppercase tracking-wider" style={{color:'var(--tk-muted)'}}>Фото до (приёмка)</div>
+      <div className="text-[0.6875rem] font-black uppercase tracking-wider" style={{color:'var(--tk-muted)'}}>Фото до (приёмка)</div>
       {masterBefore.length>0&&<div className="flex gap-2 overflow-x-auto no-scrollbar">{masterBefore.map((p,i)=><img key={i} src={p} className="h-32 rounded-lg" alt="Фото до"/>)}</div>}
-      {masterBefore.length===0&&<div className="text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует.</div>}
+      {masterBefore.length===0&&<div className="text-[0.6875rem] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует.</div>}
       {intakeAllowed&&<div>
         <label className={cn("tk-sub w-full h-12 flex items-center justify-center gap-2 cursor-pointer text-xs font-black uppercase",intakeBusy&&'opacity-50')}>
-          <Camera size={15}/>{intakeBusy?'Загрузка…':o.status==='accepted'?'Снять фото приёмки (до начала работ)':'Снять фото состояния (работы уже начаты)'}
+          <Camera size={19}/>{intakeBusy?'Загрузка…':o.status==='accepted'?'Снять фото приёмки (до начала работ)':'Снять фото состояния (работы уже начаты)'}
           <input type="file" accept="image/*" capture="environment" className="hidden" disabled={intakeBusy} onChange={e=>{doIntake(e.target.files?.[0]);e.target.value=''}}/></label>
-        <div className="text-[10px] mt-1" style={{color:'var(--tk-muted)'}}>{o.status==='accepted'
+        <div className="text-[0.625rem] mt-1" style={{color:'var(--tk-muted)'}}>{o.status==='accepted'
           ?'Фото, полученное до начала работ по процессу (загружено при статусе «принят»); после сдачи наряда добавить нельзя.'
           :'Работы уже начаты: снимок будет помечен «после начала работ» и НЕ считается фото до.'} Время съёмки сервером не подтверждается.</div>
       </div>}
-      {intake.length>0&&<div className="text-[10px] space-y-0.5" style={{color:'var(--tk-muted)'}}>{intake.map((p:any,i:number)=><div key={i}>
+      {intake.length>0&&<div className="text-[0.625rem] space-y-0.5" style={{color:'var(--tk-muted)'}}>{intake.map((p:any,i:number)=><div key={i}>
         {p.phase==='before_intake'?'Фото до (приёмка)':'Снято после начала работ (статус: '+(p.status_at_upload||'?')+')'} · получено сервером {new Date(p.server_received_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
       </div>)}</div>}
       {intakeLate.length>0&&<div className="flex gap-2 overflow-x-auto no-scrollbar">{intakeLate.map((p:any,i:number)=>p.url&&<img key={i} src={p.url} className="h-24 rounded-lg opacity-80" alt="Снято после начала работ"/>)}</div>}
     </div>
     {!o.permit_kind&&['issued','accepted','queued'].includes(o.status)&&<div className="tk-card p-3.5 space-y-2.5">
-      <div className="text-[13px] font-black uppercase tracking-wide">Допуск к работе</div>
-      <div className="text-[11px]" style={{color:'var(--tk-muted)'}}>Отметьте допуск перед началом — запись уходит в журнал.</div>
+      <div className="text-[0.8125rem] font-black uppercase tracking-wide">Допуск к работе</div>
+      <div className="text-[0.6875rem]" style={{color:'var(--tk-muted)'}}>Отметьте допуск перед началом — запись уходит в журнал.</div>
       <div className="grid grid-cols-2 gap-2">{[['confirmed','Допуск подтверждён',ShieldCheck],['not_required','Не требуется',ShieldOff]].map(([k,l,I]:any)=>
-        <button key={k} onClick={()=>setPermitKind(k)} className={cn("tk-touch border inline-flex items-center justify-center gap-1.5",permitKind===k?'bg-tk-amber text-black border-amber-600':'tk-sub')}><I size={15}/>{l}</button>)}</div>
+        <button key={k} onClick={()=>setPermitKind(k)} className={cn("tk-touch border inline-flex items-center justify-center gap-1.5",permitKind===k?'bg-tk-amber text-black border-amber-600':'tk-sub')}><I size={19}/>{l}</button>)}</div>
       {permitKind==='confirmed'&&<>
         <input className="tk-input w-full h-12 px-3 text-sm" placeholder="Номер допуска и кто подтвердил" value={permitNote} onChange={e=>setPermitNote(e.target.value)}/>
-        <div className="text-[10px]" style={{color:'var(--tk-muted)'}}>Нужны номер (цифры) и фамилия — проверяется на сервере.</div></>}
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={!permitKind||busy||(permitKind==='confirmed'&&permitNote.trim().length<8)} onClick={doPermit}><ShieldCheck size={16}/>Отметить допуск</button>
+        <div className="text-[0.625rem]" style={{color:'var(--tk-muted)'}}>Нужны номер (цифры) и фамилия — проверяется на сервере.</div></>}
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={!permitKind||busy||(permitKind==='confirmed'&&permitNote.trim().length<8)} onClick={doPermit}><ShieldCheck size={22}/>Отметить допуск</button>
     </div>}
     {o.permit_kind&&<div className="tk-card p-3 text-xs font-bold"><span className="text-tk-green">{o.permit_kind==='not_required'?'Допуск не требуется':'Допуск подтверждён'}</span><span style={{color:'var(--tk-muted)'}}>{o.permit_note?' · '+o.permit_note:''}</span></div>}
     {o.status==='issued'&&<div className="space-y-2">
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy||!o.permit_kind} onClick={()=>go('accepted')}><Check size={16}/>Принять назначение</button>
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy||!o.permit_kind} onClick={()=>go('accepted')}><Check size={22}/>Принять назначение</button>
       <div className="grid grid-cols-2 gap-2">
-        <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>go('queued','В очередь после текущего')}><Clock size={15}/>В очередь</button>
-        <button className="tk-touch tk-sub text-tk-red uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>{const r=prompt('Причина отказа');if(r)go('rejected',r)}}><Ban size={15}/>Не могу</button>
+        <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>go('queued','В очередь после текущего')}><Clock size={19}/>В очередь</button>
+        <button className="tk-touch tk-sub text-tk-red uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>{const r=prompt('Причина отказа');if(r)go('rejected',r)}}><Ban size={19}/>Не могу</button>
       </div></div>}
     {(o.status==='accepted'||(o.status==='in_progress'&&recordedPre.length<DECLS.length))&&<div className="tk-card p-3.5 space-y-2.5">
-      <div className="text-[13px] font-black uppercase tracking-wide">Перед началом работ</div>
-      <div className="bg-tk-red/10 border border-tk-red/40 rounded-lg p-2.5 text-[11px] flex gap-2">
-        <TriangleAlert size={14} className="text-tk-red shrink-0 mt-0.5"/>
+      <div className="text-[0.8125rem] font-black uppercase tracking-wide">Перед началом работ</div>
+      <div className="bg-tk-red/10 border border-tk-red/40 rounded-lg p-2.5 text-[0.6875rem] flex gap-2">
+        <TriangleAlert size={22} className="text-tk-red shrink-0 mt-0.5"/>
         <span>{o.status==='in_progress'?'Работы уже начаты: подтверждения фиксируются сейчас и будут помечены как сделанные после начала работ.':'Личные подтверждения исполнителя — фиксируются сейчас, до начала работ, с отметкой времени сервера.'} Это декларация работника, а не проверка электросостояния системой. Конкретные требования определяются утверждённой процедурой для этой задачи.</span>
       </div>
       {DECLS.map((d,i)=><label key={i} className={cn("tk-sub p-3 flex items-start gap-2.5 cursor-pointer transition",startDecl[i]&&'border-tk-green')}>
@@ -124,53 +124,53 @@ export default function OrderDetail({actor}:{actor:Actor}){
             await H.recordDeclarations(o.id,'pre_work_late',DECLS);await load()
           }
         }catch(e){setErr((e as Error).message)}finally{setStartBusy(false)}
-      }}><Play size={16}/>{startBusy?'Фиксация…':o.status==='accepted'?'Подтвердить и начать работу':'Зафиксировать (после начала)'}</button>
+      }}><Play size={22}/>{startBusy?'Фиксация…':o.status==='accepted'?'Подтвердить и начать работу':'Зафиксировать (после начала)'}</button>
     </div>}
-    {o.status==='queued'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy} onClick={()=>go('accepted')}><Check size={16}/>Принять из очереди</button>}
+    {o.status==='queued'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy} onClick={()=>go('accepted')}><Check size={22}/>Принять из очереди</button>}
     {o.status==='in_progress'&&<>
-      <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>go('paused','Пауза')}><Pause size={15}/>Пауза</button>
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={17}/>Сдать наряд №{o.id} на проверку</button></>}
-    {o.status==='paused'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase inline-flex items-center justify-center gap-2" disabled={busy} onClick={()=>go('in_progress')}><Play size={16}/>Продолжить</button>}
+      <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>go('paused','Пауза')}><Pause size={19}/>Пауза</button>
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={19}/>Сдать наряд №{o.id} на проверку</button></>}
+    {o.status==='paused'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase inline-flex items-center justify-center gap-2" disabled={busy} onClick={()=>go('in_progress')}><Play size={22}/>Продолжить</button>}
     {['completed','ai_review'].includes(o.status)&&<div className="tk-card p-4 text-center font-black text-tk-blue text-sm">На проверке у мастера</div>}
     {o.status==='rework'&&<div className="tk-card p-4 space-y-1.5 border-tk-red">
-      <div className="font-black text-tk-red text-sm flex items-center gap-2"><TriangleAlert size={15}/>На доработке</div>
+      <div className="font-black text-tk-red text-sm flex items-center gap-2"><TriangleAlert size={19}/>На доработке</div>
       {o.ai_result?.reason&&<div className="text-xs" style={{color:'var(--tk-muted)'}}>Проверка ИИ: {o.ai_result.reason}</div>}
-      <button className="tk-touch bg-tk-amber text-black w-full border border-amber-600 uppercase inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={16}/>Сдать повторно</button></div>}
+      <button className="tk-touch bg-tk-amber text-black w-full border border-amber-600 uppercase inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={22}/>Сдать повторно</button></div>}
     {o.status==='closed'&&<div className="tk-card p-3.5 space-y-1.5">
-      <span className="text-[10px] font-black px-2 py-0.5 rounded uppercase tk-sub">Закрыт</span>
+      <span className="text-[0.625rem] font-black px-2 py-0.5 rounded uppercase tk-sub">Закрыт</span>
       {o.ai_result?.human_score&&<div className="text-sm font-bold">Оценка мастера: {o.ai_result.human_score} / 5</div>}
       {o.closure?.works&&<div className="text-xs" style={{color:'var(--tk-muted)'}}>{o.closure.works}</div>}</div>}
-    <div className="tk-card p-3"><div className="text-[11px] font-black uppercase tracking-wider mb-1 inline-flex items-center gap-1.5" style={{color:'var(--tk-muted)'}}><History size={12}/>Журнал</div>
-      {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[11px] py-1 border-t first:border-0" style={{color:'var(--tk-muted)',borderColor:'var(--tk-border)'}}>{e.actor} · {eventLabel(e.new_status)} · {new Date(e.created_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</div>
+    <div className="tk-card p-3"><div className="text-[0.6875rem] font-black uppercase tracking-wider mb-1 inline-flex items-center gap-1.5" style={{color:'var(--tk-muted)'}}><History size={22}/>Журнал</div>
+      {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[0.6875rem] py-1 border-t first:border-0" style={{color:'var(--tk-muted)',borderColor:'var(--tk-border)'}}>{e.actor} · {eventLabel(e.new_status)} · {new Date(e.created_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</div>
     {wiz&&<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{background:'rgba(0,0,0,0.8)'}}>
       <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl border flex flex-col max-h-[92dvh]" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
         <div className="p-3.5 border-b space-y-2.5" style={{borderColor:'var(--tk-border)'}}>
           <div className="flex justify-between items-center">
             <h3 className="font-black text-xs uppercase tracking-wide text-tk-amber">Сдача наряда №{o.id} на проверку</h3>
-            <button onClick={()=>setWiz(false)} className="w-8 h-8 tk-sub flex items-center justify-center rounded-lg"><X size={15}/></button>
+            <button onClick={()=>setWiz(false)} className="w-8 h-8 tk-sub flex items-center justify-center rounded-lg"><X size={19}/></button>
           </div>
           <div className="flex gap-1.5">
             {steps.map((s,i)=><div key={s} className="flex-1 text-center">
               <div className={cn("h-1.5 rounded-full mb-1",i<=step?'bg-tk-amber':'')} style={i<=step?undefined:{background:'var(--tk-border)'}}/>
-              <span className={cn("text-[9px] font-black uppercase",i===step?'text-tk-amber':'')} style={i===step?undefined:{color:'var(--tk-muted)'}}>{s}</span>
+              <span className={cn("text-[0.5625rem] font-black uppercase",i===step?'text-tk-amber':'')} style={i===step?undefined:{color:'var(--tk-muted)'}}>{s}</span>
             </div>)}
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
           {step===0&&recordedPre.length>=DECLS.length&&<div className="space-y-2.5">
-            <div className="bg-tk-green/10 border border-tk-green/40 rounded-lg p-2.5 text-[11px] flex gap-2">
-              <Check size={14} className="text-tk-green shrink-0 mt-0.5"/>
+            <div className="bg-tk-green/10 border border-tk-green/40 rounded-lg p-2.5 text-[0.6875rem] flex gap-2">
+              <Check size={22} className="text-tk-green shrink-0 mt-0.5"/>
               <span>Подтверждения безопасности {recordedPre[0].phase==='pre_work_late'?'зафиксированы после начала работ':'зафиксированы при начале работ'}: {new Date(recordedPre[0].declared_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} (время сервера).</span>
             </div>
             {recordedPre.map((d:any,i:number)=><div key={i} className="tk-card p-3 flex items-start gap-2.5 border-tk-green">
-              <Check size={16} className="text-tk-green shrink-0 mt-0.5"/>
+              <Check size={22} className="text-tk-green shrink-0 mt-0.5"/>
               <span className="text-xs font-bold leading-snug">{d.text}</span>
             </div>)}
           </div>}
-          {step===0&&excludedPre.length>0&&<div className="tk-sub p-2.5 text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>Отметки из неудачных попыток старта ({excludedPre.length}) сохранены в журнале, но не учитываются как свидетельство перед началом работ.</div>}
+          {step===0&&excludedPre.length>0&&<div className="tk-sub p-2.5 text-[0.6875rem] font-bold" style={{color:'var(--tk-muted)'}}>Отметки из неудачных попыток старта ({excludedPre.length}) сохранены в журнале, но не учитываются как свидетельство перед началом работ.</div>}
           {step===0&&recordedPre.length<DECLS.length&&<div className="space-y-2.5">
-            <div className="bg-tk-amber/10 border border-tk-amber/40 rounded-lg p-2.5 text-[11px] flex gap-2">
-              <TriangleAlert size={14} className="text-tk-amber shrink-0 mt-0.5"/>
+            <div className="bg-tk-amber/10 border border-tk-amber/40 rounded-lg p-2.5 text-[0.6875rem] flex gap-2">
+              <TriangleAlert size={22} className="text-tk-amber shrink-0 mt-0.5"/>
               <span>Эти подтверждения не были зафиксированы при начале работ (наряд начат раньше) — подтверждаются сейчас, при сдаче. Это декларация работника, а не проверка электросостояния системой.</span>
             </div>
             {DECLS.map((d,i)=><label key={i} className={cn("tk-card p-3 flex items-start gap-2.5 cursor-pointer transition",decl[i]&&'border-tk-green')}>
@@ -180,23 +180,23 @@ export default function OrderDetail({actor}:{actor:Actor}){
           </div>}
           {step===1&&<div className="space-y-2.5">
             <div>
-              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Что сделано и как проверено (мин. 12 символов)</div>
+              <div className="text-[0.6875rem] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Что сделано и как проверено (мин. 12 символов)</div>
               <div className="flex gap-2 items-start">
                 <textarea className="tk-input flex-1 min-h-24 p-3 text-sm" value={works} onChange={e=>setWorks(e.target.value)} placeholder="Например: узел осмотрен, заменена деталь…"/>
                 <VoiceButton onText={t=>setWorks(w=>w?w+' '+t:t)}/>
               </div>
-              <div className="text-[10px] mt-1" style={{color:'var(--tk-muted)'}}>Голос заполняет только текст отчёта (браузерная распознавалка). Подтверждения безопасности ставятся вручную.</div>
-              <div className="flex gap-1.5 flex-wrap mt-1.5">{TEMPLATES.map((t,i)=><button key={i} onClick={()=>setWorks(t)} className="text-[10px] font-bold tk-sub px-2 py-1 rounded-lg inline-flex items-center gap-1"><FileText size={11}/>Шаблон {i+1}</button>)}</div>
+              <div className="text-[0.625rem] mt-1" style={{color:'var(--tk-muted)'}}>Голос заполняет только текст отчёта (браузерная распознавалка). Подтверждения безопасности ставятся вручную.</div>
+              <div className="flex gap-1.5 flex-wrap mt-1.5">{TEMPLATES.map((t,i)=><button key={i} onClick={()=>setWorks(t)} className="text-[0.625rem] font-bold tk-sub px-2 py-1 rounded-lg inline-flex items-center gap-1"><FileText size={19}/>Шаблон {i+1}</button>)}</div>
             </div>
             <div>
-              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Шифр неисправности</div>
+              <div className="text-[0.6875rem] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Шифр неисправности</div>
               <select className="tk-input w-full h-12 px-3 text-sm" value={fault} onChange={e=>setFault(e.target.value)}>
                 <option value="">Выберите…</option>
                 {st.fault_codes.map((f:any)=><option key={f.code} value={f.code}>{f.code} · {f.name}</option>)}
               </select>
             </div>
             <div>
-              <div className="text-[11px] font-black uppercase mb-1 flex items-center gap-1" style={{color:'var(--tk-muted)'}}><Package size={12}/>Материалы (необязательно)</div>
+              <div className="text-[0.6875rem] font-black uppercase mb-1 flex items-center gap-1" style={{color:'var(--tk-muted)'}}><Package size={22}/>Материалы (необязательно)</div>
               <input className="tk-input w-full h-12 px-3 text-sm" value={materials} onChange={e=>setMaterials(e.target.value)} placeholder="Например: подшипник 6204 — 1 шт"/>
             </div>
             <label className={cn("tk-card p-3 flex items-start gap-2.5 cursor-pointer transition",declPost&&'border-tk-green')}>
@@ -206,28 +206,28 @@ export default function OrderDetail({actor}:{actor:Actor}){
           </div>}
           {step===2&&<div className="space-y-3">
             {masterBefore.length>0?<div>
-              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото до (получено до начала работ)</div>
+              <div className="text-[0.6875rem] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото до (получено до начала работ)</div>
               <div className="flex gap-2 overflow-x-auto no-scrollbar">{masterBefore.map((p,i)=><img key={i} src={p} className="h-24 rounded-lg" alt="До"/>)}</div>
-            </div>:<div className="tk-sub p-2.5 text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует — приёмочное фото снимается до начала работ, здесь его добавить нельзя.</div>}
+            </div>:<div className="tk-sub p-2.5 text-[0.6875rem] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует — приёмочное фото снимается до начала работ, здесь его добавить нельзя.</div>}
             <div>
-              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото после{needPhoto?' (обязательно — внеплановый наряд)':''}</div>
+              <div className="text-[0.6875rem] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото после{needPhoto?' (обязательно — внеплановый наряд)':''}</div>
               <div className="flex gap-2 flex-wrap items-center">
                 {after.map((p,i)=><img key={i} src={p} className="h-24 rounded-lg border-2 border-tk-green" alt="После"/>)}
-                <label className="h-24 w-24 border-2 border-dashed border-tk-green rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer text-[10px] font-bold text-tk-green">
-                  <Camera size={18}/>Снять<input type="file" accept="image/*" capture="environment" className="hidden" onChange={e=>addPh(e.target.files?.[0])}/></label>
+                <label className="h-24 w-24 border-2 border-dashed border-tk-green rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer text-[0.625rem] font-bold text-tk-green">
+                  <Camera size={22}/>Снять<input type="file" accept="image/*" capture="environment" className="hidden" onChange={e=>addPh(e.target.files?.[0])}/></label>
               </div>
             </div>
             {masterBefore.length>0&&after.length>0&&<div className="grid grid-cols-2 gap-2">
-              <div className="text-center"><div className="text-[9px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>До</div><img src={masterBefore[0]} className="w-full h-28 object-cover rounded-lg border" style={{borderColor:'var(--tk-border)'}} alt="До"/></div>
-              <div className="text-center"><div className="text-[9px] font-black uppercase mb-1 text-tk-green">После</div><img src={after[0]} className="w-full h-28 object-cover rounded-lg border-2 border-tk-green" alt="После"/></div>
+              <div className="text-center"><div className="text-[0.5625rem] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>До</div><img src={masterBefore[0]} className="w-full h-28 object-cover rounded-lg border" style={{borderColor:'var(--tk-border)'}} alt="До"/></div>
+              <div className="text-center"><div className="text-[0.5625rem] font-black uppercase mb-1 text-tk-green">После</div><img src={after[0]} className="w-full h-28 object-cover rounded-lg border-2 border-tk-green" alt="После"/></div>
             </div>}
           </div>}
         </div>
         <div className="p-3.5 border-t grid grid-cols-2 gap-2" style={{borderColor:'var(--tk-border)',background:'var(--tk-card)'}}>
-          {step>0?<button onClick={()=>setStep(s=>s-1)} className="tk-touch tk-sub uppercase text-xs"><ArrowLeft size={14} className="inline mr-1"/>Назад</button>
+          {step>0?<button onClick={()=>setStep(s=>s-1)} className="tk-touch tk-sub uppercase text-xs"><ArrowLeft size={22} className="inline mr-1"/>Назад</button>
             :<button onClick={()=>setWiz(false)} className="tk-touch tk-sub uppercase text-xs">Отмена</button>}
-          {step<2?<button onClick={()=>setStep(s=>s+1)} disabled={!stepOk[step]} className="tk-touch bg-tk-amber text-black border border-amber-600 uppercase text-xs disabled:opacity-40">Далее<ArrowRight size={14} className="inline ml-1"/></button>
-            :<><button onClick={complete} disabled={busy||!canSend} className="tk-touch bg-tk-green text-white border border-emerald-600 uppercase text-xs disabled:opacity-40"><Check size={14} className="inline mr-1"/>{busy?'Отправка…':'На проверку мастеру'}</button>{err&&<div className="col-span-2 text-xs text-tk-red font-bold">{err}</div>}</>}
+          {step<2?<button onClick={()=>setStep(s=>s+1)} disabled={!stepOk[step]} className="tk-touch bg-tk-amber text-black border border-amber-600 uppercase text-xs disabled:opacity-40">Далее<ArrowRight size={22} className="inline ml-1"/></button>
+            :<><button onClick={complete} disabled={busy||!canSend} className="tk-touch bg-tk-green text-white border border-emerald-600 uppercase text-xs disabled:opacity-40"><Check size={22} className="inline mr-1"/>{busy?'Отправка…':'На проверку мастеру'}</button>{err&&<div className="col-span-2 text-xs text-tk-red font-bold">{err}</div>}</>}
         </div>
       </div>
     </div>}

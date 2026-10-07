@@ -38,7 +38,7 @@ Deno.serve(async req=>{
  let result:any={mode:'rules',verdict:reasons.length?'rework':'needs_master',score:null,confidence:null,rule_flags:ruleFlags,reasons:[...reasons,...ruleFlags].length?[...reasons,...ruleFlags]:['Обязательные поля заполнены. Смысл и качество фото не проверены.'],limitations:['Правила не устанавливают качество физического ремонта']};
  const key=Deno.env.get('GEMINI_API_KEY'),model=Deno.env.get('GEMINI_MODEL');
  // A selected model must have a verified free quota. No silent paid-model default.
- if(key&&model&&!reasons.length){
+ if(false&&key&&model&&!reasons.length){ // External free-text/photo path disabled pending a separately reviewed payload.
  const input={problem:o.title,works:o.closure.works,fault:o.closure.fault_code,materials:o.closure.materials,rule_flags:ruleFlags,timing:{deadline:o.deadline,created_at:o.created_at,reviewed_at:new Date().toISOString(),overdue_minutes:Math.max(0,Math.round((Date.now()-new Date(o.deadline).getTime())/60000))}};
  const admin=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
  let imagePart:any=null,photoTag='no-photo';
@@ -59,7 +59,7 @@ Deno.serve(async req=>{
  if(ruleFlags.length&&parsed.verdict==='accepted_with_notes')parsed.verdict='needs_master';
  parsed.reasons=[...ruleFlags,...parsed.reasons];
  result={...parsed,mode:'live',model,score:null,confidence:null,rule_flags:ruleFlags,photo_checked:!!imagePart,limitations:imagePart?['Фото оценила модель, проверка мастером обязательна','Не калиброванная точность','Физический ремонт не подтверждён']:['Только текст: фото моделью не проверены','Не калиброванная точность','Физический ремонт не подтверждён']};
- const{error:cacheError}=await admin.from('ai_cache').upsert({input_hash:hash,prompt_version:'v3',model,result});if(cacheError)console.error('Cache write failed',cacheError.code);
+ const{error:cacheError}=await admin.from('ai_cache').upsert({input_hash:hash,prompt_version:'v3',model,result});if(cacheError){console.error('Cache write failed',cacheError.code);result={...result,cache_warning:'Результат не сохранён в кэш'};}
  }catch(e){console.error('Model unavailable',String(e));result={...result,fallback_reason:'Модель недоступна. Проверены только обязательные поля.'}}}
  // Optimistic filter and DB transition trigger enforce the final write.
  const{data:updated,error:updateError}=await db.from('orders').update({status:'ai_review',ai_result:result}).eq('id',id).eq('version',version).select('id,version').single();

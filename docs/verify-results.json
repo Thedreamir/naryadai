@@ -19,7 +19,7 @@
     },
     {
       "name": "build",
-      "status": "FAIL"
+      "status": "PASS"
     },
     {
       "name": "config-regression-vs-git-base",

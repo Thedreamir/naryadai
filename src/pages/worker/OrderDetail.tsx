@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react'
 import {useParams, useNavigate} from 'react-router-dom'
 import imageCompression from 'browser-image-compression'
 import * as H from '../../lib/data'
+import {eventLabel} from '../../lib/status'
 import {Card} from '../../components/ui/card'
 import {Button} from '../../components/ui/button'
 import {Badge} from '../../components/ui/badge'
@@ -76,6 +77,6 @@ export default function OrderDetail({actor}:{actor:Actor}){
       {o.ai_result?.human_score&&<div className="text-[14px]">Оценка мастера: {o.ai_result.human_score} / 5</div>}
       {o.closure?.works&&<div className="text-[13px] text-muted">{o.closure.works}</div>}</Card>}
     <Card><div className="text-[13px] font-semibold mb-2">Журнал</div>
-      {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[12px] text-muted py-1 border-t border-border first:border-0">{e.actor} · {e.new_status} · {new Date(e.created_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</Card>
+      {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[12px] text-muted py-1 border-t border-border first:border-0">{e.actor} · {eventLabel(e.new_status)} · {new Date(e.created_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</Card>
   </div>
 }

@@ -6,3 +6,5 @@ export const STATUS: Record<string,{tone:string,label:string}> = {
 export const statusOf=(s:string)=>STATUS[s]||{tone:'gray',label:s}
 
 export const ACTIVE_STATUSES=['issued','queued','accepted','in_progress','paused','rework']
+
+export const eventLabel=(s:string)=>statusOf(s).label!==s?statusOf(s).label:({report_seen:'Отчёт просмотрен',created:'Создан',permit:'Допуск отмечен',photo:'Фото добавлено',comment:'Комментарий'} as Record<string,string>)[s]||s

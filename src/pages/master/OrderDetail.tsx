@@ -5,7 +5,7 @@ import {Card} from '../../components/ui/card'
 import {Button} from '../../components/ui/button'
 import {Badge} from '../../components/ui/badge'
 import type {Actor} from '../../App'
-import {statusOf} from '../../lib/status'
+import {statusOf, eventLabel} from '../../lib/status'
 export default function MasterOrderDetail({actor}:{actor:Actor}){
   const {id}=useParams(); const nav=useNavigate()
   const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
@@ -62,6 +62,6 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
       <Button size="big" variant="outline" className="w-full" disabled={busy} onClick={()=>{const r=prompt('Причина возврата на доработку');if(r)go('in_progress',r)}}>Вернуть на доработку</Button>
     </Card>}
     <Card><div className="font-semibold text-[14px] mb-2">Журнал действий</div>
-      {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[12px] text-muted py-1 border-t border-border first:border-0">{e.actor} · {e.new_status} · {new Date(e.created_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</Card>
+      {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[12px] text-muted py-1 border-t border-border first:border-0">{e.actor} · {eventLabel(e.new_status)} · {new Date(e.created_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</Card>
   </div>
 }

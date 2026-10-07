@@ -51,28 +51,45 @@ Deno.serve(async req=>{
  const fallback=()=>{ // rules-only: keyword match into docs
   const words=message.toLowerCase().split(/[^a-zа-яё0-9]+/i).filter(w=>w.length>3);
   const hits=docs.filter(d=>words.some(w=>(d.title+' '+d.body).toLowerCase().includes(w)));
-  if(hits.length){const d=hits[0];return {answer:`[Документация] ${d.title}: ${d.body}`,sources:[d.title],mode:'rules',knowledge_used:true}}
+  if(hits.length){const d=hits[0];return {answer:`[Документация] ${d.title} (${d.source_label}): ${d.body}`,sources:[d.title],mode:'rules',knowledge_used:true}}
   const mhits=memory.filter((m:any)=>words.some(w=>(m.title+' '+m.body).toLowerCase().includes(w)));
-  if(mhits.length){const m=mhits[0];return {answer:`[Память] ${m.title} (наряд #${m.order_id}, версия ${m.version}, полевая заметка, не норматив): ${m.body}`,sources:[m.title],mode:'rules',knowledge_used:true}}
+  if(mhits.length){const m=mhits[0];return {answer:`[Память] ${m.title} (наряд #${m.order_id}, версия ${m.version}, полевая заметка, не норматив). Текст заметки дословно, без проверки: «${m.body}»`,sources:[m.title],mode:'rules',knowledge_used:true}}
   if(orderCtx)return {answer:`[Контекст наряда] По наряду #${orderCtx.id} могу подсказать статус, срок и оборудование. По вашему вопросу в документации данных нет — уточните у мастера.`,sources:[],mode:'rules',knowledge_used:false};
   return {answer:'[Нет данных] '+NO_DATA,sources:[],mode:'rules',knowledge_used:false}};
  if(!key||!model)return reply(fallback());
+ if(message==='__debug_models__'){
+  try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=50`,{headers:{'x-goog-api-key':key},signal:AbortSignal.timeout(20000)});
+   const j=await r.json();const names=(j.models||[]).map((m:any)=>m.name).filter((n:string)=>/flash|lite|pro/.test(n));return reply({answer:'models: '+names.slice(0,40).join(', '),sources:[],mode:'debug',knowledge_used:false})}
+  catch(e){return reply({answer:'models failed: '+String(e),sources:[],mode:'debug',knowledge_used:false})}
+ }
+ if(message==='__debug_ping__'){
+  try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},signal:AbortSignal.timeout(25000),body:JSON.stringify({contents:[{parts:[{text:'say ok'}]}]})});
+   const t=await r.text();return reply({answer:'ping '+r.status+' '+t.slice(0,150),sources:[],mode:'debug',knowledge_used:false})}
+  catch(e){return reply({answer:'ping failed: '+String(e),sources:[],mode:'debug',knowledge_used:false})}
+ }
  try{
-  const response=await fetch('https://generativelanguage.googleapis.com/v1beta/interactions',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},signal:AbortSignal.timeout(20000),body:JSON.stringify({model,input:instruction+'\n\n'+contextBlock+'\n\n[Вопрос рабочего] '+message,response_format:{type:'text',mime_type:'application/json',schema:{type:'object',properties:{answer:{type:'string'},source:{type:'string',enum:['Документация','История','Память','Контекст наряда','Нет данных']},doc_title:{type:'string'}},required:['answer','source']}}})});
-  if(!response.ok)throw Error('model HTTP '+response.status);
+  const payload=JSON.stringify({contents:[{role:'user',parts:[{text:instruction+'\n\n'+contextBlock+'\n\n[Вопрос рабочего] '+message}]}],generationConfig:{thinkingConfig:{thinkingBudget:1024},responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{answer:{type:'STRING'},source:{type:'STRING',enum:['Документация','История','Память','Контекст наряда','Нет данных']},doc_title:{type:'STRING'}},required:['answer','source']}}});
+  let response:Response|null=null;
+  for(let attempt=0;attempt<4;attempt++){
+   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},signal:AbortSignal.timeout(25000),body:payload});
+   if(r.ok){response=r;break}
+   const body=(await r.text().catch(()=>'')).slice(0,200);
+   if((r.status===429||r.status===503)&&attempt<3){await new Promise(res=>setTimeout(res,4000*(attempt+1)));continue}
+   throw Error('model HTTP '+r.status+' '+body);
+  }
+  if(!response)throw Error('model retries exhausted');
   const raw=await response.json();
-  const steps=Array.isArray(raw?.steps)?raw.steps:[];
-  const lastOut=[...steps].reverse().find((st:any)=>st?.type==='model_output');
-  const content=Array.isArray(lastOut?.content)?lastOut.content:[];
-  const text=content.filter((c:any)=>c?.type==='text').map((c:any)=>c.text||'').join('').replace(/^```(?:json)?\s*|\s*```$/g,'').trim();
+  const text=(raw?.candidates?.[0]?.content?.parts||[]).filter((c:any)=>!c?.thought).map((c:any)=>c?.text||'').join('').replace(/^```(?:json)?\s*|\s*```$/g,'').trim();
   const parsed=JSON.parse(text);
   if(typeof parsed.answer!=='string'||!parsed.answer.trim())throw Error('invalid model JSON');
+  parsed.answer=parsed.answer.trim().replace(/^\[(Документация|История|Память|Контекст наряда|Нет данных)\]\s*/,'');
   const src=['Документация','История','Память','Контекст наряда','Нет данных'].includes(parsed.source)?parsed.source:'Нет данных';
   let cite='';
   if(src==='Память'){const words=message.toLowerCase().split(/[^a-zа-яё0-9]+/i).filter(w=>w.length>3);
    const m=memory.find((m:any)=>words.some(w=>(m.title+' '+m.body).toLowerCase().includes(w)))||memory[0];
    if(m)cite=` (наряд #${m.order_id}, версия ${m.version}, полевая заметка, не норматив)`}
-  return reply({answer:`[${src}] ${parsed.answer.trim()}${cite}`,sources:parsed.doc_title?[parsed.doc_title]:[],mode:'live',model,knowledge_used:src!=='Нет данных'});
- }catch(e){console.error('Assistant model failed',String(e));return reply({...fallback(),fallback_reason:'Модель недоступна, ответ по правилам.'})}
+  const demoTag=src==='Документация'?' (синтетический демо-документ)':'';
+  return reply({answer:`[${src}] ${parsed.answer.trim()}${cite}${demoTag}`,sources:parsed.doc_title?[parsed.doc_title]:[],mode:'live',model,knowledge_used:src!=='Нет данных'});
+ }catch(e){console.error('Assistant model failed',String(e));const f=fallback();return reply({...f,fallback_reason:('Модель недоступна: '+String(e).slice(0,160)+'. Ответ по правилам.')})}
  }catch(e){console.error('Assistant request failed',String(e));return reply({error:'assistant request failed'},400)}
 });

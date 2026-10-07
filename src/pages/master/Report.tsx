@@ -2,7 +2,7 @@ import {useEffect, useMemo, useState} from 'react'
 import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
 import type {Actor} from '../../App'
-import {BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend} from 'recharts'
+import {BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell} from 'recharts'
 const GREEN='#16402F', ACC='#1F9D63', WARN='#C77E1F', RED='#D23B3B', MUT='#B9B9B2'
 export default function Report({actor}:{actor:Actor}){
   const [st,setSt]=useState<any>(null)
@@ -35,10 +35,19 @@ export default function Report({actor}:{actor:Actor}){
             <Tooltip/><Bar dataKey="count" fill={GREEN} radius={[6,6,0,0]}/></BarChart>
         </ResponsiveContainer></Card>
       <Card><div className="font-semibold text-[15px] mb-3">Статусы нарядов</div>
-        <ResponsiveContainer width="100%" height={220}>
-          <PieChart><Pie data={data.statuses} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={3}>
-            {data.statuses.map((s:any)=><Cell key={s.name} fill={s.color}/>)}</Pie><Legend/><Tooltip/></PieChart>
-        </ResponsiveContainer></Card>
+        <ResponsiveContainer width="100%" height={200}>
+          <PieChart><Pie data={data.statuses} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
+            {data.statuses.map((s:any)=><Cell key={s.name} fill={s.color}/>)}</Pie><Tooltip/></PieChart>
+        </ResponsiveContainer>
+        <div className="mt-2 space-y-1.5">
+          {data.statuses.map((s:any)=>(
+            <div key={s.name} className="flex items-center gap-2 text-[13px] text-zinc-600">
+              <span className="h-3 w-3 rounded-sm shrink-0" style={{background:s.color}}/>
+              <span>{s.name}</span> · <b className="text-zinc-900">{s.value}</b>
+            </div>
+          ))}
+          {data.statuses.length===0&&<div className="text-[13px] text-muted">Нет нарядов в базе.</div>}
+        </div></Card>
     </div>
     <Card><div className="font-semibold text-[15px] mb-2">Оценки мастера по исполнителям</div>
       <div className="text-[12px] text-muted mb-3">Человеческие оценки, выставленные мастером при закрытии. Выводы модели в расчёт не входят.</div>

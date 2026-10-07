@@ -17,7 +17,9 @@ export default function WorkerHome({actor}:{actor:Actor}){
   const [note,setNote]=useState<any>(null)
   const [dismissed,setDismissed]=useState<number[]>(()=>{try{return JSON.parse(sessionStorage.getItem('tk-em-dismissed')||'[]')}catch{return[]}})
   const nav=useNavigate()
+  const [liveAlerts,setLiveAlerts]=useState<any[]>([])
   useEffect(()=>{H.state().then(setSt).catch(e=>setErr(e.message))},[])
+  useEffect(()=>H.watchNotifications((n:any)=>setLiveAlerts(a=>[n,...a].slice(0,3))),[])
   const mine=st?st.orders.filter((o:any)=>o.assignee_id===actor.id):[]
   const current=mine.find((o:any)=>o.status==='in_progress')
   const queue=mine.filter((o:any)=>['issued','queued','accepted','paused'].includes(o.status))
@@ -33,7 +35,12 @@ export default function WorkerHome({actor}:{actor:Actor}){
   if(err) return <div className="tk-card p-4 text-tk-red">{err}</div>
   if(!st) return <div className="py-10 text-center" style={{color:'var(--tk-muted)'}}>Загрузка нарядов…</div>
   const eqName=(o:any)=>o.equipment||st.equipment.find((e:any)=>e.id===o.equipment_id)?.name||'—'
+  const alerts=[...liveAlerts,...(st.notifications||[])].filter((n:any,i:number,arr:any[])=>arr.findIndex((x:any)=>x.id===n.id)===i).slice(0,3)
   return <div className="space-y-3">
+    {alerts.length>0&&<div className="tk-card p-3 space-y-1.5" style={{borderLeft:'4px solid var(--color-tk-amber)'}}>
+      <div className="text-[0.625rem] font-black uppercase tracking-wider inline-flex items-center gap-1.5" style={{color:'var(--tk-muted)'}}><TriangleAlert size={14} className="text-tk-amber"/>Контроль сроков</div>
+      {alerts.map((n:any)=><div key={n.id} className="text-xs font-bold flex items-center justify-between gap-2"><span className="min-w-0">{n.message}</span><span className="font-mono text-[0.625rem] shrink-0" style={{color:'var(--tk-muted)'}}>{new Date(n.created_at).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})}</span></div>)}
+    </div>}
     {emergency&&<div className="bg-tk-red text-white rounded-xl p-3 border border-red-400 shadow-xl space-y-2.5">
       <div className="flex items-start gap-2.5">
         <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center shrink-0"><TriangleAlert size={22}/></div>

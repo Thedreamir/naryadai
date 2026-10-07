@@ -29,7 +29,7 @@ export default function WorkerOrders({actor}:{actor:Actor}){
       <ChevronRight size={19} style={{color:'var(--tk-muted)'}}/>
     </div>
   </Link>
-  return <div className="space-y-3">
+  return <div className="space-y-3">{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.</div>}
     {mine.length===0&&<div className="tk-card p-6 text-center" style={{color:'var(--tk-muted)'}}>Нет активных нарядов</div>}
     {active.length>0&&<div className="space-y-2">
       <div className="text-[0.6875rem] font-black uppercase tracking-wider px-1" style={{color:'var(--tk-muted)'}}>В работе</div>

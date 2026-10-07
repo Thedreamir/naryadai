@@ -60,12 +60,12 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
       <ul className="list-disc pl-5 text-[14px] space-y-0.5">{o.ai_result.reasons.map((r:string)=><li key={r}>{r}</li>)}</ul>
       <div className="text-[12px] text-muted">{o.ai_result.mode==='live'?'Ответ языковой модели. Физический ремонт не подтверждён, оценка не калибрована.':o.ai_result.mode==='cache'?'Повторный ответ из кэша проверок. Физический ремонт не подтверждён.':'Проверка по правилам, модель не участвовала.'}{o.ai_result.fallback_reason?' '+o.ai_result.fallback_reason:''}</div>
     </Card>}
-    {['ai_review','completed'].includes(o.status)&&<Card className="space-y-3">
+    {o.status==='ai_review'&&<Card className="space-y-3">
       <div className="font-semibold text-[15px]">Решение мастера</div>
       <div className="flex items-center gap-3"><span className="text-[14px]">Оценка:</span>
         <div className="flex gap-1">{[1,2,3,4,5].map(n=><button key={n} onClick={()=>setScore(n)} className={"h-12 w-12 rounded-[12px] font-bold "+(score===n?'bg-primary text-primary-ink':'bg-surface border border-border')}>{n}</button>)}</div></div>
       <Button size="big" className="w-full" disabled={busy} onClick={()=>go('closed',undefined,{human_score:score})}>Закрыть наряд</Button>
-      <Button size="big" variant="outline" className="w-full" disabled={busy} onClick={()=>{const r=prompt('Причина возврата на доработку');if(r)go('in_progress',r)}}>Вернуть на доработку</Button>
+      <Button size="big" variant="outline" className="w-full" disabled={busy} onClick={()=>{const r=prompt('Причина возврата на доработку');if(r)go('rework',r)}}>Вернуть на доработку</Button>
     </Card>}
     <Card><div className="font-semibold text-[14px] mb-2">Журнал действий</div>
       {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[12px] text-muted py-1 border-t border-border first:border-0">{e.actor} · {eventLabel(e.new_status)} · {new Date(e.created_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</Card>

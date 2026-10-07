@@ -9,7 +9,7 @@ const b=await chromium.launch()
 const dtop=await b.newContext({viewport:{width:1440,height:900}})
 const mob=await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true})
 let oid=null
-const stored=async()=> (await svc.from('orders').select('id,status,assignee_id,master_id,closed_at,permit_kind,permit_note').eq('id',oid).single()).data
+const stored=async()=> (await svc.from('orders').select('id,status,assignee_id,master_id,closed_at,started_at,version,permit_kind,permit_note').eq('id',oid).single()).data
 const targetOK=async(pg,label)=>{
   const el=pg.getByRole('button',{name:label}).first()
   const bb=await el.boundingBox()
@@ -81,7 +81,7 @@ try{
   await targetOK(w,'Подтвердить и начать работу')
   await w.click('button:has-text("Подтвердить и начать работу")')
   await w.locator('button:has-text("Сдать наряд")').waitFor({state:'visible',timeout:15000})
-  st=await stored(); step('start stored', st.status==='in_progress', st.status)
+  st=await stored(); step('start stored', st.status==='in_progress' && !!st.started_at, st.status+' started_at='+(st.started_at?'set':'NULL'))
   await w.reload();await w.locator('button:has-text("Сдать наряд")').waitFor({state:'visible',timeout:15000})
   step('start persists after reload', true)
   await w.click('button:has-text("Сдать наряд")')
@@ -112,9 +112,16 @@ try{
   // 6. master closes
   await pg.goto('http://localhost:4173/orders/'+oid);await pg.waitForTimeout(2500)
   await pg.screenshot({path:'/tmp/e2e-phone-4-master-review.png'})
+  // completed -> ai_review via the check button (rules fallback is the honest primary)
+  await pg.click('button:has-text("Проверить закрытие (ИИ)")',{timeout:15000})
+  await pg.waitForTimeout(90000)
+  st=await stored(); step('ai check stored', st.status==='ai_review', st.status)
+  await pg.reload();await pg.waitForTimeout(2500)
+  st=await stored(); step('ai check persists after reload', st.status==='ai_review', st.status)
+  await pg.screenshot({path:'/tmp/e2e-phone-4b-ai-card.png'})
   await pg.click('button:has-text("5")',{timeout:15000});await pg.waitForTimeout(300)
   await pg.click('button:has-text("Закрыть наряд")');await pg.waitForTimeout(5000)
-  st=await stored(); step('close stored', st.status==='closed' && !!st.closed_at, `status=${st.status} closed_at=${st.closed_at?'set':'-'}`)
+  st=await stored(); step('close stored', st.status==='closed' && !!st.closed_at && st.version>1, `status=${st.status} closed_at=${st.closed_at?'set':'NULL'} version=${st.version}`)
   await pg.reload();await pg.waitForTimeout(2500)
   st=await stored(); step('close persists after reload', st.status==='closed', st.status)
   // 7. worker sees closed state, alert gone after next watcher pass not required; Home no longer lists as active

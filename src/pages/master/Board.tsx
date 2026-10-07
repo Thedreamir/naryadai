@@ -4,7 +4,7 @@ import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
 import {Badge} from '../../components/ui/badge'
 import {cn} from '../../lib/utils'
-import {statusOf} from '../../lib/status'
+import {statusOf, ACTIVE_STATUSES} from '../../lib/status'
 import {NumberTicker} from '../../components/ui/number-ticker'
 import type {Actor} from '../../App'
 const T: Record<string,{tone:any,label:string}> = {
@@ -18,9 +18,9 @@ export default function Board({actor}:{actor:Actor}){
     H.repeatTop(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setRep).catch(()=>setRep([]))},[])
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
   const now=Date.now()
-  const list = st.orders.filter((o:any)=>f==='all'?o.status!=='closed':f==='active'?['issued','queued','accepted','in_progress','paused'].includes(o.status):f==='review'?['completed','ai_review'].includes(o.status):o.status==='closed')
+  const list = st.orders.filter((o:any)=>f==='all'?o.status!=='closed':f==='active'?ACTIVE_STATUSES.includes(o.status):f==='review'?['completed','ai_review'].includes(o.status):o.status==='closed')
   const overdue = st.orders.filter((o:any)=>o.status!=='closed'&&new Date(o.deadline).getTime()<now)
-  const counts={active:st.orders.filter((o:any)=>['issued','queued','accepted','in_progress','paused'].includes(o.status)).length,
+  const counts={active:st.orders.filter((o:any)=>ACTIVE_STATUSES.includes(o.status)).length,
     work:st.orders.filter((o:any)=>o.status==='in_progress').length,
     review:st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)).length,
     closed:st.orders.filter((o:any)=>o.status==='closed').length}
@@ -37,8 +37,8 @@ export default function Board({actor}:{actor:Actor}){
         <span className="text-[11px] text-muted">индикаторы для анализа причин, не доказанные закономерности</span></div>
       {rep.slice(0,3).map((r:any)=><div key={r.equipment+r.fault_code} className="text-[13px] flex justify-between gap-3">
         <span className="truncate">{r.equipment} · шифр {r.fault_code}</span>
-        <span className="text-muted shrink-0">закрыто {r.closed_count} · повторов {r.pairs_within_window}</span></div>)}
-      <div className="text-[11px] text-muted">Закономерности заложены в синтетические данные для демонстрации. Это сигнал для анализа причин, не оценка исполнителей.</div>
+        <span className="text-muted shrink-0">закрыто за 90 дн: {r.closed_count} · пар закрытий в окне повтора: {r.pairs_within_window}</span></div>)}
+      <div className="text-[11px] text-muted">Пара = два закрытых наряда на том же оборудовании с тем же шифром в пределах окна повтора (по шифру, по умолчанию 7 дн). Закономерности заложены в синтетические данные для демонстрации. Это сигнал для анализа причин, не оценка исполнителей.</div>
     </Card>}
     <div className="grid grid-cols-4 gap-3">
       {[['Активные',counts.active],['В работе',counts.work],['На проверке',counts.review],['Закрыто',counts.closed]].map(([l,v])=>

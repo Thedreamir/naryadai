@@ -4,7 +4,7 @@ import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
 import {Badge} from '../../components/ui/badge'
 import type {Actor} from '../../App'
-import {statusOf} from '../../lib/status'
+import {statusOf, ACTIVE_STATUSES} from '../../lib/status'
 const T: Record<string,{tone:any,label:string}> = {
   issued:{tone:'teal',label:'Выдан'},queued:{tone:'amber',label:'В очереди'},accepted:{tone:'primary',label:'Принят'},
   in_progress:{tone:'primary',label:'В работе'},paused:{tone:'amber',label:'Пауза'},completed:{tone:'teal',label:'На проверке'},
@@ -14,7 +14,7 @@ export default function Orders({actor}:{actor:Actor}){
   useEffect(()=>{H.state().then(setSt).catch(()=>{})},[])
   if(!st) return <div className="text-muted py-10 text-center">Загрузка…</div>
   const mine = st.orders.filter((o:any)=>o.assignee_id===actor.id)
-  const groups = [['Активные',(o:any)=>['issued','queued','accepted','in_progress','paused'].includes(o.status)],
+  const groups = [['Активные',(o:any)=>ACTIVE_STATUSES.includes(o.status)],
     ['На проверке',(o:any)=>['completed','ai_review'].includes(o.status)],['Закрытые',(o:any)=>o.status==='closed']] as const
   return <div className="space-y-5">
     <h1 className="text-[24px] font-bold pt-2">Мои наряды</h1>

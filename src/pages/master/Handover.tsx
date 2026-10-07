@@ -3,13 +3,13 @@ import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
 import {Button} from '../../components/ui/button'
 import type {Actor} from '../../App'
-import {statusOf} from '../../lib/status'
+import {statusOf, ACTIVE_STATUSES} from '../../lib/status'
 export default function Handover({actor}:{actor:Actor}){
   const [st,setSt]=useState<any>(null)
   useEffect(()=>{H.state().then(setSt).catch(()=>{})},[])
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
   const now=Date.now()
-  const active=st.orders.filter((o:any)=>['issued','queued','accepted','in_progress','paused','rework'].includes(o.status))
+  const active=st.orders.filter((o:any)=>ACTIVE_STATUSES.includes(o.status))
   const review=st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status))
   const overdue=active.filter((o:any)=>new Date(o.deadline).getTime()<now)
   const byW=st.employees.filter((e:any)=>e.role==='worker').map((w:any)=>({w,list:active.filter((o:any)=>o.assignee_id===w.id)})).filter((x:any)=>x.list.length)

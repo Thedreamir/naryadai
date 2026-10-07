@@ -4,3 +4,5 @@ export const STATUS: Record<string,{tone:string,label:string}> = {
   ai_review:{tone:'teal',label:'Проверен ИИ'},closed:{tone:'gray',label:'Закрыт'},rejected:{tone:'red',label:'Отклонён'},rework:{tone:'red',label:'Доработка'},
 }
 export const statusOf=(s:string)=>STATUS[s]||{tone:'gray',label:s}
+
+export const ACTIVE_STATUSES=['issued','queued','accepted','in_progress','paused','rework']

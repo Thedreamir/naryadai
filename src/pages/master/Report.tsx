@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useState} from 'react'
 import * as H from '../../lib/data'
+import {ACTIVE_STATUSES} from '../../lib/status'
 import {Card} from '../../components/ui/card'
 import type {Actor} from '../../App'
 import {BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell} from 'recharts'
@@ -14,7 +15,7 @@ export default function Report({actor}:{actor:Actor}){
     for(let i=6;i>=0;i--){const d=new Date(Date.now()-i*86400000);days[d.toLocaleDateString('ru',{day:'numeric',month:'short'})]=0}
     closed.forEach((o:any)=>{const k=new Date(o.closed_at).toLocaleDateString('ru',{day:'numeric',month:'short'});if(k in days)days[k]++})
     const byDay=Object.entries(days).map(([d,n])=>({day:d,count:n}))
-    const statuses=[['Закрытые',closed.length,GREEN],['Активные',st.orders.filter((o:any)=>['issued','queued','accepted','in_progress','paused','rework'].includes(o.status)).length,ACC],['На проверке',st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)).length,WARN]]
+    const statuses=[['Закрытые',closed.length,GREEN],['Активные',st.orders.filter((o:any)=>ACTIVE_STATUSES.includes(o.status)).length,ACC],['На проверке',st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)).length,WARN]]
       .filter(x=>x[1] as number>0).map(([name,value,color])=>({name,value,color}))
     const scored=closed.filter((o:any)=>o.ai_result?.human_score)
     const ratings=st.employees.filter((e:any)=>e.role==='worker').map((w:any)=>{

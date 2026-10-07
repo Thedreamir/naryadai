@@ -2,6 +2,10 @@
   "local": true,
   "results": [
     {
+      "name": "preflight-local-only",
+      "status": "FAIL"
+    },
+    {
       "name": "architecture-presence-only",
       "status": "PASS"
     },

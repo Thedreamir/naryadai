@@ -1,3 +1,4 @@
+import {sanitizePhoto} from '../../lib/photo-sanitize'
 import {useEffect, useState} from 'react'
 import {useNavigate} from 'react-router-dom'
 import * as H from '../../lib/data'
@@ -8,6 +9,7 @@ export default function Issue({actor}:{actor:Actor}){
   const nav=useNavigate()
   const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
   const [title,setTitle]=useState(''); const [eq,setEq]=useState(()=>new URLSearchParams(location.search).get('equipment')||''); const [assignee,setAssignee]=useState('')
+  const [section,setSection]=useState('');const [kind,setKind]=useState('unplanned');const [before,setBefore]=useState<string[]>([]);const [photoBusy,setPhotoBusy]=useState(false)
   const [priority,setPriority]=useState('normal'); const [hours,setHours]=useState(2)
   useEffect(()=>{H.state().then(setSt).catch(e=>setErr(e.message))},[])
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
@@ -48,7 +50,7 @@ export default function Issue({actor}:{actor:Actor}){
     return Object.entries(use).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,q])=>n+' ('+(Math.round(q*10)/10)+')')})()
   const submit=async(e:React.FormEvent)=>{e.preventDefault();setBusy(true);setErr('')
     try{
-      await H.createOrder({title,kind:priority==='planned'?'planned':'unplanned',equipment_id:Number(eq),assignee_id:assignee,priority,deadline:new Date(Date.now()+hours*3600000).toISOString()})
+      await H.createOrder({title,kind,equipment_id:Number(eq),assignee_id:assignee,priority,deadline:new Date(Date.now()+hours*3600000).toISOString(),before_photos:before})
       nav('/')
     }catch(ex){setErr((ex as Error).message);setBusy(false)}}
   const input='w-full h-14 px-4 rounded-[14px] border border-border bg-surface text-[16px]'
@@ -59,10 +61,12 @@ export default function Issue({actor}:{actor:Actor}){
       <Card className="space-y-4">
         <label className="block"><span className="text-[13px] font-medium text-muted">Проблема и работы</span>
           <textarea required className="mt-1 w-full min-h-28 p-4 rounded-[14px] border border-border bg-surface text-[16px]" placeholder="Что нужно исправить?" value={title} onChange={e=>setTitle(e.target.value)}/></label>
+        <label className="block"><span className="text-[13px] font-medium text-muted">Участок</span><select aria-label="Участок выдачи" required className={input} value={section} onChange={e=>{setSection(e.target.value);setEq('')}}><option value="">Выберите участок</option>{[...new Set(st.equipment.map((x:any)=>String(x.section)))].map((name:any)=><option key={name} value={name}>{name}</option>)}</select></label>
+        <label className="block"><span className="text-[13px] font-medium text-muted">Тип работ</span><select aria-label="Тип работ" className={input} value={kind} onChange={e=>setKind(e.target.value)}><option value="unplanned">Внеплановый</option><option value="planned">Плановый</option></select></label>
         <label className="block"><span className="text-[13px] font-medium text-muted">Оборудование</span>
           <select required className={"mt-1 "+input} value={eq} onChange={e=>setEq(e.target.value)}>
             <option value="">Выбрать…</option>
-            {st.equipment.map((x:any)=><option key={x.id} value={x.id}>{x.name} · {x.section}</option>)}</select></label>
+            {st.equipment.filter((x:any)=>!section||String(x.section)===section).map((x:any)=><option key={x.id} value={x.id}>{x.name} · {x.section}</option>)}</select></label>
         {eligible.length>0&&<Card className="border-primary/40 bg-primary/5 !p-3.5 space-y-2">
           <div className="text-[12px] font-semibold text-muted uppercase">Автоподбор по правилам · рекомендация, не решение</div>
           {eligible.map((c:any,i:number)=>(<div key={c.w.id} className="space-y-1 pb-2 border-b border-border/50 last:border-0 last:pb-0">
@@ -90,10 +94,10 @@ export default function Issue({actor}:{actor:Actor}){
             <option value="">Выбрать…</option>
             {workers.map((w:any)=>{const active=st.orders.find((o:any)=>o.assignee_id===w.id&&o.status==='in_progress')
               const q=st.orders.filter((o:any)=>o.assignee_id===w.id&&['issued','queued','accepted'].includes(o.status)).length
-              const t=active?'в работе #'+active.id:q?'в очереди '+q:'свободен'
+              const t=!w.on_shift?'не на смене':active?'в работе #'+active.id:q?'в очереди '+q:'свободен'
               return <option key={w.id} value={w.id}>{w.name} · {t}</option>})}</select></label>
         <div className="grid grid-cols-2 gap-3">
-          <label className="block"><span className="text-[13px] font-medium text-muted">Приоритет / тип</span>
+          <label className="block"><span className="text-[13px] font-medium text-muted">Приоритет</span>
             <select className={"mt-1 "+input} value={priority} onChange={e=>setPriority(e.target.value)}>
               <option value="high">Высокий</option><option value="normal">Обычный</option>
               <option value="emergency">Аварийный</option><option value="planned">Плановый</option></select></label>
@@ -101,8 +105,9 @@ export default function Issue({actor}:{actor:Actor}){
             <input className={"mt-1 "+input} type="number" min="0.1" step="0.1" value={hours} onChange={e=>setHours(Number(e.target.value))} required/></label>
         </div>
       </Card>
+      <Card><label className="block text-[13px]">Фото неисправности (до 5, JPEG/PNG/WebP)<input aria-label="Фото неисправности" type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={photoBusy} onChange={async e=>{const files=Array.from(e.target.files||[]);e.target.value='';if(before.length+files.length>5){setErr('До 5 фото неисправности');return}setPhotoBusy(true);setErr('');try{const ready:string[]=[];for(const f of files){const clean=await sanitizePhoto(f);ready.push(await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=()=>reject(Error('Фото не прочиталось'));r.readAsDataURL(clean)}))}setBefore(prev=>[...prev,...ready])}catch(ex){setErr((ex as Error).message)}finally{setPhotoBusy(false)}}}/></label><p className="text-[12px] text-muted">Метаданные удаляются. Время съёмки не подтверждается. Только синтетические изображения в демо.</p><div className="flex gap-2 flex-wrap">{before.map((photo,i)=><div key={i}><img alt={'Неисправность '+(i+1)} src={photo} className="h-24 rounded-xl"/><button type="button" className="min-h-12" onClick={()=>setBefore(p=>p.filter((_,j)=>j!==i))}>Удалить {i+1}</button></div>)}</div></Card>
       {err&&<Card className="text-danger text-[14px]">{err}</Card>}
-      <Button size="big" className="w-full" disabled={busy}>{busy?'Выдаю…':'Выдать наряд'}</Button>
+      <Button size="big" className="w-full" disabled={busy||photoBusy}>{busy?'Выдаю…':'Выдать наряд'}</Button>
     </form>
   </div>
 }

@@ -21,7 +21,7 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
     {to:'/closed', icon:Archive, label:'Закрытые'},
     {to:'/handover', icon:Repeat, label:'Передача смены'},
     {to:'/report', icon:BarChart3, label:'Отчёт и рейтинг'},
-    {to:'/knowledge',icon:Brain,label:'Загрузка знаний'},
+    ...(import.meta.env.VITE_KNOWLEDGE_PREVIEW==='true'?[{to:'/knowledge',icon:Brain,label:'Загрузка знаний'}]:[]),
     {to:'/memory', icon:Brain, label:'Память ремонтов', badge:memoryCount},
   ]
   return <div className="workspace min-h-screen flex bg-bg">

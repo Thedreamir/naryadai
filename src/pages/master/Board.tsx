@@ -63,6 +63,7 @@ export default function Board({actor}:{actor:Actor}){
       {[['Активные',counts.active],['В работе',counts.work],['На проверке',counts.review],['Закрыто',counts.closed]].map(([l,v])=>
         <Card key={l}><div className="text-[13px] text-muted">{l}</div><div className="text-[36px] font-bold leading-tight"><NumberTicker value={v as number}/></div></Card>)}
     </div>
+    <div className="flex gap-2 flex-wrap">{st.equipment.map((eq:any)=><Link key={eq.id} to={'/equipment/'+eq.id} className="min-h-11 inline-flex items-center text-[12px] px-3 border border-border rounded-full">{eq.name} · QR</Link>)}</div>
     <div className="text-[12px] text-muted">Счётчики по доступной истории, не по текущей смене</div>
     <Card className="space-y-2">
       <div className="flex items-center justify-between"><div className="font-semibold text-[14px]">Исполнители смены</div>

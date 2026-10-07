@@ -374,3 +374,10 @@ export async function recordDeclarations(orderId: number, phase: string, texts: 
   const {error} = await s.from('order_declarations').insert(rows)
   if (error) throw new Error(translateError(error.message))
 }
+
+export async function ratings(since: string, until: string) {
+  const s = supabase!
+  const {data, error} = await s.rpc('worker_rating', {since, until})
+  if (error) throw new Error(error.message)
+  return data as any[]
+}

@@ -128,7 +128,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
     </div>}
     {o.status==='queued'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy} onClick={()=>go('accepted')}><Check size={22}/>Принять из очереди</button>}
     {o.status==='in_progress'&&<>
-      <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>go('paused','Пауза')}><Pause size={19}/>Пауза</button>
+      <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>{const r=prompt('Причина паузы (ждёт запчасти, ждёт остановки оборудования…)');if(r)go('paused',r)}}><Pause size={19}/>Пауза</button>
       <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={19}/>Сдать наряд №{o.id} на проверку</button></>}
     {o.status==='paused'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase inline-flex items-center justify-center gap-2" disabled={busy} onClick={()=>go('in_progress')}><Play size={22}/>Продолжить</button>}
     {['completed','ai_review'].includes(o.status)&&<div className="tk-card p-4 text-center font-black text-tk-blue text-sm">На проверке у мастера</div>}

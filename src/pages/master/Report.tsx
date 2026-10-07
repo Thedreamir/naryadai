@@ -6,8 +6,8 @@ import type {Actor} from '../../App'
 import {BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell} from 'recharts'
 const GREEN='#16402F', ACC='#1F9D63', WARN='#C77E1F', RED='#D23B3B', MUT='#B9B9B2'
 export default function Report({actor}:{actor:Actor}){
-  const [st,setSt]=useState<any>(null)
-  useEffect(()=>{H.state().then(setSt).catch(()=>{})},[])
+  const [st,setSt]=useState<any>(null); const [rt,setRt]=useState<any[]|null>(null)
+  useEffect(()=>{H.state().then(setSt).catch(()=>{});H.ratings(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setRt).catch(()=>setRt(null))},[])
   const data=useMemo(()=>{
     if(!st) return null
     const closed=st.orders.filter((o:any)=>o.status==='closed'&&o.closed_at)
@@ -50,6 +50,15 @@ export default function Report({actor}:{actor:Actor}){
           {data.statuses.length===0&&<div className="text-[13px] text-muted">Нет нарядов в базе.</div>}
         </div></Card>
     </div>
+    <Card><div className="font-semibold text-[15px] mb-2">Рейтинг исполнителей (пять факторов)</div>
+      <div className="text-[12px] text-muted mb-3">Веса команды: качество 30 · в срок 25 · без доработок 20 · объём и сложность 15 · без отказов 10. Качество — только оценки мастера; выводы ИИ в балл не входят. Фактор без данных исключается, веса перенормируются — видно в пояснении.</div>
+      <table className="w-full text-[14px]"><thead><tr className="text-left text-[12px] text-muted"><th className="py-2">Исполнитель</th><th>Балл</th><th>Составляющие</th></tr></thead>
+        <tbody>{(rt||[]).map((r:any)=><tr key={r.worker_id} className="border-t border-border align-top"><td className="py-2.5 font-medium">{r.name}</td>
+          <td className="font-bold text-[16px]">{r.total}</td>
+          <td className="text-[12px] text-muted py-2.5">{r.explanation}</td></tr>)}</tbody></table>
+      {rt===null&&<div className="text-[13px] text-muted py-2">Рейтинг недоступен</div>}
+      {rt&&rt.length===0&&<div className="text-[13px] text-muted py-2">Закрытых нарядов за период нет</div>}
+    </Card>
     <Card><div className="font-semibold text-[15px] mb-2">Оценки мастера по исполнителям</div>
       <div className="text-[12px] text-muted mb-3">Человеческие оценки, выставленные мастером при закрытии. Выводы модели в расчёт не входят.</div>
       <table className="w-full text-[14px]"><thead><tr className="text-left text-[12px] text-muted"><th className="py-2">Исполнитель</th><th>Закрыто</th><th>Средняя оценка</th></tr></thead>

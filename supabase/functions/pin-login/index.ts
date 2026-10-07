@@ -11,17 +11,13 @@ Deno.serve(async req=>{
  const{email,pin}=await req.json();
  if(typeof email!=='string'||typeof pin!=='string'||!/^\d{4,6}$/.test(pin))return reply({error:'email and 4-6 digit pin required'},400);
  const admin=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
- const{data:emp}=await admin.from('employees').select('id,pin_hash').eq('email',email.toLowerCase()).single();
- if(!emp?.pin_hash)return reply({error:'pin not available for this account'},403);
- const{data:att}=await admin.from('pin_attempts').select('*').eq('employee_id',emp.id).maybeSingle();
- if(att?.locked_until&&new Date(att.locked_until)>new Date())return reply({error:'pin locked, try later'},429);
- const{data:ok}=await admin.rpc('verify_employee_pin',{p_employee:emp.id,p_pin:pin});
- if(!ok){
-  const failures=(att?.failures||0)+1;const locked=failures>=5?new Date(Date.now()+10*60000).toISOString():null;
-  await admin.from('pin_attempts').upsert({employee_id:emp.id,failures:locked?0:failures,locked_until:locked});
-  return reply({error:locked?'pin locked, try later':'wrong pin'},locked?429:403);
- }
- await admin.from('pin_attempts').upsert({employee_id:emp.id,failures:0,locked_until:null});
+ const salt=Deno.env.get('PIN_RATE_SALT');if(!salt)return reply({error:'pin rate gate not configured'},503);
+ // Only deploy behind the platform ingress that overwrites x-forwarded-for.
+ const ip=(req.headers.get('x-forwarded-for')||'').split(',')[0].trim();if(!ip)return reply({error:'trusted ingress address unavailable'},503);
+ const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+'|'+ip));const bucket=Array.from(new Uint8Array(bytes)).map(x=>x.toString(16).padStart(2,'0')).join('');
+ const{data:gate,error:gateError}=await admin.rpc('pin_login_gate',{p_email:email.toLowerCase(),p_pin:pin,p_bucket:bucket});
+ if(gateError)return reply({error:'pin verification unavailable'},503);
+ if(gate?.status!=='ok')return reply({error:gate?.status==='locked'?'pin locked, try later':'pin login denied'},gate?.status==='locked'?429:403);
  const{data:link,error:linkErr}=await admin.auth.admin.generateLink({type:'magiclink',email:email.toLowerCase()});
  if(linkErr||!link?.properties?.hashed_token)throw Error('link generation failed');
  return reply({token_hash:link.properties.hashed_token});

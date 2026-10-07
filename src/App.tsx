@@ -12,6 +12,9 @@ import Board from './pages/master/Board'
 import Review from './pages/master/Review'
 import MasterOrderDetail from './pages/master/OrderDetail'
 import Issue from './pages/master/Issue'
+import Closed from './pages/master/Closed'
+import Handover from './pages/master/Handover'
+import Report from './pages/master/Report'
 export type Actor = {id:string, email:string, role:string, name:string}
 export default function App(){
   const [actor, setActor] = useState<Actor|null>(null)
@@ -26,6 +29,6 @@ export default function App(){
   if(!ready) return <div className="min-h-screen grid place-items-center text-muted">Загрузка…</div>
   if(!actor) return <Login onLogin={setActor}/>
   if(actor.role==='worker') return <WorkerShell actor={actor}><Routes><Route path="/" element={<WorkerHome actor={actor}/>}/><Route path="/orders" element={<WorkerOrders actor={actor}/>}/><Route path="/orders/:id" element={<WorkerOrderDetail actor={actor}/>}/><Route path="/current" element={<WorkerHome actor={actor}/>}/><Route path="/report" element={<WorkerProfile actor={actor}/>}/><Route path="/profile" element={<WorkerProfile actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></WorkerShell>
-  if(actor.role==='master'||actor.role==='admin') return <MasterShell actor={actor}><Routes><Route path="/" element={<Board actor={actor}/>}/><Route path="/review" element={<Review actor={actor}/>}/><Route path="/issue" element={<Issue actor={actor}/>}/><Route path="/orders/:id" element={<MasterOrderDetail actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></MasterShell>
+  if(actor.role==='master'||actor.role==='admin') return <MasterShell actor={actor}><Routes><Route path="/" element={<Board actor={actor}/>}/><Route path="/review" element={<Review actor={actor}/>}/><Route path="/issue" element={<Issue actor={actor}/>}/><Route path="/closed" element={<Closed actor={actor}/>}/><Route path="/handover" element={<Handover actor={actor}/>}/><Route path="/report" element={<Report actor={actor}/>}/><Route path="/orders/:id" element={<MasterOrderDetail actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></MasterShell>
   return <div className="p-6">Роль {actor.role}: интерфейс в разработке (v8). <button className="underline" onClick={()=>{H.logout();location.reload()}}>Выйти</button></div>
 }

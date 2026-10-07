@@ -1,3 +1,4 @@
+import {useOrderState} from '../../lib/use-order-state'
 import {useEffect, useState} from 'react'
 import {Link} from 'react-router-dom'
 import * as H from '../../lib/data'
@@ -15,9 +16,9 @@ const T: Record<string,{tone:any,label:string}> = {
 const FILTERS=[['all','Все'],['active','Активные'],['review','Проверка'],['closed','Закрытые']] as const
 export default function Board({actor}:{actor:Actor}){
   const [filterOpen,setFilterOpen]=useState(false); const [section,setSection]=useState('all'); const [priority,setPriority]=useState('all')
-  const [st,setSt]=useState<any>(null); const [f,setF]=useState<string>('all'); const [rep,setRep]=useState<any[]|null>(null); const [view,setView]=useState<'list'|'kanban'>('list'); const [pres,setPres]=useState(savedPresentation())
-  useEffect(()=>{H.state().then(setSt).catch(()=>{})
-    H.repeatTop(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setRep).catch(()=>setRep([]))},[])
+  const {st,error:stateError,refresh}=useOrderState(); const [f,setF]=useState<string>('all'); const [rep,setRep]=useState<any[]|null>(null); const [view,setView]=useState<'list'|'kanban'>('list'); const [pres,setPres]=useState(savedPresentation())
+  useEffect(()=>{H.repeatTop(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setRep).catch(()=>setRep([]))},[])
+  if(stateError)return <div role="alert" className="p-4 border rounded-xl">Данные недоступны: {stateError}<button className="min-h-12 block mt-2 border rounded-xl px-4" onClick={refresh}>Повторить</button></div>
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
   const now=Date.now()
   const visible=pres?st.orders.filter((o:any)=>!isTechnicalTitle(o.title)):st.orders

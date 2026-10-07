@@ -1,3 +1,4 @@
+import {useOrderState} from '../../lib/use-order-state'
 import {withinInstant} from '../../lib/period'
 import {isTechnicalTitle, savedPresentation, setPresentation} from '../../lib/presentation'
 import {useEffect, useState} from 'react'
@@ -9,8 +10,8 @@ import {statusOf, ACTIVE_STATUSES} from '../../lib/status'
 export default function Handover({actor}:{actor:Actor}){
   const [presentation,setPresentation]=useState(savedPresentation)
   const [shift,setShift]=useState(()=>localStorage.getItem('naryadai.handover.shift')||'day');const [date,setDate]=useState(()=>localStorage.getItem('naryadai.handover.date')||new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Almaty'}).format(new Date()));const [section,setSection]=useState(()=>localStorage.getItem('naryadai.handover.section')||'')
-  const [st,setSt]=useState<any>(null)
-  useEffect(()=>{H.state().then(setSt).catch(()=>{})},[])
+  const {st,error:stateError,refresh}=useOrderState()
+  if(stateError)return <div role="alert" className="p-4 border rounded-xl">Данные недоступны: {stateError}<button className="min-h-12 block mt-2 border rounded-xl px-4" onClick={refresh}>Повторить</button></div>
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
   const now=Date.now()
   const start=new Date(date+'T'+(shift==='day'?'08:00:00':'20:00:00')+'+05:00');const end=new Date(start.getTime()+12*3600000);const inScope=st.orders.filter((o:any)=>!section||o.section===section);const hiddenN=inScope.filter((o:any)=>isTechnicalTitle(o.title)).length;const scoped=inScope.filter((o:any)=>!presentation||!isTechnicalTitle(o.title))

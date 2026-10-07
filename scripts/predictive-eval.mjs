@@ -1,6 +1,7 @@
 // Temporal evaluation on live synthetic history. No external model or personal fields.
 import {readFileSync,writeFileSync} from 'node:fs';
-const history=JSON.parse(readFileSync('scripts/predictive-history.synthetic.json','utf8'));
+const input=JSON.parse(readFileSync('scripts/predictive-history.synthetic.json','utf8'));
+const history=input.rows.map(([equipment_id,created_at,u])=>({equipment_id,created_at,kind:u?'unplanned':'planned'}));
 const DAY=86400000;const end=Date.parse('2026-10-07T18:00:00Z');const boundary=Date.parse('2026-09-15T23:59:59Z');
 const ids=[...new Set(history.map(o=>o.equipment_id))];const events=history.filter(o=>o.kind==='unplanned').map(o=>({...o,t:Date.parse(o.created_at)}));
 export function features(eq,t){const past=events.filter(o=>o.equipment_id===eq&&o.t<t).sort((a,b)=>a.t-b.t);const gaps=past.slice(1).map((o,i)=>(o.t-past[i].t)/DAY);const mtbf=gaps.length?gaps.reduce((a,b)=>a+b,0)/gaps.length:30;const age=past.length?Math.min(60,(t-past.at(-1).t)/DAY):60;return [past.filter(o=>o.t>=t-7*DAY).length,past.filter(o=>o.t>=t-30*DAY).length,age,mtbf,past.length]}

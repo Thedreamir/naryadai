@@ -1,3 +1,5 @@
+import LanguageToggle from '../components/LanguageToggle'
+import {kzNavigation} from '../lib/language'
 import {useEffect, useState, type ReactNode} from 'react'
 import {NavLink, useLocation} from 'react-router-dom'
 import {motion} from 'framer-motion'
@@ -7,6 +9,7 @@ import type {Actor} from '../App'
 import {cn} from '../lib/utils'
 export default function MasterShell({actor, children}:{actor:Actor, children:ReactNode}){
   const loc=useLocation()
+  const [kz,setKz]=useState(()=>localStorage.getItem('tekton-language')==='kz');useEffect(()=>{const update=()=>setKz(localStorage.getItem('tekton-language')==='kz');window.addEventListener('tekton-language',update);return ()=>window.removeEventListener('tekton-language',update)},[]);const label=(t:string)=>kz?(kzNavigation[t]||t):t
   const [menuOpen,setMenuOpen]=useState(false)
   const [reviewCount,setReviewCount]=useState(0)
   const [memoryCount,setMemoryCount]=useState(0)
@@ -27,9 +30,9 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
         <div className="text-[23px] font-bold tracking-[-1px]">Tekton OS</div>
       </div>
       <div className="text-[12px] text-muted mt-3 mb-10 px-1">Мастер · рабочее пространство</div>
-      <nav className="flex flex-col">
+      <LanguageToggle/><nav className="flex flex-col">
         {items.map(i=><NavLink key={i.to} to={i.to} end={i.to==='/'} className={({isActive})=>cn('flex items-center gap-3 px-[13px] py-4 rounded-[13px] mb-[7px] text-[15px]', isActive?'bg-[#edf1ee] text-[#174b35] font-bold':'text-[#69726e] hover:bg-black/[0.03]')}>
-          <i.icon size={22} strokeWidth={1.5}/><span className="flex-1">{i.label}</span>{i.badge?(<span className="bg-primary text-primary-ink text-[0.6875rem] font-bold px-2 py-0.5 rounded-full">{i.badge}</span>):null}</NavLink>)}
+          <i.icon size={22} strokeWidth={1.5}/><span className="flex-1">{label(i.label)}</span>{i.badge?(<span className="bg-primary text-primary-ink text-[0.6875rem] font-bold px-2 py-0.5 rounded-full">{i.badge}</span>):null}</NavLink>)}
       </nav>
       <div className="mt-auto text-[11px] text-[#78807d] leading-[1.9]">
         <div className="flex items-center gap-2 mb-2"><div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#e9eee9] to-[#d4ded5] text-[#4d6758] grid place-items-center font-bold text-[14px]">{actor.name?.split(' ').map((w:string)=>w[0]).slice(-2).join('')}</div>
@@ -40,9 +43,9 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
         <div className="mt-2">Синтетические данные · тестовое облако</div>
       </div>
     </aside>
-    <header className="workspace-mobile-header"><img src="/tekton-symbol.svg" alt=""/><strong>Tekton OS</strong><span>Мастер</span><button aria-label="Открыть меню" onClick={()=>setMenuOpen(true)}>Меню</button></header>
-    <nav className="workspace-bottom" aria-label="Навигация мастера">{items.filter(i=>['/','/review','/issue','/report'].includes(i.to)).map(i=><NavLink to={i.to} end={i.to==='/'} key={i.to}><i.icon size={22}/><span>{i.to==='/issue'?'Выдать':i.to==='/report'?'Отчёт':i.label}</span></NavLink>)}<button onClick={()=>setMenuOpen(true)}><Brain size={22}/><span>Ещё</span></button></nav>
-    {menuOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setMenuOpen(false)}><section role="dialog" aria-modal="true" aria-label="Меню мастера" className="workspace-sheet" onClick={e=>e.stopPropagation()}><button autoFocus className="sheet-close" onClick={()=>setMenuOpen(false)}>Закрыть</button>{items.map(i=><NavLink to={i.to} key={i.to} onClick={()=>setMenuOpen(false)}>{i.label}</NavLink>)}<button onClick={async()=>{await H.logout();location.reload()}}>Выйти</button></section></div>}
-    <main className="workspace-main flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]"><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
+    <header className="workspace-mobile-header"><img src="/tekton-symbol.svg" alt=""/><strong>Tekton OS</strong><LanguageToggle/><span>Мастер</span><button aria-label="Открыть меню" onClick={()=>setMenuOpen(true)}>Меню</button></header>
+    <nav className="workspace-bottom" aria-label="Навигация мастера">{items.filter(i=>['/','/review','/issue','/report'].includes(i.to)).map(i=><NavLink to={i.to} end={i.to==='/'} key={i.to}><i.icon size={22}/><span>{label(i.to==='/issue'?'Выдать':i.to==='/report'?'Отчёт':i.label)}</span></NavLink>)}<button onClick={()=>setMenuOpen(true)}><Brain size={22}/><span>Ещё</span></button></nav>
+    {menuOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setMenuOpen(false)}><section role="dialog" aria-modal="true" aria-label="Меню мастера" className="workspace-sheet" onClick={e=>e.stopPropagation()}><button autoFocus className="sheet-close" onClick={()=>setMenuOpen(false)}>Закрыть</button>{items.map(i=><NavLink to={i.to} key={i.to} onClick={()=>setMenuOpen(false)}>{label(i.label)}</NavLink>)}<button onClick={async()=>{await H.logout();location.reload()}}>Выйти</button></section></div>}
+    <main className="workspace-main flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]"><p className="text-[11px] text-muted mb-2">{kz?'Қазақша навигация: аударма жобасы. Мәтіндер RU.':'KZ: черновой перевод навигации, документы и данные RU.'}</p><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
   </div>
 }

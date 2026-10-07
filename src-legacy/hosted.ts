@@ -147,10 +147,10 @@ export async function transition(id: number, x: {status:string,version:number,re
     expected_version: x.version, reason_text: x.reason||'', closure_data: closure??null,
     human_score: x.human_score??null, human_comment: ''})
   if (error) {
-    // Garbage-collect photos uploaded for a rejected transition.
-    for (const p of uploadedPaths) { try { await s.storage.from('repair-photos').remove([p]) } catch {} }
-    for (const h of uploadedHashes) { try { await s.from('order_photos').delete().eq('order_id', id).eq('sha256', h) } catch {} }
-    throw new Error(translateError(error.message))
+    const cleanupErrors:string[]=[];
+    for(const p of uploadedPaths){try{const r=await s.storage.from('repair-photos').remove([p]);if(r.error)cleanupErrors.push('photo cleanup failed')}catch{cleanupErrors.push('photo cleanup unavailable')}}
+    for(const h of uploadedHashes){try{const r=await s.from('order_photos').delete().eq('order_id',id).eq('sha256',h);if(r.error)cleanupErrors.push('evidence cleanup failed')}catch{cleanupErrors.push('evidence cleanup unavailable')}}
+    throw new Error(translateError(error.message)+(cleanupErrors.length?' · Не удалось удалить все загруженные фото: сообщите мастеру, наряд не отправлен.':''))
   }
   return data
 }

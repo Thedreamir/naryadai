@@ -47,7 +47,7 @@ export async function state() {
   const myId = await uid()
   const [emp, orders, events, equipment, sections, faults, materials, notifications, norms] = await Promise.all([
     s.from('employees').select('*'),
-    s.from('orders').select('*').order('id', {ascending:false}).limit(600),
+    s.from('orders').select('*').eq('cancelled',false).order('id', {ascending:false}).limit(600),
     s.from('order_events').select('*').order('id', {ascending:false}).limit(2000),
     s.from('equipment').select('*'),
     s.from('sections').select('*'),

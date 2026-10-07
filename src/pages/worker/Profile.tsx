@@ -24,7 +24,7 @@ export default function Profile({actor}:{actor:Actor}){
     {rt&&<div className="tk-card p-3.5 space-y-1">
       <div className="flex items-baseline justify-between"><span className="text-[0.625rem] font-bold uppercase" style={{color:'var(--tk-muted)'}}>Мой рейтинг (пять факторов)</span>
         <span className="text-xl font-black text-tk-amber">{rt.total}</span></div>
-      <div className="text-[0.625rem]" style={{color:'var(--tk-muted)'}}>Посчитано факторов: {rt.factors_available}/5</div>
+      <div className="text-[0.625rem]" style={{color:'var(--tk-muted)'}}>Посчитано факторов: {rt.factors_available}/5 · причины отказов: подтверждено {rt.rejects_justified}, неоправдано {rt.rejects_unjustified}, неизвестно {rt.rejects_unclassified}</div>
       <div className="text-[0.6875rem]" style={{color:'var(--tk-muted)'}}>{rt.explanation}</div>
       <div className="text-[0.625rem]" style={{color:'var(--tk-muted)'}}>Веса: качество 30 · в срок 25 · без доработок 20 · объём и сложность 15 · без отказов 10.</div>
     </div>}

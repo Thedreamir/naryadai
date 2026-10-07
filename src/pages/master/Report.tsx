@@ -55,7 +55,7 @@ export default function Report({actor}:{actor:Actor}){
       <table className="w-full text-[14px]"><thead><tr className="text-left text-[12px] text-muted"><th className="py-2">Исполнитель</th><th>Балл</th><th>Факторы</th><th>Составляющие</th></tr></thead>
         <tbody>{(rt||[]).map((r:any)=><tr key={r.worker_id} className="border-t border-border align-top"><td className="py-2.5 font-medium">{r.name}</td>
           <td className="font-bold text-[16px]">{r.total}</td><td>{r.factors_available}/5</td>
-          <td className="text-[12px] text-muted py-2.5">{r.explanation}</td></tr>)}</tbody></table>
+          <td className="text-[12px] text-muted py-2.5">{r.explanation}<div>Отказы: оправдано {r.rejects_justified} · без причины/неоправдано {r.rejects_unjustified} · требуют проверки {r.rejects_unclassified}. {r.f_rejects===null?"Фактор отказов исключён: данные неполные.":""}</div></td></tr>)}</tbody></table>
       {rt===null&&<div className="text-[13px] text-muted py-2">Рейтинг недоступен</div>}
       {rt&&rt.length===0&&<div className="text-[13px] text-muted py-2">Закрытых нарядов за период нет</div>}
     </Card>

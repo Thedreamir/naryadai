@@ -12,8 +12,9 @@ const T: Record<string,{tone:any,label:string}> = {
   ai_review:{tone:'teal',label:'Проверка ИИ'},closed:{tone:'gray',label:'Закрыт'}}
 const FILTERS=[['all','Все'],['active','Активные'],['review','Проверка'],['closed','Закрытые']] as const
 export default function Board({actor}:{actor:Actor}){
-  const [st,setSt]=useState<any>(null); const [f,setF]=useState<string>('all')
-  useEffect(()=>{H.state().then(setSt).catch(()=>{})},[])
+  const [st,setSt]=useState<any>(null); const [f,setF]=useState<string>('all'); const [rep,setRep]=useState<any[]|null>(null)
+  useEffect(()=>{H.state().then(setSt).catch(()=>{})
+    H.repeatTop(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setRep).catch(()=>setRep([]))},[])
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
   const now=Date.now()
   const list = st.orders.filter((o:any)=>f==='all'?o.status!=='closed':f==='active'?['issued','queued','accepted','in_progress','paused'].includes(o.status):f==='review'?['completed','ai_review'].includes(o.status):o.status==='closed')
@@ -29,6 +30,14 @@ export default function Board({actor}:{actor:Actor}){
     {overdue.length>0&&<Card className="border-warn/40 bg-warn/5 space-y-1">
       <div className="font-semibold text-[14px]">Контроль сроков</div>
       {overdue.slice(0,5).map((o:any)=><div key={o.id} className="text-[13px] text-warn flex justify-between"><span>Просрочен наряд #{o.id}: {o.title}</span><span>{new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>)}
+    </Card>}
+    {rep&&rep.length>0&&<Card className="border-primary/40 bg-primary/5 space-y-1.5">
+      <div className="flex items-center justify-between"><div className="font-semibold text-[14px]">Контроль повторов: частые повторные закрытия</div>
+        <span className="text-[11px] text-muted">индикаторы для анализа причин, не доказанные закономерности</span></div>
+      {rep.slice(0,3).map((r:any)=><div key={r.equipment+r.fault_code} className="text-[13px] flex justify-between gap-3">
+        <span className="truncate">{r.equipment} · шифр {r.fault_code}</span>
+        <span className="text-muted shrink-0">закрыто {r.closed_count} · повторов {r.pairs_within_window}</span></div>)}
+      <div className="text-[11px] text-muted">Закономерности заложены в синтетические данные для демонстрации. Это сигнал для анализа причин, не оценка исполнителей.</div>
     </Card>}
     <div className="grid grid-cols-4 gap-3">
       {[['Активные',counts.active],['В работе',counts.work],['На проверке',counts.review],['Закрыто',counts.closed]].map(([l,v])=>

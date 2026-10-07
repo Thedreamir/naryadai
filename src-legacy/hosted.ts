@@ -1,3 +1,4 @@
+import {sanitizeDataUrl} from '../src/lib/photo-sanitize'
 import {clearAllDrafts} from '../src/lib/report-draft'
 // Hosted Supabase data layer. Same shapes the local /api server returns.
 // Active only when VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY are set at build time.
@@ -119,7 +120,7 @@ export async function transition(id: number, x: {status:string,version:number,re
     const myId = await uid()
     const evidence = []
     const uploadOne = async (dataUrl: string, i: number, phase: string) => {
-      const {bytes, mime} = dataUrlToBytes(dataUrl)
+      const {bytes, mime} = dataUrlToBytes(await sanitizeDataUrl(dataUrl))
       if (bytes.length > 400000) throw new Error('Фото слишком большое')
       const hash = await sha256Hex(bytes)
       const ext = mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg'
@@ -365,7 +366,7 @@ export async function assistantChat(message: string, orderId?: number): Promise<
 export async function recordIntakePhoto(id: number, dataUrl: string): Promise<any[]> {
   const s = supabase!
   const myId = await uid()
-  const {bytes, mime} = dataUrlToBytes(dataUrl)
+  const {bytes, mime} = dataUrlToBytes(await sanitizeDataUrl(dataUrl))
   if (bytes.length > 400000) throw new Error('Фото слишком большое')
   const hash = await sha256Hex(bytes)
   const ext = mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg'

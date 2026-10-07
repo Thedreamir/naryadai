@@ -1,12 +1,12 @@
 import type {ReactNode} from 'react'
 import {NavLink, useLocation, useNavigate} from 'react-router-dom'
 import {motion} from 'framer-motion'
-import {Zap, ListChecks, MessagesSquare, Settings, UserRound, Phone, Hand} from 'lucide-react'
+import {Activity, ListChecks, MessagesSquare, Settings, UserRound, PhoneCall, Hand} from 'lucide-react'
 import type {Actor} from '../App'
 import {cn} from '../lib/utils'
 import {usePrefs} from '../ui/prefs'
 const tabs = [
-  {to:'/', icon:Zap, label:'В работе'},
+  {to:'/', icon:Activity, label:'В работе'},
   {to:'/orders', icon:ListChecks, label:'Наряды'},
   {to:'/assistant', icon:MessagesSquare, label:'AI чат'},
   {to:'/settings', icon:Settings, label:'Настройки'},
@@ -29,7 +29,7 @@ export default function WorkerShell({actor, children}:{actor:Actor, children:Rea
       </div>
       <div className="flex items-center gap-1.5">
         <button onClick={openHud} className="bg-tk-amber text-black font-black text-[11px] px-2.5 py-1.5 rounded-lg border border-amber-600 active:scale-95 flex items-center gap-1 uppercase tracking-wide">
-          <Phone size={12}/>AI
+          <PhoneCall size={12}/>AI
         </button>
         <button onClick={()=>nav('/settings')} className="w-8 h-8 rounded-lg bg-tk-slate text-white flex items-center justify-center active:scale-95" title="Настройки">
           <Settings size={14}/>

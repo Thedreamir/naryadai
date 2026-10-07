@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react'
 import * as H from '../../lib/data'
-import {Send, Mic, MicOff, Bot, UserRound, BookOpen} from 'lucide-react'
+import {Send, Mic, MicOff, Headset, UserRound, BookOpen, Info} from 'lucide-react'
 import type {Actor} from '../../App'
 import {cn} from '../../lib/utils'
 type Msg={from:'me'|'ai';text:string;mode?:string;sources?:string[]}
@@ -29,21 +29,21 @@ export default function Assistant({actor}:{actor:Actor}){
   }
   return <div className="flex flex-col" style={{height:'calc(100dvh - 8.5rem)'}}>
     <div className="tk-card p-2.5 mb-2 text-[10px] font-bold flex items-center gap-2" style={{color:'var(--tk-muted)'}}>
-      <Bot size={13} className="text-tk-amber shrink-0"/>
+      <Info size={13} className="text-tk-amber shrink-0"/>
       Текстовый ассистент. Отвечает только по данным наряда и демо-документации (синтетической, не заводской); без данных отвечает «нет данных». Ничего не меняет в нарядах.
       {orderId&&<span className="text-tk-amber">· контекст: наряд #{orderId}</span>}
     </div>
     <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">
       {msgs.map((m,i)=><div key={i} className={cn('flex gap-2',m.from==='me'&&'flex-row-reverse')}>
         <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0",m.from==='me'?'bg-tk-slate text-white':'bg-tk-amber text-black')}>
-          {m.from==='me'?<UserRound size={13}/>:<Bot size={13}/>}</div>
+          {m.from==='me'?<UserRound size={13}/>:<Headset size={13}/>}</div>
         <div className={cn("rounded-xl px-3 py-2 text-xs max-w-[80%] leading-relaxed",m.from==='me'?'bg-tk-slate text-white':'tk-card')}>
           {m.text}
           {m.sources&&m.sources.length>0&&<div className="text-[9px] mt-1 opacity-70 inline-flex items-center gap-1"><BookOpen size={10}/>Источник: {m.sources.join('; ')}</div>}
           {m.mode&&<div className="text-[9px] mt-1 opacity-60">{m.mode==='live'?'ответ модели Gemini (демо, бесплатный тариф)':'ответ по правилам без модели'} · учебная документация — не применять на реальном оборудовании</div>}
         </div>
       </div>)}
-      {busy&&<div className="flex gap-2"><div className="w-7 h-7 rounded-lg bg-tk-amber text-black flex items-center justify-center"><Bot size={13}/></div>
+      {busy&&<div className="flex gap-2"><div className="w-7 h-7 rounded-lg bg-tk-amber text-black flex items-center justify-center"><Headset size={13}/></div>
         <div className="tk-card px-3 py-2 text-xs" style={{color:'var(--tk-muted)'}}>Думаю…</div></div>}
       <div ref={bottomRef}/>
     </div>

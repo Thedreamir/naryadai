@@ -31,16 +31,16 @@ export default function Report({actor}:{actor:Actor}){
   const refreshRefusals=()=>H.refusalReviews().then(setRefusals).catch(e=>setReviewError(e.message))
   const decide=async(eventId:number,classification:'justified'|'unjustified')=>{setReviewBusy(true);setReviewError('');try{await H.reviewRefusal(eventId,classification,notes[eventId]||'');await refreshRefusals();setBounds(periodBounds(days))}catch(e){setReviewError((e as Error).message);await refreshRefusals()}finally{setReviewBusy(false)}}
   const [st,setSt]=useState<any>(null); const [rt,setRt]=useState<any[]|null>(null); const [an,setAn]=useState<any[]|null>(null)
-  const [loadError,setLoadError]=useState('');const [loading,setLoading]=useState(true)
+  const [reportOrders,setReportOrders]=useState<any[]>([]);const [loadError,setLoadError]=useState('');const [loading,setLoading]=useState(true)
   useEffect(()=>{let active=true;setLoading(true);setLoadError('');setRt(null);setAn(null);setRefusals([]);
-    Promise.all([H.state(),H.ratings(bounds.since,bounds.until).catch(()=>null),H.anomalies(bounds.since,bounds.until).catch(()=>null),H.refusalReviews().catch(()=>[])])
-      .then(([state,rating,anomaly,refusal])=>{if(active){setSt(state);setRt(rating);setAn(anomaly);setRefusals(refusal)}}).catch(e=>{if(active)setLoadError(e.message)}).finally(()=>{if(active)setLoading(false)});
+    Promise.all([H.state(),H.closedReportOrders(bounds.since,bounds.until),H.ratings(bounds.since,bounds.until).catch(()=>null),H.anomalies(bounds.since,bounds.until).catch(()=>null),H.refusalReviews().catch(()=>[])])
+      .then(([state,orders,rating,anomaly,refusal])=>{if(active){setReportOrders(orders);setSt(state);setRt(rating);setAn(anomaly);setRefusals(refusal)}}).catch(e=>{if(active)setLoadError(e.message)}).finally(()=>{if(active)setLoading(false)});
     return()=>{active=false}
   },[bounds])
-  const download=(kind:'orders'|'ratings')=>{if(loading||loadError||!st||(kind==='ratings'&&rt===null))return;const text=kind==='orders'?closedOrderCsv(st.orders,bounds):ratingCsv(rt||[],bounds);const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='tekton-synthetic-'+kind+'-'+bounds.until.slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+  const download=(kind:'orders'|'ratings')=>{if(loading||loadError||!st||(kind==='ratings'&&rt===null))return;const text=kind==='orders'?closedOrderCsv(reportOrders,bounds):ratingCsv(rt||[],bounds);const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='tekton-synthetic-'+kind+'-'+bounds.until.slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
   const data=useMemo(()=>{
     if(!st) return null
-    const closed=st.orders.filter((o:any)=>o.status==='closed'&&within(o.closed_at,bounds))
+    const closed=reportOrders.filter((o:any)=>o.status==='closed'&&within(o.closed_at,bounds))
     const buckets: Record<string,number>={}
     for(let i=days;i>=0;i--){const d=new Date(Date.now()-i*86400000);buckets[d.toLocaleDateString('ru',{day:'numeric',month:'short'})]=0}
     closed.forEach((o:any)=>{const k=new Date(o.closed_at).toLocaleDateString('ru',{day:'numeric',month:'short'});if(k in buckets)buckets[k]++})
@@ -54,7 +54,7 @@ export default function Report({actor}:{actor:Actor}){
       return {name:w.name,closed:closed.filter((o:any)=>o.assignee_id===w.id).length,avg}
     }).filter((r:any)=>r.closed>0)
     return {byDay,statuses,ratings,scoredCount:scored.length,closedCount:closed.length}
-  },[st,bounds,days])
+  },[st,reportOrders,bounds,days])
   if(!st||!data) return <div role={loadError?'alert':'status'} className="text-muted py-10">{loadError||'Загрузка…'}</div>
   return <div className="space-y-4">
     <div><h1 className="text-[26px] font-bold">Отчёт и рейтинг</h1>

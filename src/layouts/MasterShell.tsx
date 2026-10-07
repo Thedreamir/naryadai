@@ -7,6 +7,7 @@ import type {Actor} from '../App'
 import {cn} from '../lib/utils'
 export default function MasterShell({actor, children}:{actor:Actor, children:ReactNode}){
   const loc=useLocation()
+  const [menuOpen,setMenuOpen]=useState(false)
   const [reviewCount,setReviewCount]=useState(0)
   const [memoryCount,setMemoryCount]=useState(0)
   useEffect(()=>{H.state().then(st=>setReviewCount(st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)).length)).catch(()=>{});H.repairMemory().then(d=>setMemoryCount((d as any[]).filter(e=>e.status==='candidate').length)).catch(()=>{})},[])
@@ -19,8 +20,8 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
     {to:'/report', icon:BarChart3, label:'Отчёт и рейтинг'},
     {to:'/memory', icon:Brain, label:'Память ремонтов', badge:memoryCount},
   ]
-  return <div className="min-h-screen flex bg-bg">
-    <aside className="w-[248px] shrink-0 bg-white/70 border-r border-border flex flex-col px-[22px] py-8 sticky top-0 h-screen">
+  return <div className="workspace min-h-screen flex bg-bg">
+    <aside className="workspace-sidebar w-[248px] shrink-0 bg-white/70 border-r border-border flex flex-col px-[22px] py-8 sticky top-0 h-screen">
       <div className="flex items-center gap-[11px] px-1">
         <img src="/tekton-symbol.svg" alt="" className="w-[34px] h-[34px]"/>
         <div className="text-[23px] font-bold tracking-[-1px]">Tekton OS</div>
@@ -39,6 +40,9 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
         <div className="mt-2">Синтетические данные · тестовое облако</div>
       </div>
     </aside>
-    <main className="flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]"><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
+    <header className="workspace-mobile-header"><img src="/tekton-symbol.svg" alt=""/><strong>Tekton OS</strong><span>Мастер</span><button aria-label="Открыть меню" onClick={()=>setMenuOpen(true)}>Меню</button></header>
+    <nav className="workspace-bottom" aria-label="Навигация мастера">{items.filter(i=>['/','/review','/issue','/report'].includes(i.to)).map(i=><NavLink to={i.to} end={i.to==='/'} key={i.to}><i.icon size={22}/><span>{i.to==='/issue'?'Выдать':i.to==='/report'?'Отчёт':i.label}</span></NavLink>)}<button onClick={()=>setMenuOpen(true)}><Brain size={22}/><span>Ещё</span></button></nav>
+    {menuOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setMenuOpen(false)}><section role="dialog" aria-modal="true" aria-label="Меню мастера" className="workspace-sheet" onClick={e=>e.stopPropagation()}><button autoFocus className="sheet-close" onClick={()=>setMenuOpen(false)}>Закрыть</button>{items.map(i=><NavLink to={i.to} key={i.to} onClick={()=>setMenuOpen(false)}>{i.label}</NavLink>)}<button onClick={async()=>{await H.logout();location.reload()}}>Выйти</button></section></div>}
+    <main className="workspace-main flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]"><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
   </div>
 }

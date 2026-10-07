@@ -1,3 +1,4 @@
+import {useState} from 'react'
 import {NavLink} from 'react-router-dom'
 import {BarChart3, LayoutGrid, Brain, LogOut} from 'lucide-react'
 import * as H from '../../lib/data'
@@ -7,8 +8,9 @@ import LeaderOverview from './LeaderOverview'
 import type {Actor} from '../../App'
 import {Routes, Route, Navigate} from 'react-router-dom'
 export default function LeaderHome({actor}:{actor:Actor}){
-  return <div className="min-h-screen flex bg-bg">
-    <aside className="w-[248px] shrink-0 bg-white/70 border-r border-border flex flex-col px-[22px] py-8 sticky top-0 h-screen">
+  const [menuOpen,setMenuOpen]=useState(false)
+  return <div className="workspace min-h-screen flex bg-bg">
+    <aside className="workspace-sidebar w-[248px] shrink-0 bg-white/70 border-r border-border flex flex-col px-[22px] py-8 sticky top-0 h-screen">
       <div className="flex items-center gap-[11px] px-1">
         <img src="/tekton-symbol.svg" alt="" className="w-[34px] h-[34px]"/>
         <div className="text-[23px] font-bold tracking-[-1px]">Tekton OS</div>
@@ -31,7 +33,10 @@ export default function LeaderHome({actor}:{actor:Actor}){
         <div className="mt-2">Синтетические данные · тестовое облако</div>
       </div>
     </aside>
-    <main className="flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]">
+    <header className="workspace-mobile-header"><img src="/tekton-symbol.svg" alt=""/><strong>Tekton OS</strong><span>Обзор</span><button aria-label="Открыть меню" onClick={()=>setMenuOpen(true)}>Меню</button></header>
+    <nav className="workspace-bottom leader-bottom" aria-label="Навигация руководителя"><NavLink to="/" end><LayoutGrid size={22}/><span>Обзор</span></NavLink><NavLink to="/report"><BarChart3 size={22}/><span>Отчёт</span></NavLink><NavLink to="/memory"><Brain size={22}/><span>Знания</span></NavLink></nav>
+    {menuOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setMenuOpen(false)}><section role="dialog" aria-modal="true" aria-label="Меню руководителя" className="workspace-sheet" onClick={e=>e.stopPropagation()}><button autoFocus className="sheet-close" onClick={()=>setMenuOpen(false)}>Закрыть</button><p>{actor.name} · руководитель · только чтение</p><button onClick={async()=>{await H.logout();location.reload()}}>Выйти</button></section></div>}
+    <main className="workspace-main flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]">
       <div className="text-[12px] text-muted mb-3">Руководителю доступны сводный отчёт и рейтинг. Выдача, проверка и управление нарядами — функции мастера; здесь только чтение.</div>
       <Routes><Route path="/" element={<LeaderOverview actor={actor}/>}/><Route path="/report" element={<Report actor={actor}/>}/><Route path="/memory" element={<Memory actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes>
     </main>

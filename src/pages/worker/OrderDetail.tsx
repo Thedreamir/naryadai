@@ -1,7 +1,7 @@
 import {loadDraft,saveDraft,clearDraft} from '../../lib/report-draft'
 import {useEffect, useState} from 'react'
 import {useParams, useNavigate} from 'react-router-dom'
-import imageCompression from 'browser-image-compression'
+import {sanitizePhoto} from '../../lib/photo-sanitize'
 import * as H from '../../lib/data'
 import {eventLabel} from '../../lib/status'
 import VoiceButton from './VoiceButton'
@@ -15,7 +15,7 @@ const DECLS=[
 ]
 const DECL_POST='Подтверждаю лично: после работ выполнен контрольный запуск / осмотр'
 const TEMPLATES=['Узел осмотрен, заменена изношенная деталь, крепёж протянут по инструкции. Контрольный запуск выполнен — посторонних шумов нет.','Загрязнение устранено, смазка узла обновлена, работа восстановлена.','Причина — износ. Деталь заменена, люфтов и вибрации не выявлено.']
-function compress(f:File){return imageCompression(f,{maxSizeMB:0.35,maxWidthOrHeight:1600})}
+function compress(f:File){return sanitizePhoto(f)}
 function read(f:Blob){return new Promise<string>(res=>{const r=new FileReader();r.onload=()=>res(String(r.result));r.readAsDataURL(f)})}
 export default function OrderDetail({actor}:{actor:Actor}){
   const {id}=useParams(); const nav=useNavigate()
@@ -57,10 +57,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
     if(recordedPre.length<DECLS.length){try{await H.recordDeclarations(o.id,'pre_work_at_surrender',DECLS)}catch(e){}}
     go('completed',undefined,{works,fault_code:fault,materials:materialRows,photos:after,safety_declarations:[...preDecls,{phase:'post_work',text:DECL_POST,confirmed:declPost}]})}
   const addPh=async(f:File|null|undefined)=>{if(!f)return
-    // Compression must never block a field report: on slow/unsupported pipelines fall back to the original file.
-    let file=f
-    try{file=await Promise.race([compress(f),new Promise<File>((_,rej)=>setTimeout(()=>rej(new Error('compress timeout')),8000))])}catch(e){console.warn('photo compress fallback',e)}
-    try{const url=await read(file);setAfter(p=>[...p,url])}catch(e){setErr('Фото не прочиталось, попробуйте другое.')}}
+    try{const clean=await sanitizePhoto(f);const url=await read(clean);setAfter(p=>[...p,url])}catch(e){setErr('Фото не отправлено: '+(e as Error).message)}}
   const steps=['Безопасность','Отчёт','Фото']
   const stepOk=[allDecl,works.trim().length>=12&&!!fault,(!needPhoto||after.length>0)]
   return <div className="space-y-3">{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.</div>}

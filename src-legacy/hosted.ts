@@ -63,7 +63,7 @@ export async function state() {
   const eqById: Record<number,any> = {}; (equipment.data||[]).forEach(x=>eqById[x.id]={...x, section: secById[x.section_id]||''})
   const actor = byId[myId]
   if (!actor) throw new Error('У этой учётной записи нет карточки сотрудника')
-  const ordersJoined = (orders.data||[]).map((o:AnyOrder)=>({...o,
+  const ordersJoined: AnyOrder[] = (orders.data||[]).map((o:AnyOrder)=>({...o,
     equipment: eqById[o.equipment_id]?.name||'—', section: eqById[o.equipment_id]?.section||'—',
     assignee: byId[o.assignee_id]?.name||'—'}))
   // Worker declarations (pre_work recorded at start, etc.)
@@ -378,6 +378,13 @@ export async function recordDeclarations(orderId: number, phase: string, texts: 
 export async function ratings(since: string, until: string) {
   const s = supabase!
   const {data, error} = await s.rpc('worker_rating', {since, until})
+  if (error) throw new Error(error.message)
+  return data as any[]
+}
+
+export async function anomalies(since: string, until: string) {
+  const s = supabase!
+  const {data, error} = await s.rpc('anomaly_report', {since, until})
   if (error) throw new Error(error.message)
   return data as any[]
 }

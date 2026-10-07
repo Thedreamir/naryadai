@@ -3,6 +3,7 @@ import {createPortal} from 'react-dom'
 import * as H from '../../lib/data'
 import {PhoneOff, Mic, MicOff} from 'lucide-react'
 import {cn} from '../../lib/utils'
+import type {Actor} from '../../App'
 const SR:any=(window as any).SpeechRecognition||(window as any).webkitSpeechRecognition
 export default function VoiceHud({actor}:{actor:Actor}){
   const [open,setOpen]=useState(false); const [listening,setListening]=useState(false)

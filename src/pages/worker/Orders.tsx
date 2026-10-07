@@ -33,11 +33,11 @@ export default function WorkerOrders({actor}:{actor:Actor}){
     {mine.length===0&&<div className="tk-card p-6 text-center" style={{color:'var(--tk-muted)'}}>Нет активных нарядов</div>}
     {active.length>0&&<div className="space-y-2">
       <div className="text-[0.6875rem] font-black uppercase tracking-wider px-1" style={{color:'var(--tk-muted)'}}>В работе</div>
-      {active.map(o=>row(o,true))}
+      {active.map((o:any)=>row(o,true))}
     </div>}
     {queue.length>0&&<div className="space-y-2">
       <div className="text-[0.6875rem] font-black uppercase tracking-wider px-1" style={{color:'var(--tk-muted)'}}>Очередь</div>
-      {queue.map(o=>row(o,false))}
+      {queue.map((o:any)=>row(o,false))}
     </div>}
   </div>
 }

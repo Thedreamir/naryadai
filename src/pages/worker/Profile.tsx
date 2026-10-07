@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react'
 import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
 import {Button} from '../../components/ui/button'
+import PushButton from '../../components/PushButton'
 import type {Actor} from '../../App'
 export default function Profile({actor}:{actor:Actor}){
   const [st,setSt]=useState<any>(null)
@@ -25,6 +26,7 @@ export default function Profile({actor}:{actor:Actor}){
       </div>
     </Card>
     <Card className="text-[13px] text-muted">Статистика по доступной истории демо-базы, не аттестация.</Card>
+    <PushButton/>
     <Button size="big" variant="outline" className="w-full" onClick={async()=>{await H.logout();location.reload()}}>Выйти</Button>
     <div className="text-[12px] text-muted text-center">Синтетические данные · тестовый проект</div>
   </div>

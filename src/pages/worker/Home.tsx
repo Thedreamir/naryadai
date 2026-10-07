@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react'
 import * as H from '../../lib/data'
 import {Link} from 'react-router-dom'
 import {Card} from '../../components/ui/card'
+import {NumberTicker} from '../../components/ui/number-ticker'
 import {Button} from '../../components/ui/button'
 import {Badge} from '../../components/ui/badge'
 import type {Actor} from '../../App'
@@ -34,8 +35,8 @@ export default function WorkerHome({actor}:{actor:Actor}){
       <div className="text-[17px] font-semibold">Нет наряда в работе{queue.length?' — следующий ждёт ниже':''}</div>
     </Card>}
     <div className="grid grid-cols-2 gap-3">
-      <Card><div className="text-[32px] font-bold leading-none">{queue.length}</div><div className="text-[13px] text-muted mt-1">в очереди</div></Card>
-      <Card><div className="text-[32px] font-bold leading-none">{doneToday}</div><div className="text-[13px] text-muted mt-1">на проверке/закрыто</div></Card>
+      <Card><div className="text-[32px] font-bold leading-none"><NumberTicker value={queue.length}/></div><div className="text-[13px] text-muted mt-1">в очереди</div></Card>
+      <Card><div className="text-[32px] font-bold leading-none"><NumberTicker value={doneToday}/></div><div className="text-[13px] text-muted mt-1">на проверке/закрыто</div></Card>
     </div>
     {queue.length>0&&<div className="space-y-2">
       <div className="text-[15px] font-semibold">Мои наряды</div>

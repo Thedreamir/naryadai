@@ -5,6 +5,7 @@ import {Card} from '../../components/ui/card'
 import {Badge} from '../../components/ui/badge'
 import {cn} from '../../lib/utils'
 import {statusOf} from '../../lib/status'
+import {NumberTicker} from '../../components/ui/number-ticker'
 import type {Actor} from '../../App'
 const T: Record<string,{tone:any,label:string}> = {
   issued:{tone:'teal',label:'Выдан'},queued:{tone:'amber',label:'В очереди'},accepted:{tone:'primary',label:'Принят'},
@@ -41,7 +42,7 @@ export default function Board({actor}:{actor:Actor}){
     </Card>}
     <div className="grid grid-cols-4 gap-3">
       {[['Активные',counts.active],['В работе',counts.work],['На проверке',counts.review],['Закрыто',counts.closed]].map(([l,v])=>
-        <Card key={l}><div className="text-[13px] text-muted">{l}</div><div className="text-[36px] font-bold leading-tight">{v}</div></Card>)}
+        <Card key={l}><div className="text-[13px] text-muted">{l}</div><div className="text-[36px] font-bold leading-tight"><NumberTicker value={v as number}/></div></Card>)}
     </div>
     <div className="text-[12px] text-muted">Счётчики по доступной истории, не по текущей смене</div>
     <div className="flex gap-2">{FILTERS.map(([k,l])=><button key={k} onClick={()=>setF(k)} className={cn('h-10 px-4 rounded-full text-[14px] font-semibold',f===k?'bg-primary text-primary-ink':'bg-surface border border-border')}>{l}</button>)}</div>

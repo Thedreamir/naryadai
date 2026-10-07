@@ -6,7 +6,7 @@
 - Draft -> утверждение увиденной версии -> approved -> revoke. Audit хранит снимки. 11 тестов минимальной локальной схемы, не всей схемы.
 - Transformers.js multilingual-e5-small q8, wasm в браузере. Веса скачиваются с Hugging Face; текст локален. Node inference проверен, браузерный ещё требует QA. Score не вероятность достоверности. Это эмбеддинги, не генеративная модель.
 - Повторное чтение БД после поиска удаляет устаревшие/отозванные результаты. Это не постоянная синхронизация всех открытых экранов.
-- Новая assistant-chat defaults rules-only: regex не даёт гарантии анонимизации. ALLOW_SYNTHETIC_EXTERNAL_CHAT разрешает только отдельный тест после проверки, не реальные материалы. Live-функция не менялась.
+- Новая assistant-chat defaults rules-only: regex не даёт гарантии анонимизации. Внешний free-text chat отключён целиком; структурированный необязательный режим требует отдельной разработки/проверки. Live-функция не менялась.
 - Требуются полный миграционный прогон, live цикл и проверка цитат/отзыва. До них блок не выполнен.
 
 Источники: https://huggingface.co/Xenova/multilingual-e5-small ; https://huggingface.co/intfloat/multilingual-e5-small ; https://huggingface.co/docs/transformers.js/en/pipelines ; https://mozilla.github.io/pdf.js/examples/

@@ -18,7 +18,7 @@ function compress(f:File){return imageCompression(f,{maxSizeMB:0.35,maxWidthOrHe
 function read(f:Blob){return new Promise<string>(res=>{const r=new FileReader();r.onload=()=>res(String(r.result));r.readAsDataURL(f)})}
 export default function OrderDetail({actor}:{actor:Actor}){
   const {id}=useParams(); const nav=useNavigate()
-  const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
+  const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false); const [reasonFor,setReasonFor]=useState<null|'rejected'|'paused'>(null)
   const [permitKind,setPermitKind]=useState(''); const [permitNote,setPermitNote]=useState('')
   const [wiz,setWiz]=useState(false); const [step,setStep]=useState(0)
   const [decl,setDecl]=useState<boolean[]>([false,false]); const [declPost,setDeclPost]=useState(false)
@@ -97,11 +97,23 @@ export default function OrderDetail({actor}:{actor:Actor}){
       <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={!permitKind||busy||(permitKind==='confirmed'&&permitNote.trim().length<8)} onClick={doPermit}><ShieldCheck size={22}/>Отметить допуск</button>
     </div>}
     {o.permit_kind&&<div className="tk-card p-3 text-xs font-bold"><span className="text-tk-green">{o.permit_kind==='not_required'?'Допуск не требуется':'Допуск подтверждён'}</span><span style={{color:'var(--tk-muted)'}}>{o.permit_note?' · '+o.permit_note:''}</span></div>}
+    {reasonFor&&<div className="tk-card p-3.5 space-y-2 border-tk-amber">
+      <div className="text-[0.8125rem] font-black uppercase tracking-wide">{reasonFor==='rejected'?'Причина отказа':'Причина паузы'}</div>
+      <div className="grid grid-cols-1 gap-1.5">
+        {(reasonFor==='rejected'?[['no_materials','Нет материалов / запчастей'],['no_permit','Нет допуска'],['busy_emergency','Занят аварийным нарядом'],['wrong_specialty','Не моя специальность'],['other','Другая причина']]:[['wait_parts','Ждёт запчасти'],['wait_stop','Ждёт остановки оборудования'],['other','Другая причина']]).map(([code,label])=>
+          <button key={code} className="tk-touch tk-sub text-left px-3.5 normal-case font-bold" disabled={busy} onClick={async()=>{
+            let note=''
+            if(code==='other'){note=prompt('Опишите причину своими словами')||'';if(!note.trim())return}
+            setReasonFor(null); await go(reasonFor, code+': '+label+(note?' — '+note:''))
+          }}>{label}</button>)}
+      </div>
+      <button className="text-[0.6875rem] font-bold uppercase" style={{color:'var(--tk-muted)'}} onClick={()=>setReasonFor(null)}>Отмена</button>
+    </div>}
     {o.status==='issued'&&<div className="space-y-2">
       <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy||!o.permit_kind} onClick={()=>go('accepted')}><Check size={22}/>Принять назначение</button>
       <div className="grid grid-cols-2 gap-2">
         <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>go('queued','В очередь после текущего')}><Clock size={19}/>В очередь</button>
-        <button className="tk-touch tk-sub text-tk-red uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>{const r=prompt('Причина отказа');if(r)go('rejected',r)}}><Ban size={19}/>Не могу</button>
+        <button className="tk-touch tk-sub text-tk-red uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>setReasonFor('rejected')}><Ban size={19}/>Не могу</button>
       </div></div>}
     {(o.status==='accepted'||(o.status==='in_progress'&&recordedPre.length<DECLS.length))&&<div className="tk-card p-3.5 space-y-2.5">
       <div className="text-[0.8125rem] font-black uppercase tracking-wide">Перед началом работ</div>
@@ -128,7 +140,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
     </div>}
     {o.status==='queued'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy} onClick={()=>go('accepted')}><Check size={22}/>Принять из очереди</button>}
     {o.status==='in_progress'&&<>
-      <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>{const r=prompt('Причина паузы (ждёт запчасти, ждёт остановки оборудования…)');if(r)go('paused',r)}}><Pause size={19}/>Пауза</button>
+      <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>setReasonFor('paused')}><Pause size={19}/>Пауза</button>
       <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={19}/>Сдать наряд №{o.id} на проверку</button></>}
     {o.status==='paused'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase inline-flex items-center justify-center gap-2" disabled={busy} onClick={()=>go('in_progress')}><Play size={22}/>Продолжить</button>}
     {['completed','ai_review'].includes(o.status)&&<div className="tk-card p-4 text-center font-black text-tk-blue text-sm">На проверке у мастера</div>}

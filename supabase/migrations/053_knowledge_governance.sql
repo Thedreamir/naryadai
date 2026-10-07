@@ -20,6 +20,7 @@ grant all on public.knowledge_doc_events to service_role;
 create or replace function public.submit_knowledge_doc(p_title text,p_body text,p_source text,p_equipment bigint default null) returns bigint language plpgsql security definer set search_path=public,pg_temp as $$
 declare nid bigint;
 begin
+ if not exists(select 1 from employees where id=current_actor() and is_active) then raise exception 'active actor required';end if;
  if coalesce(current_actor_role(),'') not in ('master','leader','admin') then raise exception 'master or leader required';end if;
  if length(trim(p_title))<5 or length(p_title)>200 or length(trim(p_body))<20 or length(p_body)>12000 or length(p_source)>200 then raise exception 'invalid document length';end if;
  insert into knowledge_docs(title,body,source_label,equipment_id,status,author_id,synthetic) values(trim(p_title),trim(p_body),trim(p_source),p_equipment,'draft',current_actor(),true) returning id into nid;
@@ -28,6 +29,7 @@ end $$;
 create or replace function public.review_knowledge_doc(p_id bigint,p_action text,p_version integer,p_note text) returns void language plpgsql security definer set search_path=public,pg_temp as $$
 declare d knowledge_docs%rowtype; target text;
 begin
+ if not exists(select 1 from employees where id=current_actor() and is_active) then raise exception 'active actor required';end if;
  if coalesce(current_actor_role(),'') not in ('master','admin') then raise exception 'master required';end if;
  select * into d from knowledge_docs where id=p_id for update;if not found then raise exception 'document not found';end if;
  if d.version<>p_version then raise exception 'version changed';end if;

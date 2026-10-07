@@ -1,0 +1,16 @@
+import {chromium} from '@playwright/test'
+const prefix=process.argv[2]
+const b=await chromium.launch()
+const ctx=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true})
+const pg=await ctx.newPage()
+await pg.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'})
+await pg.fill('input[type=email]','worker-a@naryadai.test')
+await pg.fill('input[type=password]',process.env.PW_WORKERA)
+await pg.click('button:has-text("Войти")'); await pg.waitForTimeout(7000)
+await pg.screenshot({path:`/tmp/${prefix}-dark-home.png`})
+await pg.goto('http://127.0.0.1:4173/settings'); await pg.waitForTimeout(2500)
+await pg.click('button:has-text("Светлая")'); await pg.waitForTimeout(1200)
+await pg.goto('http://127.0.0.1:4173/'); await pg.waitForTimeout(3000)
+await pg.screenshot({path:`/tmp/${prefix}-light-home.png`})
+await b.close()
+console.log('done '+prefix)

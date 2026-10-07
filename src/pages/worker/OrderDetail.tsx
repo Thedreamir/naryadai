@@ -1,3 +1,4 @@
+import {loadDraft,saveDraft,clearDraft} from '../../lib/report-draft'
 import {useEffect, useState} from 'react'
 import {useParams, useNavigate} from 'react-router-dom'
 import imageCompression from 'browser-image-compression'
@@ -22,15 +23,15 @@ export default function OrderDetail({actor}:{actor:Actor}){
   const [permitKind,setPermitKind]=useState(''); const [permitNote,setPermitNote]=useState('')
   const [wiz,setWiz]=useState(false); const [step,setStep]=useState(0)
   const [decl,setDecl]=useState<boolean[]>([false,false]); const [declPost,setDeclPost]=useState(false)
-  const [works,setWorks]=useState(''); const [fault,setFault]=useState(''); const [materials,setMaterials]=useState('')
-  const [after,setAfter]=useState<string[]>([])
+  const [works,setWorks]=useState(''); const [fault,setFault]=useState(''); const [,setMaterials]=useState('')
+  const [materialRows,setMaterialRows]=useState<{name:string,quantity:number,unit:string}[]>([]);const [draftNote,setDraftNote]=useState('');const [online,setOnline]=useState(navigator.onLine);useEffect(()=>{const f=()=>setOnline(navigator.onLine);window.addEventListener('online',f);window.addEventListener('offline',f);return()=>{window.removeEventListener('online',f);window.removeEventListener('offline',f)}},[]);const [after,setAfter]=useState<string[]>([])
   const [intakeBusy,setIntakeBusy]=useState(false)
   const [startDecl,setStartDecl]=useState<boolean[]>([false,false]); const [startBusy,setStartBusy]=useState(false)
   const load=()=>H.state().then(setSt).catch(e=>setErr(e.message))
   useEffect(()=>{load()},[id])
-  const openWiz=()=>{setWiz(true);setStep(0);setDecl([false,false]);setDeclPost(false);setWorks('');setFault('');setMaterials('');setAfter([])}
+  const openWiz=()=>{setWiz(true);setStep(0);setDecl([false,false]);setDeclPost(false);setWorks('');setFault('');setMaterials('');setMaterialRows([]);setAfter([]);const d=loadDraft(actor.id,Number(id));if(d){setWorks(d.works);setFault(d.fault);setMaterialRows(d.materials);setAfter(d.after);setDraftNote('Черновик восстановлен. Подтверждения безопасности заново, версия и статус проверяются сервером при отправке.')}}
   const go=async(status:string,reason?:string,closure?:any)=>{setBusy(true);setErr('')
-    try{await H.transition(o.id,{status,version:o.version,reason,closure});setWiz(false);await load();window.scrollTo(0,0)}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
+    try{if(!navigator.onLine)throw Error('Нет связи: сохраните черновик. Статус не изменён.');await H.transition(o.id,{status,version:o.version,reason,closure});if(status==='completed')clearDraft(actor.id,o.id);setWiz(false);await load();window.scrollTo(0,0)}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
   if(err&&!st) return <div className="tk-card p-4 text-tk-red">{err}</div>
   if(!st) return <div className="py-10 text-center" style={{color:'var(--tk-muted)'}}>Загрузка…</div>
   const o=st.orders.find((x:any)=>x.id===Number(id))
@@ -48,11 +49,13 @@ export default function OrderDetail({actor}:{actor:Actor}){
   const recordedPre:any[]=(o.declarations||[]).filter((d:any)=>(d.phase==='pre_work'||d.phase==='pre_work_late')&&!d.excluded_from_evidence)
   const excludedPre:any[]=(o.declarations||[]).filter((d:any)=>(d.phase==='pre_work'||d.phase==='pre_work_late')&&d.excluded_from_evidence)
   const allDecl=recordedPre.length>=DECLS.length?true:decl.slice(0,DECLS.length).every(Boolean)
-  const canSend=works.trim().length>=12&&!!fault&&(!needPhoto||after.length>0)
+  const canSend=works.trim().length>=12&&!!fault&&(!needPhoto||after.length>0)&&materialRows.every(m=>!!m.name&&m.quantity>0)
   const complete=async()=>{
+    if(!navigator.onLine){setErr('Нет связи: сохраните черновик, статус не изменён.');return}
+
     const preDecls=recordedPre.length>=DECLS.length?recordedPre.map((d:any)=>({phase:'pre_work',text:d.text,confirmed:true,recorded_at:d.declared_at})):DECLS.map((d,i)=>({phase:'pre_work_at_surrender',text:d,confirmed:decl[i]}))
     if(recordedPre.length<DECLS.length){try{await H.recordDeclarations(o.id,'pre_work_at_surrender',DECLS)}catch(e){}}
-    go('completed',undefined,{works,fault_code:fault,materials:materials?[{name:materials,quantity:1}]:[],photos:after,safety_declarations:[...preDecls,{phase:'post_work',text:DECL_POST,confirmed:declPost}]})}
+    go('completed',undefined,{works,fault_code:fault,materials:materialRows,photos:after,safety_declarations:[...preDecls,{phase:'post_work',text:DECL_POST,confirmed:declPost}]})}
   const addPh=async(f:File|null|undefined)=>{if(!f)return
     // Compression must never block a field report: on slow/unsupported pipelines fall back to the original file.
     let file=f
@@ -60,7 +63,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
     try{const url=await read(file);setAfter(p=>[...p,url])}catch(e){setErr('Фото не прочиталось, попробуйте другое.')}}
   const steps=['Безопасность','Отчёт','Фото']
   const stepOk=[allDecl,works.trim().length>=12&&!!fault,(!needPhoto||after.length>0)]
-  return <div className="space-y-3">
+  return <div className="space-y-3">{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.</div>}
     <button className="text-xs font-bold inline-flex items-center gap-1" style={{color:'var(--tk-muted)'}} onClick={()=>nav(-1)}><ArrowLeft size={19}/>Назад</button>
     <div className="tk-card p-3.5 space-y-2.5">
       <div className="flex items-center justify-between">
@@ -163,7 +166,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
         <div className="p-3.5 border-b space-y-2.5" style={{borderColor:'var(--tk-border)'}}>
           <div className="flex justify-between items-center">
             <h3 className="font-black text-xs uppercase tracking-wide text-tk-amber">Сдача наряда №{o.id} на проверку</h3>
-            <button onClick={()=>setWiz(false)} className="w-8 h-8 tk-sub flex items-center justify-center rounded-lg"><X size={19}/></button>
+            <button onClick={()=>setWiz(false)} aria-label="Закрыть отчёт" className="w-12 h-12 tk-sub flex items-center justify-center rounded-lg"><X size={19}/></button>
           </div>
           <div className="flex gap-1.5">
             {steps.map((s,i)=><div key={s} className="flex-1 text-center">
@@ -172,7 +175,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
             </div>)}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
+        <div className="flex-1 overflow-y-auto p-3.5 space-y-3"><div className="tk-sub p-3 text-xs">{online?'Связь есть':'Офлайн'} · черновик хранится на этом устройстве 24 часа. Без отправки статус не меняется. Не для общих устройств с реальными данными.<button className="tk-touch tk-sub w-full mt-2" onClick={()=>{try{saveDraft(actor.id,o.id,{works,fault,materials:materialRows,after});setDraftNote('Черновик сохранён, наряд не отправлен.')}catch(e){setErr((e as Error).message)}}}>Сохранить черновик</button>{draftNote&&<p role="status">{draftNote}</p>}</div>
           {step===0&&recordedPre.length>=DECLS.length&&<div className="space-y-2.5">
             <div className="bg-tk-green/10 border border-tk-green/40 rounded-lg p-2.5 text-[0.6875rem] flex gap-2">
               <Check size={22} className="text-tk-green shrink-0 mt-0.5"/>
@@ -202,7 +205,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
                 <VoiceButton onText={t=>setWorks(w=>w?w+' '+t:t)}/>
               </div>
               <div className="text-[0.625rem] mt-1" style={{color:'var(--tk-muted)'}}>Голос заполняет только текст отчёта (браузерная распознавалка). Подтверждения безопасности ставятся вручную.</div>
-              <div className="flex gap-1.5 flex-wrap mt-1.5">{TEMPLATES.map((t,i)=><button key={i} onClick={()=>setWorks(t)} className="text-[0.625rem] font-bold tk-sub px-2 py-1 rounded-lg inline-flex items-center gap-1"><FileText size={19}/>Шаблон {i+1}</button>)}</div>
+
             </div>
             <div>
               <div className="text-[0.6875rem] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Шифр неисправности</div>
@@ -213,7 +216,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
             </div>
             <div>
               <div className="text-[0.6875rem] font-black uppercase mb-1 flex items-center gap-1" style={{color:'var(--tk-muted)'}}><Package size={22}/>Материалы (необязательно)</div>
-              <input className="tk-input w-full h-12 px-3 text-sm" value={materials} onChange={e=>setMaterials(e.target.value)} placeholder="Например: подшипник 6204 — 1 шт"/>
+              {materialRows.map((m,i)=><div key={i} className="grid grid-cols-[1fr_80px] gap-2 mb-2"><select aria-label={'Материал '+(i+1)} className="tk-input min-h-12 px-2 text-sm" value={m.name} onChange={e=>{const item=st.materials.find((x:any)=>x.name===e.target.value);setMaterialRows(r=>r.map((x,j)=>j===i?{...x,name:e.target.value,unit:item?.unit||''}:x))}}><option value="">Выберите материал</option>{st.materials.map((x:any)=><option key={x.id} value={x.name}>{x.name} · {x.unit}</option>)}</select><input aria-label={'Количество '+(i+1)} className="tk-input min-h-12 px-2" type="number" min="0.01" step="0.01" value={m.quantity} onChange={e=>setMaterialRows(r=>r.map((x,j)=>j===i?{...x,quantity:Number(e.target.value)}:x))}/><span className="text-xs">Единица: {m.unit||'выберите материал'}</span><button className="min-h-12 text-xs" onClick={()=>setMaterialRows(r=>r.filter((_,j)=>j!==i))}>Удалить</button></div>)}<button className="tk-touch tk-sub w-full text-sm" onClick={()=>setMaterialRows(r=>[...r,{name:'',quantity:1,unit:''}])}>Добавить материал</button>
             </div>
             <label className={cn("tk-card p-3 flex items-start gap-2.5 cursor-pointer transition",declPost&&'border-tk-green')}>
               <input type="checkbox" checked={declPost} onChange={()=>setDeclPost(v=>!v)} className="mt-0.5 w-5 h-5 accent-tk-green shrink-0"/>
@@ -243,7 +246,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
           {step>0?<button onClick={()=>setStep(s=>s-1)} className="tk-touch tk-sub uppercase text-xs"><ArrowLeft size={22} className="inline mr-1"/>Назад</button>
             :<button onClick={()=>setWiz(false)} className="tk-touch tk-sub uppercase text-xs">Отмена</button>}
           {step<2?<button onClick={()=>setStep(s=>s+1)} disabled={!stepOk[step]} className="tk-touch bg-tk-amber text-black border border-amber-600 uppercase text-xs disabled:opacity-40">Далее<ArrowRight size={22} className="inline ml-1"/></button>
-            :<><button onClick={complete} disabled={busy||!canSend} className="tk-touch bg-tk-green text-white border border-emerald-600 uppercase text-xs disabled:opacity-40"><Check size={22} className="inline mr-1"/>{busy?'Отправка…':'На проверку мастеру'}</button>{err&&<div className="col-span-2 text-xs text-tk-red font-bold">{err}</div>}</>}
+            :<><button onClick={complete} disabled={busy||!canSend||!online} className="tk-touch bg-tk-green text-white border border-emerald-600 uppercase text-xs disabled:opacity-40"><Check size={22} className="inline mr-1"/>{busy?'Отправка…':'На проверку мастеру'}</button>{err&&<div className="col-span-2 text-xs text-tk-red font-bold">{err}</div>}</>}
         </div>
       </div>
     </div>}

@@ -1,0 +1,15 @@
+import {chromium} from '@playwright/test'
+const b=await chromium.launch()
+const pg=await (await b.newContext({viewport:{width:1440,height:900}})).newPage()
+pg.on('response',async r=>{if(r.url().includes('review-order')||r.url().includes('review_fallback'))console.log('NET',r.status(),r.url().split('/').pop(),(await r.text()).slice(0,150))})
+await pg.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'})
+await pg.fill('input[type=email]','master@naryadai.test'); await pg.fill('input[type=password]',process.env.PW_MASTER)
+await pg.click('button:has-text("Войти")'); await pg.waitForTimeout(7000)
+await pg.goto('http://127.0.0.1:4173/orders/642',{waitUntil:'networkidle'}); await pg.waitForTimeout(3000)
+const t0=Date.now()
+await pg.click('button:has-text("Проверить закрытие (ИИ)")')
+const got=await pg.waitForSelector('text=Карточка оснований',{timeout:120000}).then(()=>true).catch(()=>false)
+console.log('AI card:',got,'in',Math.round((Date.now()-t0)/1000),'s')
+if(got){const t=await pg.locator('body').innerText();const m=t.match(/Карточка оснований[\s\S]{0,300}/);console.log((m?m[0]:'').replace(/\n/g,' | ').slice(0,300))}
+await pg.screenshot({path:'/tmp/dbg4-ai.png'})
+await b.close()

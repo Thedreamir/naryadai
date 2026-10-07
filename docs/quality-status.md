@@ -21,3 +21,5 @@ Photo EXIF gate: decode/re-encode pixels at hosted dataURL upload boundary, fail
 F5/F6: shared read-only state refresh hook on core master/worker lists, order subscription + online invalidation + unsubscribe + generation guard. Fixture forced error and retry passed; cross-session Supabase propagation not tested. Voice dialog labelled/focus trap/Escape/abort, reduced-motion CSS; Chromium keyboard test passed, speech/device untested. Knowledge lazy import, no latency gain claim.
 
 Preflight: 56 local migration numbers contiguous; env missing -> FAIL, live alignment NOT RUN. F13 actual shared completionElapsed helper tests include invalid/reversed timestamps; server-completed event lookup source staged, DB integration not tested. Pause-inclusive elapsed is not active labor time.
+
+01:31 current complete verify exits1: six PASS including full PWA build, env preflight FAIL, five NOT RUN.11unit+24field rules pass; PWA11entries2303.66KiB. Issue section/type/sanitized before-photo up to5 locally verified390px; hosted insertion/device not tested.

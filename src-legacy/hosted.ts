@@ -361,6 +361,12 @@ export async function recordIntakePhoto(id: number, dataUrl: string): Promise<an
   return data
 }
 
+export async function startWork(id: number, version: number, texts: string[]) {
+  const s = supabase!
+  const {data, error} = await s.rpc('start_work_with_declarations', {p_order_id: id, p_expected_version: version, p_texts: texts})
+  if (error) throw new Error(ru(error.message))
+  return data
+}
 export async function recordDeclarations(orderId: number, phase: string, texts: string[]): Promise<void> {
   const s = supabase!
   const myId = await uid()

@@ -7,11 +7,10 @@ import VoiceButton from './VoiceButton'
 import type {Actor} from '../../App'
 import {Camera, TriangleAlert, X, Check, ArrowLeft, ArrowRight, Package} from 'lucide-react'
 import {cn} from '../../lib/utils'
-const DECLS_PERMIT=[
-  'Подтверждаю лично: оборудование обесточено и заземлено согласно наряду-допуску',
-  'Подтверждаю лично: блокировки и предупреждающие плакаты (LOTO) вывешены'
+const DECLS=[
+  'Подтверждаю лично: требования безопасности выполнены согласно утверждённой для этой задачи процедуре (включая обесточивание, заземление и LOTO, если они требуются процедурой)',
+  'Подтверждаю лично: использую средства защиты, зона работ безопасна'
 ]
-const DECLS_ZONE=['Подтверждаю лично: использую средства защиты, зона работ безопасна']
 const DECL_POST='Подтверждаю лично: после работ выполнен контрольный запуск / осмотр'
 const TEMPLATES=['Узел осмотрен, заменена изношенная деталь, крепёж протянут по инструкции. Контрольный запуск выполнен — посторонних шумов нет.','Загрязнение устранено, смазка узла обновлена, работа восстановлена.','Причина — износ. Деталь заменена, люфтов и вибрации не выявлено.']
 function compress(f:File){return imageCompression(f,{maxSizeMB:0.35,maxWidthOrHeight:1600})}
@@ -45,8 +44,8 @@ export default function OrderDetail({actor}:{actor:Actor}){
     try{const url=await read(await compress(f));await H.recordIntakePhoto(o.id,url);await load()}catch(e){setErr((e as Error).message)}finally{setIntakeBusy(false)}}
   const doPermit=async()=>{setBusy(true);setErr('')
     try{await H.recordPermit(o.id,{kind:permitKind,note:permitNote,version:o.version});setPermitKind('');setPermitNote('');await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
-  const DECLS=o.permit_kind==='confirmed'?DECLS_PERMIT:DECLS_ZONE
-  const recordedPre:any[]=(o.declarations||[]).filter((d:any)=>d.phase==='pre_work'||d.phase==='pre_work_late')
+  const recordedPre:any[]=(o.declarations||[]).filter((d:any)=>(d.phase==='pre_work'||d.phase==='pre_work_late')&&!d.excluded_from_evidence)
+  const excludedPre:any[]=(o.declarations||[]).filter((d:any)=>(d.phase==='pre_work'||d.phase==='pre_work_late')&&d.excluded_from_evidence)
   const allDecl=recordedPre.length>=DECLS.length?true:decl.slice(0,DECLS.length).every(Boolean)
   const canSend=works.trim().length>=12&&!!fault&&(!needPhoto||after.length>0)
   const complete=async()=>{
@@ -107,7 +106,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
       <div className="text-[13px] font-black uppercase tracking-wide">Перед началом работ</div>
       <div className="bg-tk-red/10 border border-tk-red/40 rounded-lg p-2.5 text-[11px] flex gap-2">
         <TriangleAlert size={14} className="text-tk-red shrink-0 mt-0.5"/>
-        <span>{o.status==='in_progress'?'Работы уже начаты: подтверждения фиксируются сейчас и будут помечены как сделанные после начала работ.':'Личные подтверждения исполнителя — фиксируются сейчас, до начала работ, с отметкой времени сервера.'} Это декларация работника, а не проверка электросостояния системой.{o.permit_kind==='not_required'?' Наряд-допуск для этой задачи не требуется — пункты по обесточиванию и LOTO не применяются.':''}</span>
+        <span>{o.status==='in_progress'?'Работы уже начаты: подтверждения фиксируются сейчас и будут помечены как сделанные после начала работ.':'Личные подтверждения исполнителя — фиксируются сейчас, до начала работ, с отметкой времени сервера.'} Это декларация работника, а не проверка электросостояния системой. Конкретные требования определяются утверждённой процедурой для этой задачи.</span>
       </div>
       {DECLS.map((d,i)=><label key={i} className={cn("tk-sub p-3 flex items-start gap-2.5 cursor-pointer transition",startDecl[i]&&'border-tk-green')}>
         <input type="checkbox" checked={startDecl[i]} onChange={()=>setStartDecl(p=>p.map((v,j)=>j===i?!v:v))} className="mt-0.5 w-5 h-5 accent-tk-green shrink-0"/>
@@ -118,10 +117,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
         setStartBusy(true);setErr('')
         try{
           if(o.status==='accepted'){
-            await H.transition(o.id,{status:'in_progress',version:o.version})
-            if(!(o.declarations||[]).some((d:any)=>d.phase==='pre_work'||d.phase==='pre_work_late')){
-              try{await H.recordDeclarations(o.id,'pre_work',DECLS)}catch(e){setErr('Наряд начат, но подтверждения не записались — зафиксируйте ниже, будет отмечено «после начала».')}
-            }
+            await H.startWork(o.id,o.version,DECLS)
             await load();window.scrollTo(0,0)
           }else{
             await H.recordDeclarations(o.id,'pre_work_late',DECLS);await load()
@@ -170,6 +166,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
               <span className="text-xs font-bold leading-snug">{d.text}</span>
             </div>)}
           </div>}
+          {step===0&&excludedPre.length>0&&<div className="tk-sub p-2.5 text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>Отметки из неудачных попыток старта ({excludedPre.length}) сохранены в журнале, но не учитываются как свидетельство перед началом работ.</div>}
           {step===0&&recordedPre.length<DECLS.length&&<div className="space-y-2.5">
             <div className="bg-tk-amber/10 border border-tk-amber/40 rounded-lg p-2.5 text-[11px] flex gap-2">
               <TriangleAlert size={14} className="text-tk-amber shrink-0 mt-0.5"/>

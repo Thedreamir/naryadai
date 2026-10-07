@@ -1,0 +1,11 @@
+import {chromium} from '@playwright/test'
+const b=await chromium.launch()
+const pg=await (await b.newContext({viewport:{width:390,height:844}})).newPage()
+pg.on('response',async r=>{if(r.status()>=400) console.log('HTTP',r.status(),r.url().slice(-60), (await r.text()).slice(0,200))})
+await pg.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'})
+await pg.fill('input[type=email]','worker-b@naryadai.test'); await pg.fill('input[type=password]',process.env.PW_WORKERB)
+await pg.click('button:has-text("Войти")'); await pg.waitForTimeout(7000)
+await pg.goto('http://127.0.0.1:4173/orders/638',{waitUntil:'networkidle'}); await pg.waitForTimeout(2500)
+await pg.click('button:has-text("Начать работу")'); await pg.waitForTimeout(4000)
+console.log('TEXT:', (await pg.locator('body').innerText()).slice(0,300).replace(/\n/g,' | '))
+await b.close()

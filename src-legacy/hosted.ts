@@ -300,6 +300,7 @@ function translateError(msg: string): string {
   if (msg.includes('actor required')) return 'Сессия не распознана. Войдите снова.'
   if (msg.includes('invalid status transition')) return 'Недопустимый переход статуса'
   if (msg.includes('assigned worker required')) return 'Действие доступно только назначенному исполнителю'
+  if (msg.includes('already has an order in progress')) return 'У исполнителя уже есть наряд в работе: завершите его или поставьте на паузу'
   if (msg.includes('master')) return 'Действие доступно мастеру'
   if (msg.includes('reason required')) return 'Укажите причину'
   if (msg.includes('closure incomplete')) return 'Закрытие неполное: работы и шифр обязательны'

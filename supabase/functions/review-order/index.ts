@@ -1,9 +1,14 @@
 // Prepared Edge Function. Not deployed/verified until a test project and model are selected.
 import {createClient} from 'npm:@supabase/supabase-js@2.117.2';
-const cors={'Access-Control-Allow-Origin':Deno.env.get('PWA_ORIGIN')||'','Access-Control-Allow-Headers':'authorization, apikey, content-type','Vary':'Origin'};
+const allowed=(Deno.env.get('PWA_ORIGIN')||'').split(',').map(s=>s.trim()).filter(Boolean);
+const devOrigins=['http://127.0.0.1:4173','http://localhost:4173'];
+const cors={'Access-Control-Allow-Origin':allowed[0]||'','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info, x-supabase-api-version','Vary':'Origin'};
 Deno.serve(async req=>{
- const headers={...cors,'Content-Type':'application/json'};
- if(req.method==='OPTIONS')return new Response('ok',{headers:cors});
+ const origin=req.headers.get('Origin')||'';
+ const allowOrigin=[...allowed,...devOrigins].includes(origin)?origin:(allowed[0]||'');
+ const corsDyn={...cors,'Access-Control-Allow-Origin':allowOrigin};
+ const headers={...corsDyn,'Content-Type':'application/json'};
+ if(req.method==='OPTIONS')return new Response('ok',{headers:corsDyn});
  const reply=(x:unknown,status=200)=>new Response(JSON.stringify(x),{status,headers});
  try{
  const token=req.headers.get('Authorization');if(!token)return reply({error:'authentication required'},401);

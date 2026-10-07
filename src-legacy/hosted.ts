@@ -1,3 +1,4 @@
+import {clearAllDrafts} from '../src/lib/report-draft'
 // Hosted Supabase data layer. Same shapes the local /api server returns.
 // Active only when VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY are set at build time.
 import {createClient, SupabaseClient} from '@supabase/supabase-js'
@@ -34,7 +35,7 @@ export async function login(email: string, password: string) {
   if (error) throw new Error('Вход не удался: проверьте логин и пароль')
 }
 
-export async function logout() { if (supabase) await supabase.auth.signOut() }
+export async function logout() { clearAllDrafts();for(const k of Object.keys(localStorage))if(k.startsWith('tekton-worker-snapshot:'))localStorage.removeItem(k);if (supabase) await supabase.auth.signOut() }
 
 async function uid(): Promise<string> {
   const {data} = await supabase!.auth.getUser()
@@ -42,7 +43,7 @@ async function uid(): Promise<string> {
   return data.user.id
 }
 
-export async function state() {
+async function stateOnline() {
   const s = supabase!
   const myId = await uid()
   const [emp, orders, events, equipment, sections, faults, materials, notifications, norms] = await Promise.all([
@@ -88,6 +89,14 @@ export async function state() {
   return {actor, orders: ordersJoined, employees, events: eventsJoined, permits,
     equipment: Object.values(eqById), fault_codes: faults.data||[], materials: materials.data||[],
     notifications: notifications.data||[], work_norms: norms.data||[], backend: 'Supabase · тестовый проект (синтетические данные)'}
+}
+
+export async function state(){
+ const {data}=await supabase!.auth.getSession();const user=data.session?.user.id;
+ if(!user||!data.session?.expires_at||data.session.expires_at*1000<Date.now())throw Error('Нужен действующий вход: офлайн-сессия не подтверждена');
+ const cacheKey='tekton-worker-snapshot:'+user;
+ try{const live=await stateOnline();if(live.actor.role==='worker'){try{const mine=live.orders.filter(o=>o.assignee_id===user);const safe={actor:live.actor,employees:[live.actor],orders:mine.map(o=>({id:o.id,title:o.title,assignee_id:o.assignee_id,status:o.status,version:o.version,kind:o.kind,priority:o.priority,deadline:o.deadline,equipment_id:o.equipment_id,equipment:o.equipment,section:o.section,permit_kind:o.permit_kind,permit_note:o.permit_note,declarations:o.declarations||[],intake_photos:[],before_photos:[]})),events:live.events.filter(e=>mine.some(o=>o.id===e.order_id)),equipment:live.equipment,sections:live.sections,materials:live.materials,fault_codes:live.fault_codes,notifications:[],permits:[],offline:false,cachedAt:Date.now()};localStorage.setItem(cacheKey,JSON.stringify(safe))}catch{}}return live}
+ catch(e){if(navigator.onLine)throw e;try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached?.actor.id===user&&cached.actor.role==='worker'&&Date.now()-cached.cachedAt<86400000)return {...cached,offline:true}}catch{}throw Error('Нет связи и свежего личного снимка. Подключитесь для загрузки нарядов.')}
 }
 
 export async function transition(id: number, x: {status:string,version:number,reason?:string,human_score?:number,closure?:any}) {

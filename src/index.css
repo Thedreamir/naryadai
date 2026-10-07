@@ -77,3 +77,11 @@ body.glove-mode .tk-touch{min-height:88px !important;font-size:1.2rem !important
   h1,h2 {break-after:avoid}
   p {orphans:3;widows:3}
 }
+@media print {
+  @page {size:A4;margin:12mm}
+  body {font-size:10px!important;line-height:1.3!important}
+  main [class*="text-"] {font-size:10px!important;line-height:1.3!important}
+  main h1 {font-size:22px!important}
+  main [class*="p-6"],main [class*="p-5"],main [class*="p-4"] {padding:8px!important}
+  main .space-y-4>:not(:last-child) {margin-bottom:8px!important}
+}

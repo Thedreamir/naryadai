@@ -412,7 +412,7 @@ export async function repairMemory() {
   if(r.error) throw r.error
   return r.data||[]
 }
-export async function reviewRepairMemory(id:number,action:'approve'|'reject'|'revoke',note:string) {
-  const r=await supabase!.rpc('review_repair_memory',{p_id:id,p_action:action,p_note:note})
-  if(r.error) throw new Error(/only candidate/.test(r.error.message)?'Запись уже рассмотрена. Обновите список.':/only approved/.test(r.error.message)?'Отозвать можно только утверждённую запись.':r.error.message)
+export async function reviewRepairMemory(id:number,action:'approve'|'reject'|'revoke',note:string,expectedVersion:number) {
+  const r=await supabase!.rpc('review_repair_memory',{p_id:id,p_action:action,p_note:note,p_expected_version:expectedVersion})
+  if(r.error) throw new Error(/version changed/.test(r.error.message)?'Запись изменилась. Обновите список перед решением.':/only candidate/.test(r.error.message)?'Запись уже рассмотрена. Обновите список.':/only approved/.test(r.error.message)?'Отозвать можно только утверждённую запись.':r.error.message)
 }

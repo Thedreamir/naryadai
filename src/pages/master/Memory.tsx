@@ -23,9 +23,9 @@ export default function Memory({actor}:{actor:Actor}){
   const [notes,setNotes]=useState<Record<number,string>>({})
   const refresh=useCallback(()=>H.repairMemory().then(d=>setItems(d as unknown as Entry[])).catch(e=>setError(e.message)),[])
   useEffect(()=>{refresh()},[refresh])
-  const decide=async(id:number,action:'approve'|'reject'|'revoke')=>{
+  const decide=async(id:number,action:'approve'|'reject'|'revoke',version:number)=>{
     setBusy(true);setError('')
-    try{await H.reviewRepairMemory(id,action,notes[id]||'');await refresh()}
+    try{await H.reviewRepairMemory(id,action,notes[id]||'',version);await refresh()}
     catch(e){setError((e as Error).message);await refresh()}
     finally{setBusy(false)}
   }
@@ -67,10 +67,10 @@ export default function Memory({actor}:{actor:Actor}){
               value={notes[e.id]||''} onChange={ev=>setNotes(n=>({...n,[e.id]:ev.target.value}))}/>
             <div className="flex gap-2">
               {e.status==='candidate'&&<>
-                <Button disabled={busy} onClick={()=>decide(e.id,'approve')}>Утвердить в базу знаний</Button>
-                <Button disabled={busy} variant="outline" onClick={()=>decide(e.id,'reject')}>Отклонить</Button>
+                <Button disabled={busy} onClick={()=>decide(e.id,'approve',e.version)}>Утвердить в базу знаний</Button>
+                <Button disabled={busy} variant="outline" onClick={()=>decide(e.id,'reject',e.version)}>Отклонить</Button>
               </>}
-              {e.status==='approved'&&<Button disabled={busy} variant="outline" onClick={()=>decide(e.id,'revoke')}>Отозвать из базы знаний</Button>}
+              {e.status==='approved'&&<Button disabled={busy} variant="outline" onClick={()=>decide(e.id,'revoke',e.version)}>Отозвать из базы знаний</Button>}
             </div>
           </div>}
         </Card>})}

@@ -66,6 +66,11 @@ export async function state() {
   const ordersJoined = (orders.data||[]).map((o:AnyOrder)=>({...o,
     equipment: eqById[o.equipment_id]?.name||'—', section: eqById[o.equipment_id]?.section||'—',
     assignee: byId[o.assignee_id]?.name||'—'}))
+  // Worker declarations (pre_work recorded at start, etc.)
+  try {
+    const {data: declRows} = await s.from('order_declarations').select('*').order('id')
+    for (const o of ordersJoined) (o as any).declarations = (declRows||[]).filter((r:any)=>r.order_id===o.id)
+  } catch { for (const o of ordersJoined) (o as any).declarations = [] }
   // Intake (before) photos: own table, mint signed URLs best-effort.
   try {
     const {data: intakeRows} = await s.from('order_intake_photos').select('*').order('id')
@@ -354,4 +359,12 @@ export async function recordIntakePhoto(id: number, dataUrl: string): Promise<an
   const {data, error} = await s.from('order_intake_photos').insert({order_id: id, uploaded_by: myId, storage_path: path, sha256: hash, byte_size: bytes.length, mime_type: mime, captured_client_at: new Date().toISOString()}).select().single()
   if (error) { try { await s.storage.from('repair-photos').remove([path]) } catch {} ; throw new Error(translateError(error.message)) }
   return data
+}
+
+export async function recordDeclarations(orderId: number, phase: string, texts: string[]): Promise<void> {
+  const s = supabase!
+  const myId = await uid()
+  const rows = texts.map(t => ({order_id: orderId, declared_by: myId, phase, text: t, confirmed: true}))
+  const {error} = await s.from('order_declarations').insert(rows)
+  if (error) throw new Error(translateError(error.message))
 }

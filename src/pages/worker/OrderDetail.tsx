@@ -24,6 +24,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
   const [works,setWorks]=useState(''); const [fault,setFault]=useState(''); const [materials,setMaterials]=useState('')
   const [after,setAfter]=useState<string[]>([])
   const [intakeBusy,setIntakeBusy]=useState(false)
+  const [startDecl,setStartDecl]=useState<boolean[]>([false,false]); const [startBusy,setStartBusy]=useState(false)
   const load=()=>H.state().then(setSt).catch(e=>setErr(e.message))
   useEffect(()=>{load()},[id])
   const openWiz=()=>{setWiz(true);setStep(0);setDecl([false,false]);setDeclPost(false);setWorks('');setFault('');setMaterials('');setAfter([])}
@@ -43,9 +44,13 @@ export default function OrderDetail({actor}:{actor:Actor}){
     try{const url=await read(await compress(f));await H.recordIntakePhoto(o.id,url);await load()}catch(e){setErr((e as Error).message)}finally{setIntakeBusy(false)}}
   const doPermit=async()=>{setBusy(true);setErr('')
     try{await H.recordPermit(o.id,{kind:permitKind,note:permitNote,version:o.version});setPermitKind('');setPermitNote('');await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
-  const allDecl=decl.every(Boolean)
+  const recordedPre:any[]=(o.declarations||[]).filter((d:any)=>d.phase==='pre_work')
+  const allDecl=recordedPre.length>=2?true:decl.every(Boolean)
   const canSend=works.trim().length>=12&&!!fault&&(!needPhoto||after.length>0)
-  const complete=()=>go('completed',undefined,{works,fault_code:fault,materials:materials?[{name:materials,quantity:1}]:[],photos:after,safety_declarations:[...DECLS.map((d,i)=>({phase:'pre_work',text:d,confirmed:decl[i]})),{phase:'post_work',text:DECL_POST,confirmed:declPost}]})
+  const complete=async()=>{
+    const preDecls=recordedPre.length>=2?recordedPre.map((d:any)=>({phase:'pre_work',text:d.text,confirmed:true,recorded_at:d.declared_at})):DECLS.map((d,i)=>({phase:'pre_work_at_surrender',text:d,confirmed:decl[i]}))
+    if(recordedPre.length<2){try{await H.recordDeclarations(o.id,'pre_work_at_surrender',DECLS)}catch(e){}}
+    go('completed',undefined,{works,fault_code:fault,materials:materials?[{name:materials,quantity:1}]:[],photos:after,safety_declarations:[...preDecls,{phase:'post_work',text:DECL_POST,confirmed:declPost}]})}
   const addPh=async(f:File|null|undefined)=>{if(!f)return;const url=await read(await compress(f));setAfter(p=>[...p,url])}
   const steps=['Безопасность','Отчёт','Фото']
   const stepOk=[allDecl,works.trim().length>=12&&!!fault,(!needPhoto||after.length>0)]
@@ -96,7 +101,22 @@ export default function OrderDetail({actor}:{actor:Actor}){
         <button className="tk-touch tk-sub uppercase" disabled={busy} onClick={()=>go('queued','В очередь после текущего')}>В очередь</button>
         <button className="tk-touch tk-sub text-tk-red uppercase" disabled={busy} onClick={()=>{const r=prompt('Причина отказа');if(r)go('rejected',r)}}>Не могу</button>
       </div></div>}
-    {o.status==='accepted'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={busy} onClick={()=>go('in_progress')}>Начать работу</button>}
+    {o.status==='accepted'&&<div className="tk-card p-3.5 space-y-2.5">
+      <div className="text-[13px] font-black uppercase tracking-wide">Перед началом работ</div>
+      <div className="bg-tk-red/10 border border-tk-red/40 rounded-lg p-2.5 text-[11px] flex gap-2">
+        <TriangleAlert size={14} className="text-tk-red shrink-0 mt-0.5"/>
+        <span>Личные подтверждения исполнителя — фиксируются сейчас, до начала работ, с отметкой времени сервера. Это декларация работника, а не проверка электросостояния системой.</span>
+      </div>
+      {DECLS.map((d,i)=><label key={i} className={cn("tk-sub p-3 flex items-start gap-2.5 cursor-pointer transition",startDecl[i]&&'border-tk-green')}>
+        <input type="checkbox" checked={startDecl[i]} onChange={()=>setStartDecl(p=>p.map((v,j)=>j===i?!v:v))} className="mt-0.5 w-5 h-5 accent-tk-green shrink-0"/>
+        <span className="text-xs font-bold leading-snug">{d}</span>
+      </label>)}
+      {err&&<div className="text-xs text-tk-red font-bold">{err}</div>}
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={busy||startBusy||!startDecl.every(Boolean)} onClick={async()=>{
+        setStartBusy(true);setErr('')
+        try{if(!(o.declarations||[]).some((d:any)=>d.phase==='pre_work'))await H.recordDeclarations(o.id,'pre_work',DECLS);await go('in_progress')}catch(e){setErr((e as Error).message)}finally{setStartBusy(false)}
+      }}>{startBusy?'Фиксация…':'Подтвердить и начать работу'}</button>
+    </div>}
     {o.status==='queued'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={busy} onClick={()=>go('accepted')}>Принять из очереди</button>}
     {o.status==='in_progress'&&<>
       <button className="tk-touch tk-sub uppercase" disabled={busy} onClick={()=>go('paused','Пауза')}>Пауза</button>
@@ -128,10 +148,20 @@ export default function OrderDetail({actor}:{actor:Actor}){
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
-          {step===0&&<div className="space-y-2.5">
-            <div className="bg-tk-red/10 border border-tk-red/40 rounded-lg p-2.5 text-[11px] flex gap-2">
-              <TriangleAlert size={14} className="text-tk-red shrink-0 mt-0.5"/>
-              <span>Личные подтверждения исполнителя. Это декларация работника, а не проверка электросостояния системой.</span>
+          {step===0&&recordedPre.length>=2&&<div className="space-y-2.5">
+            <div className="bg-tk-green/10 border border-tk-green/40 rounded-lg p-2.5 text-[11px] flex gap-2">
+              <Check size={14} className="text-tk-green shrink-0 mt-0.5"/>
+              <span>Подтверждения безопасности зафиксированы при начале работ: {new Date(recordedPre[0].declared_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} (время сервера).</span>
+            </div>
+            {recordedPre.map((d:any,i:number)=><div key={i} className="tk-card p-3 flex items-start gap-2.5 border-tk-green">
+              <Check size={16} className="text-tk-green shrink-0 mt-0.5"/>
+              <span className="text-xs font-bold leading-snug">{d.text}</span>
+            </div>)}
+          </div>}
+          {step===0&&recordedPre.length<2&&<div className="space-y-2.5">
+            <div className="bg-tk-amber/10 border border-tk-amber/40 rounded-lg p-2.5 text-[11px] flex gap-2">
+              <TriangleAlert size={14} className="text-tk-amber shrink-0 mt-0.5"/>
+              <span>Эти подтверждения не были зафиксированы при начале работ (наряд начат раньше) — подтверждаются сейчас, при сдаче. Это декларация работника, а не проверка электросостояния системой.</span>
             </div>
             {DECLS.map((d,i)=><label key={i} className={cn("tk-card p-3 flex items-start gap-2.5 cursor-pointer transition",decl[i]&&'border-tk-green')}>
               <input type="checkbox" checked={decl[i]} onChange={()=>setDecl(p=>p.map((v,j)=>j===i?!v:v))} className="mt-0.5 w-5 h-5 accent-tk-green shrink-0"/>
@@ -187,7 +217,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
           {step>0?<button onClick={()=>setStep(s=>s-1)} className="tk-touch tk-sub uppercase text-xs"><ArrowLeft size={14} className="inline mr-1"/>Назад</button>
             :<button onClick={()=>setWiz(false)} className="tk-touch tk-sub uppercase text-xs">Отмена</button>}
           {step<2?<button onClick={()=>setStep(s=>s+1)} disabled={!stepOk[step]} className="tk-touch bg-tk-amber text-black border border-amber-600 uppercase text-xs disabled:opacity-40">Далее<ArrowRight size={14} className="inline ml-1"/></button>
-            :<button onClick={complete} disabled={busy||!canSend} className="tk-touch bg-tk-green text-white border border-emerald-600 uppercase text-xs disabled:opacity-40"><Check size={14} className="inline mr-1"/>{busy?'Отправка…':'На проверку мастеру'}</button>}
+            :<><button onClick={complete} disabled={busy||!canSend} className="tk-touch bg-tk-green text-white border border-emerald-600 uppercase text-xs disabled:opacity-40"><Check size={14} className="inline mr-1"/>{busy?'Отправка…':'На проверку мастеру'}</button>{err&&<div className="col-span-2 text-xs text-tk-red font-bold">{err}</div>}</>}
         </div>
       </div>
     </div>}

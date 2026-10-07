@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom'
 import {ChevronRight} from 'lucide-react'
 import type {Actor} from '../../App'
 import {cn} from '../../lib/utils'
-const PRIOR:Record<string,string>={emergency:'⚡ Аварийный',high:'⚡ Высокий',medium:'Средний',low:'Низкий'}
+const PRIOR:Record<string,string>={emergency:'⚡ Аварийный',high:'⚡ Высокий',normal:'Обычный',planned:'Плановый',medium:'Средний',low:'Низкий'}
 const stLabel:Record<string,string>={issued:'Выдан',queued:'Очередь',accepted:'Принят',in_progress:'В работе',paused:'Пауза',rework:'Доработка'}
 export default function WorkerOrders({actor}:{actor:Actor}){
   const [st,setSt]=useState<any>(null); const [err,setErr]=useState('')

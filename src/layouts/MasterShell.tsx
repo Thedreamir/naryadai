@@ -21,6 +21,7 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
     {to:'/closed', icon:Archive, label:'Закрытые'},
     {to:'/handover', icon:Repeat, label:'Передача смены'},
     {to:'/report', icon:BarChart3, label:'Отчёт и рейтинг'},
+    {to:'/knowledge',icon:Brain,label:'Загрузка знаний'},
     {to:'/memory', icon:Brain, label:'Память ремонтов', badge:memoryCount},
   ]
   return <div className="workspace min-h-screen flex bg-bg">
@@ -44,7 +45,7 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
       </div>
     </aside>
     <header className="workspace-mobile-header"><img src="/tekton-symbol.svg" alt=""/><strong>Tekton OS</strong><LanguageToggle/><span>Мастер</span><button aria-label="Открыть меню" onClick={()=>setMenuOpen(true)}>Меню</button></header>
-    <nav className="workspace-bottom" aria-label="Навигация мастера">{items.filter(i=>['/','/review','/issue','/report'].includes(i.to)).map(i=><NavLink to={i.to} end={i.to==='/'} key={i.to}><i.icon size={22}/><span>{label(i.to==='/issue'?'Выдать':i.to==='/report'?'Отчёт':i.label)}</span></NavLink>)}<button onClick={()=>setMenuOpen(true)}><Brain size={22}/><span>Ещё</span></button></nav>
+    <nav className="workspace-bottom" aria-label="Навигация мастера">{items.filter(i=>['/','/review','/issue','/report'].includes(i.to)).map(i=><NavLink to={i.to} end={i.to==='/'} key={i.to}><i.icon size={22}/><span>{label(i.to==='/issue'?'Выдать':i.to==='/report'?'Отчёт':i.label)}</span></NavLink>)}<button onClick={()=>setMenuOpen(true)}><Brain size={22}/><span>{label('Ещё')}</span></button></nav>
     {menuOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setMenuOpen(false)}><section role="dialog" aria-modal="true" aria-label="Меню мастера" className="workspace-sheet" onClick={e=>e.stopPropagation()}><button autoFocus className="sheet-close" onClick={()=>setMenuOpen(false)}>Закрыть</button>{items.map(i=><NavLink to={i.to} key={i.to} onClick={()=>setMenuOpen(false)}>{label(i.label)}</NavLink>)}<button onClick={async()=>{await H.logout();location.reload()}}>Выйти</button></section></div>}
     <main className="workspace-main flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]"><p className="text-[11px] text-muted mb-2">{kz?'Қазақша навигация: аударма жобасы. Мәтіндер RU.':'KZ: черновой перевод навигации, документы и данные RU.'}</p><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
   </div>

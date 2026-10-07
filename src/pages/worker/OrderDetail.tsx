@@ -29,7 +29,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
   const [startDecl,setStartDecl]=useState<boolean[]>([false,false]); const [startBusy,setStartBusy]=useState(false)
   const load=()=>H.state().then(setSt).catch(e=>setErr(e.message))
   useEffect(()=>{load()},[id])
-  const openWiz=()=>{setWiz(true);setStep(0);setDecl([false,false]);setDeclPost(false);setWorks('');setFault('');setMaterials('');setMaterialRows([]);setAfter([]);const d=loadDraft(actor.id,Number(id));if(d){setWorks(d.works);setFault(d.fault);setMaterialRows(d.materials);setAfter(d.after);setDraftNote('Черновик восстановлен. Подтверждения безопасности заново, версия и статус проверяются сервером при отправке.')}}
+  const openWiz=()=>{setErr('');setDraftNote('');setWiz(true);setStep(0);setDecl([false,false]);setDeclPost(false);setWorks('');setFault('');setMaterials('');setMaterialRows([]);setAfter([]);const d=loadDraft(actor.id,Number(id));if(d){setWorks(d.works);setFault(d.fault);setMaterialRows(d.materials);setAfter(d.after);setDraftNote('Черновик восстановлен. Подтверждения безопасности заново, версия и статус проверяются сервером при отправке.')}}
   const go=async(status:string,reason?:string,closure?:any)=>{setBusy(true);setErr('')
     try{if(!navigator.onLine)throw Error('Нет связи: сохраните черновик. Статус не изменён.');await H.transition(o.id,{status,version:o.version,reason,closure});if(status==='completed')clearDraft(actor.id,o.id);setWiz(false);await load();window.scrollTo(0,0)}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
   if(err&&!st) return <div className="tk-card p-4 text-tk-red">{err}</div>
@@ -71,7 +71,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
       </div>
       <h1 className="text-base font-black leading-snug">{o.title}</h1>
       <div className="text-xs" style={{color:'var(--tk-muted)'}}>{o.equipment} · {o.section} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
-      {err&&<div className="text-xs text-tk-red font-bold">{err}</div>}
+      {err&&!wiz&&<div role="alert" className="text-xs text-tk-red font-bold">{err}</div>}
     </div>
     <div className="tk-card p-3 space-y-2">
       <div className="text-[0.6875rem] font-black uppercase tracking-wider" style={{color:'var(--tk-muted)'}}>Фото до (приёмка)</div>
@@ -129,7 +129,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
         <input type="checkbox" checked={startDecl[i]} onChange={()=>setStartDecl(p=>p.map((v,j)=>j===i?!v:v))} className="mt-0.5 w-5 h-5 accent-tk-green shrink-0"/>
         <span className="text-xs font-bold leading-snug">{d}</span>
       </label>)}
-      {err&&<div className="text-xs text-tk-red font-bold">{err}</div>}
+      
       <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy||startBusy||!startDecl.slice(0,DECLS.length).every(Boolean)} onClick={async()=>{
         setStartBusy(true);setErr('')
         try{
@@ -172,7 +172,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
             </div>)}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-3"><div className="tk-sub p-3 text-xs">{online?'Связь есть':'Офлайн'} · черновик хранится на этом устройстве 24 часа. Без отправки статус не меняется. Не для общих устройств с реальными данными.<button className="tk-touch tk-sub w-full mt-2" onClick={()=>{try{saveDraft(actor.id,o.id,{works,fault,materials:materialRows,after});setDraftNote('Черновик сохранён, наряд не отправлен.')}catch(e){setErr((e as Error).message)}}}>Сохранить черновик</button>{draftNote&&<p role="status">{draftNote}</p>}</div>
+        <div className="flex-1 overflow-y-auto p-3.5 space-y-3">{err&&<div role="alert" className="text-xs text-tk-red font-bold">{err}</div>}<div className="tk-sub p-3 text-xs">{online?'Связь есть':'Офлайн'} · черновик хранится на этом устройстве 24 часа. Без отправки статус не меняется. Не для общих устройств с реальными данными.<button className="tk-touch tk-sub w-full mt-2" onClick={()=>{try{saveDraft(actor.id,o.id,{works,fault,materials:materialRows,after});setDraftNote('Черновик сохранён, наряд не отправлен.')}catch(e){setErr((e as Error).message)}}}>Сохранить черновик</button>{draftNote&&<p role="status">{draftNote}</p>}</div>
           {step===0&&recordedPre.length>=DECLS.length&&<div className="space-y-2.5">
             <div className="bg-tk-green/10 border border-tk-green/40 rounded-lg p-2.5 text-[0.6875rem] flex gap-2">
               <Check size={22} className="text-tk-green shrink-0 mt-0.5"/>
@@ -243,9 +243,9 @@ export default function OrderDetail({actor}:{actor:Actor}){
           {step>0?<button onClick={()=>setStep(s=>s-1)} className="tk-touch tk-sub uppercase text-xs"><ArrowLeft size={22} className="inline mr-1"/>Назад</button>
             :<button onClick={()=>setWiz(false)} className="tk-touch tk-sub uppercase text-xs">Отмена</button>}
           {step<2?<button onClick={()=>setStep(s=>s+1)} disabled={!stepOk[step]} className="tk-touch bg-tk-amber text-black border border-amber-600 uppercase text-xs disabled:opacity-40">Далее<ArrowRight size={22} className="inline ml-1"/></button>
-            :<><button onClick={complete} disabled={busy||!canSend||!online} className="tk-touch bg-tk-green text-white border border-emerald-600 uppercase text-xs disabled:opacity-40"><Check size={22} className="inline mr-1"/>{busy?'Отправка…':'На проверку мастеру'}</button>{err&&<div className="col-span-2 text-xs text-tk-red font-bold">{err}</div>}</>}
+            :<><button onClick={complete} disabled={busy||!canSend||!online} className="tk-touch bg-tk-green text-white border border-emerald-600 uppercase text-xs disabled:opacity-40"><Check size={22} className="inline mr-1"/>{busy?'Отправка…':'На проверку мастеру'}</button></>}
         </div>
       </div>
     </div>}
   </div>
-}
+        }

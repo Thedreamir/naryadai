@@ -1,3 +1,4 @@
+import {Link} from 'react-router-dom'
 import {useCallback, useEffect, useState} from 'react'
 import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
@@ -34,7 +35,7 @@ export default function Memory({actor}:{actor:Actor}){
   const hidden=items.filter(i=>isTechnicalTitle(i.title)).length
   const visible=pres?items.filter(i=>!isTechnicalTitle(i.title)):items
   const candidates=items.filter(i=>i.status==='candidate').length
-  return <div>
+  return <div><Link to="/knowledge" className="inline-flex items-center h-12 px-4 border rounded-xl mb-3">Загрузить знания (черновик)</Link>
     <div className="flex items-end justify-between mb-5">
       <div>
         <h1 className="text-[26px] font-bold tracking-[-0.5px]">Память ремонтов</h1>

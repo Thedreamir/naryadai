@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const p=require('path');require(p.join(process.env.CLAUDE_PROJECT_DIR||process.cwd(),'.claude/scripts/hooks/block-no-verify.js'))\""
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const p=require('path');require(p.join(process.env.CLAUDE_PROJECT_DIR||process.cwd(),'.claude/scripts/hooks/config-protection.js'))\""
+          }
+        ]
+      }
+    ]
+  },
+  "includeCoAuthoredBy": false
+}

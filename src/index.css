@@ -66,3 +66,14 @@ body.glove-mode .tk-touch{min-height:88px !important;font-size:1.2rem !important
 .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
 @keyframes tk-blink2{0%,93.5%,100%{opacity:0}94.5%,96%{opacity:1}}
 .blink-closed{opacity:0;animation:tk-blink2 4.8s ease-in-out infinite;pointer-events:none}
+
+@media print {
+  aside,header,nav,button {display:none!important}
+  body,html {background:white!important;color:#111!important;font-size:12px}
+  main {padding:0!important;max-width:none!important;width:100%!important}
+  .min-h-screen {min-height:0!important}
+  [class*="rounded"] {box-shadow:none!important;backdrop-filter:none!important;border-radius:0!important}
+  [class*="bg-"] {background:white!important}
+  h1,h2 {break-after:avoid}
+  p {orphans:3;widows:3}
+}

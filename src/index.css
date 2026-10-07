@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --color-bg: #F2F2EF;
+  --color-surface: #FFFFFF;
+  --color-border: #E4E4DE;
+  --color-ink: #1B1B18;
+  --color-muted: #6B6B66;
+  --color-primary: #16402F;
+  --color-primary-ink: #FFFFFF;
+  --color-accent: #1F9D63;
+  --color-danger: #D23B3B;
+  --color-warn: #C77E1F;
+  --color-info: #0E7C6B;
+  --radius-card: 18px;
+  --radius-btn: 14px;
+}
+html{background:var(--color-bg)}
+body{font-family:var(--font-sans);color:var(--color-ink);background:var(--color-bg);-webkit-font-smoothing:antialiased}

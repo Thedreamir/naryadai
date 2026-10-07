@@ -1,9 +1,14 @@
-import * as React from 'react'
-import { Slot } from '@radix-ui/react-slot'
-import { cva, type VariantProps } from 'class-variance-authority'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-// shadcn/ui button pattern (MIT): Radix Slot + cva, adapted for glove-size controls.
-const variants=cva('inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c38942] min-h-16 px-5',{variants:{variant:{default:'bg-[#205e59] text-white hover:bg-[#184943]',outline:'border border-neutral-300 bg-white hover:bg-neutral-100',destructive:'bg-red-700 text-white hover:bg-red-800'}},defaultVariants:{variant:'default'}})
-type Props=React.ButtonHTMLAttributes<HTMLButtonElement>&VariantProps<typeof variants>&{asChild?:boolean}
-export function Button({className,variant,asChild=false,...props}:Props){const C=asChild?Slot:'button';return <C className={twMerge(clsx(variants({variant}),className))} {...props}/>}
+import {forwardRef, type ButtonHTMLAttributes} from 'react'
+import {cn} from '../../lib/utils'
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & {variant?: 'primary'|'outline'|'ghost'|'danger', size?: 'big'|'md'}
+export const Button = forwardRef<HTMLButtonElement, Props>(function Button({variant='primary', size='md', className, ...p}, ref){
+  const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-[14px] transition active:scale-[.98] disabled:opacity-50 select-none'
+  const sizes = {big: 'h-16 px-6 text-[17px]', md: 'h-11 px-4 text-[15px]'}
+  const variants = {
+    primary: 'bg-primary text-primary-ink',
+    outline: 'bg-surface text-ink border border-border',
+    ghost: 'bg-transparent text-muted',
+    danger: 'bg-danger text-white',
+  }
+  return <button ref={ref} className={cn(base, sizes[size], variants[variant], className)} {...p}/>
+})

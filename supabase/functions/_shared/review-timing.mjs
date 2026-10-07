@@ -1,0 +1,1 @@
+export function completionElapsed(started,completed){const a=Date.parse(started),b=Date.parse(completed);if(!Number.isFinite(a)||!Number.isFinite(b)||b<a)throw Error('invalid completion interval');return Math.round((b-a)/60000)}

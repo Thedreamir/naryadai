@@ -41,7 +41,7 @@ Deno.serve(async req=>{
  }
  // ---- context: curated knowledge docs (equipment-scoped first when an owned order is given) ----
  let docs:any[]=[];
- {let q=admin.from('knowledge_docs').select('id,title,body,source_label,equipment_id,version').eq('status','approved');
+ {let q=admin.from('knowledge_docs').select('id,title,body,source_label,equipment_id,version,reviewed_by,reviewed_at').eq('status','approved');
   if(orderCtx)q=q.or(`equipment_id.is.null,equipment_id.eq.${Number(orderCtx.equipment_id)}`);
   const{data}=await q.order('id').limit(48);docs=data||[]}
  if(orderCtx)docs=docs.filter((d:any)=>d.equipment_id===null||d.equipment_id===orderCtx.equipment_id)
@@ -67,12 +67,14 @@ Deno.serve(async req=>{
  const ws=words(message);
  const fallback=()=>{ // rules-only: best-scored keyword match, docs before memory, threshold 2
   const dBest=docs.map(d=>({d,s:score(d.title+' '+d.body,ws)})).filter(x=>x.s>=2).sort((a,b)=>b.s-a.s||a.d.id-b.d.id)[0];
-  if(dBest)return {answer:`[Документация] ${dBest.d.title} (${dBest.d.source_label}): ${dBest.d.body}`,sources:[dBest.d.title],source_id:String(dBest.d.id),mode:'rules',knowledge_used:true};
+  if(dBest)return {answer:`[Документация] ${dBest.d.title} (${dBest.d.source_label}, версия ${dBest.d.version}, утверждение ${dBest.d.reviewed_at||'не указано'}, проверяющий ${dBest.d.reviewed_by||'не указан'}): ${dBest.d.body}`,sources:[dBest.d.title],source_id:String(dBest.d.id),mode:'rules',knowledge_used:true};
   const mBest=memory.map((m:any)=>({m,s:score(m.title+' '+m.body,ws)})).filter(x=>x.s>=2).sort((a,b)=>b.s-a.s||a.m.id-b.m.id)[0];
   if(mBest){const m=mBest.m;return {answer:`[Память] ${m.title} (наряд #${m.order_id}, версия ${m.version}, полевая заметка, не норматив). Текст заметки дословно, без проверки: «${m.body}»`,sources:[m.title],source_id:String(m.id),mode:'rules',knowledge_used:true}}
   if(orderCtx)return {answer:`[Контекст наряда] По наряду #${orderCtx.id} могу подсказать статус, срок и оборудование. По вашему вопросу в документации данных нет — уточните у мастера.`,sources:[],source_id:String(orderCtx.id),mode:'rules',knowledge_used:false};
   return {answer:'[Нет данных] '+NO_DATA,sources:[],source_id:'',mode:'rules',knowledge_used:false}};
- if(!key||!model)return reply(fallback());
+ // Fail closed: regex masking cannot prove anonymization of arbitrary free text.
+ // Keep chat rules-only until a separately reviewed synthetic-external test switch is set.
+ if(Deno.env.get('ALLOW_SYNTHETIC_EXTERNAL_CHAT')!=='true'||!key||!model)return reply(fallback());
  try{
   const {data:people}=await admin.from('employees').select('name');
   const redact=(text:string)=>{let out=text.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[EMAIL]').replace(/\+?\d[\d\s()-]{8,}\d/g,'[NUMBER]');for(const p of people||[]){const n=String(p.name||'').trim();if(n.length>2)out=out.split(n).join('[PERSON]')}return out};
@@ -95,7 +97,7 @@ Deno.serve(async req=>{
   // citation: only a validated source id from the provided set; never a guessed/first entry
   const sid=String(parsed.source_id||'').replace(/\D+/g,'');
   let cited:any=null,cite='',demoTag='';
-  if(src==='Документация'){cited=docs.find((d:any)=>String(d.id)===sid);if(cited){cite='';demoTag=' (синтетический демо-документ)'}}
+  if(src==='Документация'){cited=docs.find((d:any)=>String(d.id)===sid);if(cited){cite=` (источник #${cited.id}, версия ${cited.version}, утверждение ${cited.reviewed_at||'не указано'}, проверяющий ${cited.reviewed_by||'не указан'})`;demoTag=' (синтетический демо-документ)'}}
   else if(src==='Память'){cited=memory.find((m:any)=>String(m.id)===sid);if(cited)cite=` (наряд #${cited.order_id}, версия ${cited.version}, полевая заметка, не норматив)`}
   else if(src==='История'||src==='Контекст наряда'){cited=orderCtx&&(src==='Контекст наряда'?String(orderCtx.id)===sid:histIds.includes(sid))?(src==='Контекст наряда'?orderCtx:{id:sid}):null}
   if(src!=='Нет данных'&&!cited)return reply({answer:'[Нет данных] '+NO_DATA,sources:[],source_id:'',mode:'live',model,knowledge_used:false,caveat:'model cited an unknown source id'});

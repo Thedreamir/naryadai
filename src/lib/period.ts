@@ -3,3 +3,4 @@ export function savedPeriod():PeriodDays {const n=Number(localStorage.getItem('n
 export function setPeriod(days:PeriodDays){localStorage.setItem('naryadai.report.days',String(days))}
 export function periodBounds(days:PeriodDays){const until=new Date().toISOString();return {since:new Date(Date.parse(until)-days*86400000).toISOString(),until}}
 export function within(value:string|undefined,bounds:{since:string,until:string}){return !!value && Date.parse(value)>=Date.parse(bounds.since) && Date.parse(value)<Date.parse(bounds.until)}
+export function withinInstant(value:string|undefined,startMs:number,endMs:number){return !!value && Date.parse(value)>=startMs && Date.parse(value)<endMs}

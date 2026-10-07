@@ -38,12 +38,14 @@ export default function OrderDetail({actor}:{actor:Actor}){
     {!o.permit_kind&&['issued','accepted','queued'].includes(o.status)&&<Card className="space-y-3">
       <div className="text-[15px] font-semibold">Допуск к работе</div>
       <div className="text-[13px] text-muted">Отметьте допуск перед началом работ — запись уходит в журнал.</div>
-      <div className="grid grid-cols-2 gap-2">{[['permit','Допуск оформлен'],['briefing','Инструктаж пройден'],['loto','Блокировки LOTO'],['not_required','Не требуется']].map(([k,l])=>
+      <div className="grid grid-cols-2 gap-2">{[['confirmed','Допуск подтверждён'],['not_required','Допуск не требуется']].map(([k,l])=>
         <button key={k} onClick={()=>setPermitKind(k)} className={"h-14 rounded-[14px] border text-[14px] font-semibold px-3 leading-tight "+(permitKind===k?'bg-primary text-primary-ink border-primary':'bg-surface border-border')}>{l}</button>)}</div>
-      <input className="w-full h-12 px-3 rounded-[14px] border border-border bg-bg text-[15px]" placeholder="Примечание (необязательно)" value={permitNote} onChange={e=>setPermitNote(e.target.value)}/>
-      <Button size="big" className="w-full" disabled={!permitKind||busy} onClick={doPermit}>Отметить допуск</Button>
+      {permitKind==='confirmed'&&<>
+        <input className="w-full h-12 px-3 rounded-[14px] border border-border bg-bg text-[15px]" placeholder="Номер допуска и кто подтвердил" value={permitNote} onChange={e=>setPermitNote(e.target.value)}/>
+        <div className="text-[12px] text-muted">Нужны номер (цифры) и фамилия подтвердившего — проверяется на сервере.</div></>}
+      <Button size="big" className="w-full" disabled={!permitKind||busy||(permitKind==='confirmed'&&permitNote.trim().length<8)} onClick={doPermit}>Отметить допуск</Button>
     </Card>}
-    {o.permit_kind&&<Card className="text-[13px] text-muted">Допуск: {o.permit_kind}{o.permit_note?' · '+o.permit_note:''}</Card>}
+    {o.permit_kind&&<Card className="text-[13px] text-muted">{o.permit_kind==='not_required'?'Допуск не требуется':'Допуск подтверждён'}{o.permit_note?' · '+o.permit_note:''}</Card>}
     {o.status==='issued'&&<div className="space-y-2">
       <Button size="big" className="w-full" disabled={busy||!o.permit_kind} onClick={()=>go('accepted')}>Принять назначение</Button>
       <div className="grid grid-cols-2 gap-2">

@@ -11,7 +11,7 @@ export default function Issue({actor}:{actor:Actor}){
   const [title,setTitle]=useState(''); const [eq,setEq]=useState(()=>new URLSearchParams(location.search).get('equipment')||''); const [assignee,setAssignee]=useState('')
   const [section,setSection]=useState('');const [kind,setKind]=useState('unplanned');const [before,setBefore]=useState<string[]>([]);const [photoBusy,setPhotoBusy]=useState(false)
   const [priority,setPriority]=useState('normal'); const [hours,setHours]=useState(2)
-  useEffect(()=>{H.state().then(setSt).catch(e=>setErr(e.message))},[])
+  useEffect(()=>{H.state().then(data=>{setSt(data);const requested=new URLSearchParams(location.search).get('equipment');const selected=(data as any).equipment.find((x:any)=>String(x.id)===requested);if(selected)setSection(String(selected.section));else if(requested)setEq('')}).catch(e=>setErr(e.message))},[])
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
   const workers=st.employees.filter((e:any)=>e.role==='worker')
   // Rule-based candidate hint (PDF 5.1.3): availability + experience on this equipment + on-time share.

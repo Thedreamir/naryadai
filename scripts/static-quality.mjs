@@ -1,0 +1,5 @@
+import fs from 'node:fs';import path from 'node:path';const errors=[];const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(d,e.name)):[path.join(d,e.name)]);
+for(const f of walk('src').filter(f=>/\.(tsx?|jsx?)$/.test(f))){const s=fs.readFileSync(f,'utf8');if(/\bdebugger\s*;|console\.log\(/.test(s))errors.push(f+': debug logging');for(const l of s.split('\n'))if(/TODO/.test(l)&&!/#\d+|https:\/\//.test(l))errors.push(f+': TODO missing issue reference')}
+for(const f of ['package.json',...fs.existsSync('.github')?walk('.github'):[]])if(fs.readFileSync(f,'utf8').includes('--no-verify'))errors.push(f+': forbidden bypass');
+for(const f of ['tsconfig.json','playwright.config.ts'])if(!fs.existsSync(f))errors.push(f+': missing protected config');
+console.log(JSON.stringify({errors,config_baseline:'NOT VERIFIED: workspace has no git metadata; compare against saved branch before commit',conventional_commit:'NOT VERIFIED: commit metadata required'},null,2));if(errors.length)process.exitCode=1;

@@ -1,3 +1,4 @@
+import {completionElapsed} from '../_shared/review-timing.mjs';
 // Prepared Edge Function. Not deployed/verified until a test project and model are selected.
 import {createClient} from 'npm:@supabase/supabase-js@2.117.2';
 const allowed=(Deno.env.get('PWA_ORIGIN')||'').split(',').map(s=>s.trim()).filter(Boolean);
@@ -31,10 +32,12 @@ Deno.serve(async req=>{
  try{const admin0=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const{data:norms}=await admin0.from('work_norms').select('work_type,norm_minutes');
   const hit=(norms||[]).find((n:any)=>tN.includes(norm(n.work_type)));
-  if(hit&&o.started_at){const mins=Math.round((Date.now()-new Date(o.started_at).getTime())/60000);
-   if(mins<Math.max(1,Math.round(hit.norm_minutes*0.25)))ruleFlags.push(`Правило: выполнено за ${mins} мин при нормативе ${hit.norm_minutes} мин (демо-справочник) — проверить достоверность`);
-   if(mins>hit.norm_minutes*4)ruleFlags.push(`Правило: выполнение ${mins} мин заметно дольше норматива ${hit.norm_minutes} мин (демо-справочник)`)}
- }catch(e){console.error('norm check failed',String(e))}
+  if(hit&&o.started_at){const {data:completion,error:completionError}=await db.from('order_events').select('created_at').eq('order_id',o.id).eq('new_status','completed').order('created_at',{ascending:false}).limit(1).maybeSingle();
+   if(completionError||!completion?.created_at)throw Error('server completion time unavailable');
+   const mins=completionElapsed(o.started_at,completion.created_at);
+   if(mins<Math.max(1,Math.round(hit.norm_minutes*0.25)))ruleFlags.push(`Правило: от начала до сдачи ${mins} мин, включая паузы при нормативе ${hit.norm_minutes} мин (демо-справочник) — проверить достоверность`);
+   if(mins>hit.norm_minutes*4)ruleFlags.push(`Правило: от начала до сдачи ${mins} мин (включая паузы) заметно дольше норматива ${hit.norm_minutes} мин (демо-справочник)`)}
+ }catch(e){console.error('norm check failed',String(e));ruleFlags.push('Нормативный интервал недоступен: время сдачи не подтверждено этой проверкой')}
  let result:any={mode:'rules',verdict:reasons.length?'rework':'needs_master',score:null,confidence:null,rule_flags:ruleFlags,reasons:[...reasons,...ruleFlags].length?[...reasons,...ruleFlags]:['Обязательные поля заполнены. Смысл и качество фото не проверены.'],limitations:['Правила не устанавливают качество физического ремонта']};
  const key=Deno.env.get('GEMINI_API_KEY'),model=Deno.env.get('GEMINI_MODEL');
  // A selected model must have a verified free quota. No silent paid-model default.

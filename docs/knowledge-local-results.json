@@ -1,0 +1,41 @@
+{
+  "local": true,
+  "tests": [
+    {
+      "name": "leader creates draft",
+      "ok": true
+    },
+    {
+      "name": "leader cannot approve",
+      "ok": true
+    },
+    {
+      "name": "worker cannot see draft",
+      "ok": true
+    },
+    {
+      "name": "worker cannot upload",
+      "ok": true
+    },
+    {
+      "name": "stale version refused",
+      "ok": true
+    },
+    {
+      "name": "worker sees approved",
+      "ok": true
+    },
+    {
+      "name": "revoked invisible to worker",
+      "ok": true
+    },
+    {
+      "name": "three audit snapshots",
+      "ok": true
+    },
+    {
+      "name": "direct insert denied",
+      "ok": true
+    }
+  ]
+}

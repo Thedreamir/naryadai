@@ -65,6 +65,15 @@ export default function Report({actor}:{actor:Actor}){
       {rt===null&&<div className="text-[13px] text-muted py-2">Рейтинг недоступен</div>}
       {rt&&rt.length===0&&<div className="text-[13px] text-muted py-2">Закрытых нарядов за период нет</div>}
     </Card>
+    {rt&&rt.length>0&&<Card><h2 className="font-semibold text-[15px] mb-2">Рейтинг бригад</h2>
+      <div className="text-[12px] text-muted mb-3">Средний балл исполнителей бригады за период (те же пять факторов). Синтетические демо-данные.</div>
+      <table className="w-full text-[14px]"><thead><tr className="text-left text-[12px] text-muted"><th className="py-2">Бригада</th><th>Средний балл</th><th>Исполнителей с рейтингом</th></tr></thead>
+      <tbody>{Object.entries((rt||[]).reduce((acc:any,r:any)=>{const b=st.employees.find((x:any)=>x.id===r.worker_id)?.brigade||'Без бригады';(acc[b]=acc[b]||[]).push(r.total);return acc},{})).map(([b,arr]:any)=>{
+        const nums=(arr as any[]).filter((x:any)=>typeof x==='number')
+        return <tr key={b as string} className="border-t border-border"><td className="py-2.5 font-medium">{b as string}</td>
+          <td className="font-bold text-[16px]">{nums.length?Math.round((nums as number[]).reduce((a,c)=>a+c,0)/nums.length*10)/10:'—'}</td>
+          <td className="text-[12px] text-muted">{(arr as any[]).length}</td></tr>})}</tbody></table>
+    </Card>}
     <Card><h2 className="font-semibold text-[15px] mb-2">Причины отказов: проверка мастером</h2>
       <p className="text-[12px] text-muted mb-3">Исходная причина и автор события неизменны. Неизвестные причины исключают фактор отказов, пока мастер не подтвердит решение. Объём рейтинга - приближение относительно лучшего исполнителя за период, не норматив трудоёмкости.</p>
       {reviewError&&<p role="alert" className="text-danger text-[13px]">{reviewError}</p>}

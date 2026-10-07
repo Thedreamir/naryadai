@@ -58,7 +58,7 @@ async function stateOnline() {
     s.from('notifications').select('*').order('id', {ascending:false}).limit(20),
     s.from('work_norms').select('*'),
   ])
-  for (const r of [emp,orders,equipment,sections,faults,materials]) if (r.error) throw new Error(r.error.message)
+  for (const r of [emp,orders,events,equipment,sections,faults,materials,notifications,norms]) if (r.error) throw new Error(r.error.message)
   const employees = emp.data||[]
   const byId: Record<string,any> = {}; employees.forEach(e=>byId[e.id]=e)
   const secById: Record<number,string> = {}; (sections.data||[]).forEach(x=>secById[x.id]=x.name)
@@ -324,7 +324,7 @@ export async function equipmentHistory(equipmentId: number) {
 
 export function watch(onChange: ()=>void) {
   if (!supabase) return ()=>{}
-  const ch = supabase.channel('orders-live').on('postgres_changes', {event:'*', schema:'public', table:'orders'}, ()=>onChange()).subscribe()
+  const ch = supabase.channel('orders-live-'+crypto.randomUUID()).on('postgres_changes', {event:'*', schema:'public', table:'orders'}, ()=>onChange()).subscribe()
   return ()=>{ supabase!.removeChannel(ch) }
 }
 

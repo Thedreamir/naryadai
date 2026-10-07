@@ -34,6 +34,14 @@
       "ok": true
     },
     {
+      "name": "inactive master upload denied",
+      "ok": true
+    },
+    {
+      "name": "inactive master review denied",
+      "ok": true
+    },
+    {
       "name": "direct insert denied",
       "ok": true
     }

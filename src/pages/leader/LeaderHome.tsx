@@ -10,7 +10,7 @@ export default function LeaderHome({actor}:{actor:Actor}){
     <aside className="w-[248px] shrink-0 bg-white/70 border-r border-border flex flex-col px-[22px] py-8 sticky top-0 h-screen">
       <div className="flex items-center gap-[11px] px-1">
         <img src="/tekton-symbol.svg" alt="" className="w-[34px] h-[34px]"/>
-        <div className="text-[23px] font-bold tracking-[-1px]">НарядAI</div>
+        <div className="text-[23px] font-bold tracking-[-1px]">Tekton OS</div>
       </div>
       <div className="text-[12px] text-muted mt-3 mb-10 px-1">Руководитель · рабочее пространство</div>
       <nav className="flex flex-col">
@@ -24,6 +24,7 @@ export default function LeaderHome({actor}:{actor:Actor}){
           <div className="min-w-0"><div className="text-[13px] font-semibold text-[#313936] truncate">{actor.name}</div><div>Демо-учётка</div></div></div>
         <button className="flex items-center gap-2 h-10 text-[13px] text-muted" onClick={async()=>{await H.logout();location.reload()}}><LogOut size={18}/>Выйти</button>
         <div className="mt-2"><strong className="text-[13px] text-[#313936]">Ptah AI</strong><br/>Помощник, не арбитр качества</div>
+        <div className="mt-1">Dreamer Labs · dreamir</div>
         <div className="mt-2">Синтетические данные · тестовое облако</div>
       </div>
     </aside>

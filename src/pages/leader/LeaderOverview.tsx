@@ -3,21 +3,24 @@ import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
 import {savedPeriod, periodBounds} from '../../lib/period'
 import {ACTIVE_STATUSES} from '../../lib/status'
+import {isTechnicalTitle, savedPresentation, setPresentation} from '../../lib/presentation'
 import type {Actor} from '../../App'
 export default function LeaderOverview({actor}:{actor:Actor}){
   const [st,setSt]=useState<any>(null); const [an,setAn]=useState<any[]|null>(null)
-  const [bounds]=useState(()=>periodBounds(savedPeriod()))
+  const [bounds]=useState(()=>periodBounds(savedPeriod())); const [pres,setPres]=useState(savedPresentation())
   useEffect(()=>{H.state().then(setSt).catch(()=>{});H.anomalies(bounds.since,bounds.until).then(setAn).catch(()=>setAn(null))},[bounds])
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
-  const active=st.orders.filter((o:any)=>ACTIVE_STATUSES.includes(o.status))
-  const review=st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status))
-  const inWork=st.orders.filter((o:any)=>o.status==='in_progress')
+  const visible=pres?st.orders.filter((o:any)=>!isTechnicalTitle(o.title)):st.orders; const hiddenN=st.orders.length-visible.length
+  const active=visible.filter((o:any)=>ACTIVE_STATUSES.includes(o.status))
+  const review=visible.filter((o:any)=>['completed','ai_review'].includes(o.status))
+  const inWork=visible.filter((o:any)=>o.status==='in_progress')
   const overdue=active.filter((o:any)=>new Date(o.deadline).getTime()<Date.now())
   const top=(an||[]).slice(0,4)
   return <div className="space-y-[18px]">
     <div className="flex items-end justify-between">
       <div><h1 className="text-[38px] font-bold tracking-[-1.8px] leading-[1.1]">Картина производства.</h1>
         <p className="text-[15px] text-muted mt-2">Сначала отклонения. Затем причины и действия.</p></div>
+      <label className="flex items-center gap-2 text-[13px] text-muted"><input type="checkbox" checked={pres} onChange={e=>{setPres(e.target.checked);setPresentation(e.target.checked)}}/>Скрыть технические{pres&&hiddenN>0?` (${hiddenN})`:''}</label>
     </div>
     <div className="grid grid-cols-3 gap-[18px]">
       <Card><div className="text-[12px] text-muted">Активные наряды</div><div className="text-[38px] font-bold tracking-[-1.5px] my-1">{active.length}</div><div className="text-[12px] text-muted">По доступной истории</div></Card>

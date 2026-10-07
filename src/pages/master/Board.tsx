@@ -5,6 +5,7 @@ import {Card} from '../../components/ui/card'
 import {Badge} from '../../components/ui/badge'
 import {cn} from '../../lib/utils'
 import {statusOf, ACTIVE_STATUSES} from '../../lib/status'
+import {isTechnicalTitle, savedPresentation, setPresentation} from '../../lib/presentation'
 import {NumberTicker} from '../../components/ui/number-ticker'
 import type {Actor} from '../../App'
 const T: Record<string,{tone:any,label:string}> = {
@@ -13,19 +14,21 @@ const T: Record<string,{tone:any,label:string}> = {
   ai_review:{tone:'teal',label:'Проверка ИИ'},closed:{tone:'gray',label:'Закрыт'}}
 const FILTERS=[['all','Все'],['active','Активные'],['review','Проверка'],['closed','Закрытые']] as const
 export default function Board({actor}:{actor:Actor}){
-  const [st,setSt]=useState<any>(null); const [f,setF]=useState<string>('all'); const [rep,setRep]=useState<any[]|null>(null); const [view,setView]=useState<'list'|'kanban'>('list')
+  const [st,setSt]=useState<any>(null); const [f,setF]=useState<string>('all'); const [rep,setRep]=useState<any[]|null>(null); const [view,setView]=useState<'list'|'kanban'>('list'); const [pres,setPres]=useState(savedPresentation())
   useEffect(()=>{H.state().then(setSt).catch(()=>{})
     H.repeatTop(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setRep).catch(()=>setRep([]))},[])
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
   const now=Date.now()
-  const list = st.orders.filter((o:any)=>f==='all'?o.status!=='closed':f==='active'?ACTIVE_STATUSES.includes(o.status):f==='review'?['completed','ai_review'].includes(o.status):o.status==='closed')
-  const overdue = st.orders.filter((o:any)=>o.status!=='closed'&&new Date(o.deadline).getTime()<now)
-  const counts={active:st.orders.filter((o:any)=>ACTIVE_STATUSES.includes(o.status)).length,
-    work:st.orders.filter((o:any)=>o.status==='in_progress').length,
-    review:st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)).length,
-    closed:st.orders.filter((o:any)=>o.status==='closed').length}
+  const visible=pres?st.orders.filter((o:any)=>!isTechnicalTitle(o.title)):st.orders
+  const hiddenN=st.orders.length-visible.length
+  const list = visible.filter((o:any)=>f==='all'?o.status!=='closed':f==='active'?ACTIVE_STATUSES.includes(o.status):f==='review'?['completed','ai_review'].includes(o.status):o.status==='closed')
+  const overdue = visible.filter((o:any)=>o.status!=='closed'&&new Date(o.deadline).getTime()<now)
+  const counts={active:visible.filter((o:any)=>ACTIVE_STATUSES.includes(o.status)).length,
+    work:visible.filter((o:any)=>o.status==='in_progress').length,
+    review:visible.filter((o:any)=>['completed','ai_review'].includes(o.status)).length,
+    closed:visible.filter((o:any)=>o.status==='closed').length}
   const crew=st.employees.filter((e:any)=>e.role==='worker').map((w:any)=>{
-    const mine=st.orders.filter((o:any)=>o.assignee_id===w.id&&o.status!=='closed'&&o.status!=='rejected')
+    const mine=visible.filter((o:any)=>o.assignee_id===w.id&&o.status!=='closed'&&o.status!=='rejected')
     const work=mine.find((o:any)=>['in_progress','paused','rework'].includes(o.status))
     const q=mine.filter((o:any)=>['issued','queued','accepted'].includes(o.status)).length
     const stt=!w.on_shift?{tone:'gray',label:'не на смене'}:work?{tone:'amber',label:(work.status==='paused'?'пауза':'в работе')+' #'+work.id}:q?{tone:'primary',label:'очередь '+q}:{tone:'teal',label:'свободен'}
@@ -41,7 +44,7 @@ export default function Board({actor}:{actor:Actor}){
   return <div className="space-y-5">
     <div className="flex items-end justify-between"><div><h1 className="text-[26px] font-bold">Наряды смены</h1>
       <div className="text-[13px] text-muted">Каждый переход фиксируется в журнале.</div></div>
-      <Link to="/issue" className="bg-primary text-primary-ink h-11 px-5 rounded-[14px] font-semibold inline-flex items-center">+ Выдать наряд</Link></div>
+      <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-[13px] text-muted"><input type="checkbox" checked={pres} onChange={e=>{setPres(e.target.checked);setPresentation(e.target.checked)}}/>Скрыть технические{pres&&hiddenN>0?` (${hiddenN})`:''}</label><Link to="/issue" className="bg-primary text-primary-ink h-11 px-5 rounded-[13px] font-semibold inline-flex items-center">+ Выдать наряд</Link></div></div>
     {overdue.length>0&&<Card className="border-warn/40 bg-warn/5 space-y-1">
       <div className="font-semibold text-[14px]">Контроль сроков</div>
       {overdue.slice(0,5).map((o:any)=><div key={o.id} className="text-[13px] text-warn flex justify-between"><span>Просрочен наряд #{o.id}: {o.title}</span><span>{new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>)}
@@ -78,7 +81,7 @@ export default function Board({actor}:{actor:Actor}){
         <div className="text-[12px] text-muted">{o.equipment} · {o.assignee} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{new Date(o.deadline).getTime()<now&&o.status!=='closed'?' · просрочен':''}</div>
       </Card></Link>)}
     </div>:<div className="grid grid-cols-3 gap-3 items-start">
-      {KCOLS.map(([k,label,match])=>{const col=st.orders.filter((o:any)=>{if(o.status==='closed'||o.status==='rejected')return false;const isOD=new Date(o.deadline).getTime()<now;return k==='overdue'?isOD:(!isOD&&match(o))})
+      {KCOLS.map(([k,label,match])=>{const col=visible.filter((o:any)=>{if(o.status==='closed'||o.status==='rejected')return false;const isOD=new Date(o.deadline).getTime()<now;return k==='overdue'?isOD:(!isOD&&match(o))})
         return <div key={k} className="space-y-2">
         <div className={cn('text-[12px] font-semibold uppercase tracking-wide',k==='overdue'?'text-warn':'text-muted')}>{label} · {col.length}</div>
         {col.slice(0,12).map((o:any)=><Link to={'/orders/'+o.id} key={k+o.id}><Card className={cn('space-y-1 !p-3 hover:border-primary/40 transition mb-2',k==='overdue'&&'border-warn/50')}>

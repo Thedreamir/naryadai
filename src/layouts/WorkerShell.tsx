@@ -9,7 +9,7 @@ import {usePrefs} from '../ui/prefs'
 const tabs:{to:string;icon:PhName;label:string}[] = [
   {to:'/', icon:'pulse', label:'В работе'},
   {to:'/orders', icon:'clipboardText', label:'Наряды'},
-  {to:'/assistant', icon:'chatsCircle', label:'AI чат'},
+  {to:'/assistant', icon:'chatsCircle', label:'Ptah AI'},
   {to:'/settings', icon:'gearSix', label:'Настройки'},
   {to:'/profile', icon:'userCircle', label:'Профиль'},
 ]
@@ -19,10 +19,10 @@ export default function WorkerShell({actor, children}:{actor:Actor, children:Rea
   return <div className="h-dvh flex flex-col" style={{background:'var(--tk-bg)',color:'var(--tk-ink)'}}>
     <header className="shrink-0 z-20 border-b px-3.5 py-2.5 flex items-center justify-between" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
       <div className="flex items-center gap-2.5 min-w-0">
-        <div className="w-11 h-11 rounded-lg bg-tk-amber text-black flex items-center justify-center font-black text-base shrink-0">НА</div>
+        <div className="w-11 h-11 rounded-lg bg-tk-amber text-black flex items-center justify-center font-black text-base shrink-0">TO</div>
         <div>
           <h1 className="font-extrabold text-sm tracking-tight uppercase flex items-center gap-1.5 leading-none whitespace-nowrap">
-            <span>НарядAI</span>
+            <span>Tekton OS</span>
             {glove&&<span title="Режим перчаток включён" className="shrink-0 bg-tk-amber/20 text-tk-amber border border-tk-amber/50 p-1 rounded flex items-center"><PhIcon name="hand" size={16}/></span>}
           </h1>
           <p className="text-[0.5625rem] font-bold mt-0.5 leading-tight" style={{color:'var(--tk-muted)'}}>Тестовый проект · синтетические данные</p>

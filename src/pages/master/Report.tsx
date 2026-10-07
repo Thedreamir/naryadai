@@ -1,3 +1,4 @@
+import {Button} from '../../components/ui/button'
 import {useEffect, useMemo, useState} from 'react'
 import * as H from '../../lib/data'
 import {ACTIVE_STATUSES} from '../../lib/status'
@@ -6,8 +7,11 @@ import type {Actor} from '../../App'
 import {BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell} from 'recharts'
 const GREEN='#16402F', ACC='#1F9D63', WARN='#C77E1F', RED='#D23B3B', MUT='#B9B9B2'
 export default function Report({actor}:{actor:Actor}){
+  const [refusals,setRefusals]=useState<any[]>([]); const [reviewError,setReviewError]=useState(''); const [reviewBusy,setReviewBusy]=useState(false); const [notes,setNotes]=useState<Record<number,string>>({})
+  const refreshRefusals=()=>H.refusalReviews().then(setRefusals).catch(e=>setReviewError(e.message))
+  const decide=async(eventId:number,classification:'justified'|'unjustified')=>{setReviewBusy(true);setReviewError('');try{await H.reviewRefusal(eventId,classification,notes[eventId]||'');await refreshRefusals();setRt(await H.ratings(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()))}catch(e){setReviewError((e as Error).message);await refreshRefusals()}finally{setReviewBusy(false)}}
   const [st,setSt]=useState<any>(null); const [rt,setRt]=useState<any[]|null>(null); const [an,setAn]=useState<any[]|null>(null)
-  useEffect(()=>{H.state().then(setSt).catch(()=>{});H.ratings(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setRt).catch(()=>setRt(null));H.anomalies(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setAn).catch(()=>setAn(null))},[])
+  useEffect(()=>{refreshRefusals();H.state().then(setSt).catch(()=>{});H.ratings(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setRt).catch(()=>setRt(null));H.anomalies(new Date(Date.now()-90*86400000).toISOString(),new Date().toISOString()).then(setAn).catch(()=>setAn(null))},[])
   const data=useMemo(()=>{
     if(!st) return null
     const closed=st.orders.filter((o:any)=>o.status==='closed'&&o.closed_at)
@@ -33,11 +37,11 @@ export default function Report({actor}:{actor:Actor}){
       <Card><div className="font-semibold text-[15px] mb-3">Закрытия за 7 дней</div>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data.byDay}><XAxis dataKey="day" fontSize={11} tickLine={false}/><YAxis allowDecimals={false} fontSize={11} tickLine={false} width={24}/>
-            <Tooltip/><Bar dataKey="count" fill={GREEN} radius={[6,6,0,0]}/></BarChart>
+            <Tooltip/><Bar isAnimationActive={false} dataKey="count" fill={GREEN} radius={[6,6,0,0]}/></BarChart>
         </ResponsiveContainer></Card>
       <Card><div className="font-semibold text-[15px] mb-3">Статусы нарядов</div>
         <ResponsiveContainer width="100%" height={200}>
-          <PieChart><Pie data={data.statuses} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
+          <PieChart><Pie isAnimationActive={false} data={data.statuses} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
             {data.statuses.map((s:any)=><Cell key={s.name} fill={s.color}/>)}</Pie><Tooltip/></PieChart>
         </ResponsiveContainer>
         <div className="mt-2 space-y-1.5">
@@ -52,12 +56,24 @@ export default function Report({actor}:{actor:Actor}){
     </div>
     <Card><div className="font-semibold text-[15px] mb-2">Рейтинг исполнителей (пять факторов)</div>
       <div className="text-[12px] text-muted mb-3">Веса команды: качество 30 · в срок 25 · без доработок 20 · объём и сложность 15 · без отказов 10. Качество — только оценки мастера; выводы ИИ в балл не входят. Фактор без данных исключается, веса перенормируются — видно в пояснении.</div>
-      <table className="w-full text-[14px]"><thead><tr className="text-left text-[12px] text-muted"><th className="py-2">Исполнитель</th><th>Балл</th><th>Факторы</th><th>Составляющие</th></tr></thead>
+      <table className="w-full text-[14px]"><thead><tr className="text-left text-[12px] text-muted"><th className="py-2">Исполнитель</th><th className="min-w-[65px]">Балл</th><th className="min-w-[65px]">Факторы</th><th>Составляющие</th></tr></thead>
         <tbody>{(rt||[]).map((r:any)=><tr key={r.worker_id} className="border-t border-border align-top"><td className="py-2.5 font-medium">{r.name}</td>
-          <td className="font-bold text-[16px]">{r.total}</td><td>{r.factors_available}/5</td>
+          <td className="font-bold text-[16px]">{r.total??"Нет данных"}</td><td>{r.factors_available}/5</td>
           <td className="text-[12px] text-muted py-2.5">{r.explanation}<div>Отказы: оправдано {r.rejects_justified} · без причины/неоправдано {r.rejects_unjustified} · требуют проверки {r.rejects_unclassified}. {r.f_rejects===null?"Фактор отказов исключён: данные неполные.":""}</div></td></tr>)}</tbody></table>
       {rt===null&&<div className="text-[13px] text-muted py-2">Рейтинг недоступен</div>}
       {rt&&rt.length===0&&<div className="text-[13px] text-muted py-2">Закрытых нарядов за период нет</div>}
+    </Card>
+    <Card><h2 className="font-semibold text-[15px] mb-2">Причины отказов: проверка мастером</h2>
+      <p className="text-[12px] text-muted mb-3">Исходная причина и автор события неизменны. Неизвестные причины исключают фактор отказов, пока мастер не подтвердит решение. Объём рейтинга - приближение относительно лучшего исполнителя за период, не норматив трудоёмкости.</p>
+      {reviewError&&<p role="alert" className="text-danger text-[13px]">{reviewError}</p>}
+      <div className="space-y-3">{refusals.filter(e=>e.reason && !['no_materials','no_permit','busy_emergency','wrong_specialty','unjustified'].includes(e.reason.split(':')[0])).map(e=><div key={e.id} data-refusal-event={e.id} className="border border-border rounded-[12px] p-3">
+        <div className="text-[13px] font-medium">Событие #{e.id} · наряд #{e.order_id} · {st.employees.find((x:any)=>x.id===e.actor_id)?.name||e.actor_id}</div>
+        <div className="text-[13px] mt-1">Исходная причина: {e.reason}</div>
+        <div className="text-[12px] text-muted">{new Date(e.created_at).toLocaleString('ru')} · источник: журнал отказов</div>
+        {e.review?<div className="text-[13px] mt-2">Решение мастера: {e.review.classification==='justified'?'Оправдан':'Неоправдан'} · {e.review.note}<div className="text-muted text-[12px]">{st.employees.find((x:any)=>x.id===e.review.reviewer_id)?.name||e.review.reviewer_id} · {new Date(e.review.reviewed_at).toLocaleString('ru')}</div></div>:
+          actor.role==='master'||actor.role==='admin'?<div className="mt-2 space-y-2"><input aria-label="Основание решения" className="w-full border border-border rounded-[10px] p-3" placeholder="Основание решения (не менее 3 символов)" value={notes[e.id]||''} onChange={x=>setNotes({...notes,[e.id]:x.target.value})}/><div className="flex gap-2"><Button disabled={reviewBusy||(notes[e.id]||'').trim().length<3} onClick={()=>decide(e.id,'justified')}>Подтвердить причину</Button><Button variant="outline" disabled={reviewBusy||(notes[e.id]||'').trim().length<3} onClick={()=>decide(e.id,'unjustified')}>Отказ неоправдан</Button></div></div>:<div className="text-[12px] text-muted">Ожидает решения мастера. Руководителю доступен только просмотр.</div>}
+      </div>)}</div>
+      {refusals.filter(e=>e.reason && !['no_materials','no_permit','busy_emergency','wrong_specialty','unjustified'].includes(e.reason.split(':')[0])).length===0&&<p className="text-muted text-[13px]">Спорных причин нет.</p>}
     </Card>
     <Card><div className="font-semibold text-[15px] mb-2">Аномалии и рекомендации (90 дней)</div>
       <div className="text-[12px] text-muted mb-3">Правила и статистика по демо-истории, не вывод ИИ-модели. Каждый сигнал — повод для анализа, не доказанная закономерность; закономерности заложены в синтетические данные для демонстрации.</div>

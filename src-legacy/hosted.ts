@@ -388,3 +388,14 @@ export async function anomalies(since: string, until: string) {
   if (error) throw new Error(error.message)
   return data as any[]
 }
+
+export async function refusalReviews() {
+  const events=await supabase!.from('order_events').select('*').eq('new_status','rejected').order('created_at',{ascending:false}).limit(1000)
+  const reviews=await supabase!.from('refusal_reviews').select('*')
+  if(events.error) throw events.error; if(reviews.error) throw reviews.error
+  return (events.data||[]).map(e=>({...e,review:(reviews.data||[]).find(r=>r.event_id===e.id)||null}))
+}
+export async function reviewRefusal(eventId:number,classification:'justified'|'unjustified',note:string) {
+  const r=await supabase!.rpc('review_refusal',{p_event_id:eventId,p_classification:classification,p_note:note})
+  if(r.error) throw new Error(r.error.code==='23505'?'Решение уже сохранено. Обновите список; повторная запись недоступна.':r.error.message)
+}

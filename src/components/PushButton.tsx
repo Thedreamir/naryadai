@@ -1,32 +1,40 @@
 import {useEffect, useState} from 'react'
 import * as H from '../lib/data'
 function urlBase64ToUint8Array(base64String:string){const padding='='.repeat((4-base64String.length%4)%4);const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');const rawData=window.atob(base64);const out=new Uint8Array(rawData.length);for(let i=0;i<rawData.length;++i)out[i]=rawData.charCodeAt(i);return out}
+type St='checking'|'unsupported'|'denied'|'subscribed'|'ready'|'error'
 export default function PushButton(){
-  const [st,setSt]=useState<'default'|'granted'|'denied'|'subscribed'|'unsupported'|'error'>('default')
+  const [st,setSt]=useState<St>('checking')
+  const [errMsg,setErrMsg]=useState('')
   const [busy,setBusy]=useState(false)
   useEffect(()=>{
     if(typeof Notification==='undefined'||!('serviceWorker' in navigator)||!('PushManager' in window)){setSt('unsupported');return}
-    setSt(Notification.permission==='granted'?'granted':Notification.permission==='denied'?'denied':'default')
-    navigator.serviceWorker.ready.then(r=>r.pushManager.getSubscription()).then(s=>{if(s)setSt('subscribed')}).catch(()=>{})
+    if(Notification.permission==='denied'){setSt('denied');return}
+    // granted or default: check for a live subscription so a failed past attempt is retryable
+    navigator.serviceWorker.ready.then(r=>r.pushManager.getSubscription()).then(s=>setSt(s?'subscribed':'ready')).catch(()=>setSt('ready'))
   },[])
-  const enable=async()=>{setBusy(true)
+  const enable=async()=>{setBusy(true);setErrMsg('')
     try{
-      const p=await Notification.requestPermission(); setSt(p==='granted'?'granted':p)
-      if(p!=='granted')return
+      const p=await Notification.requestPermission()
+      if(p==='denied'){setSt('denied');return}
+      if(p!=='granted'){setSt('ready');return}
       const vapid=import.meta.env.VITE_VAPID_PUBLIC as string|undefined
-      if(!vapid){setSt('error');return}
+      if(!vapid)throw new Error('нет VAPID-ключа в сборке')
       const reg=await navigator.serviceWorker.ready
-      const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(vapid)})
-      await H.savePushSubscription(sub.toJSON() as {endpoint:string,keys:{p256dh:string,auth:string}})
+      let sub
+      try{sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(vapid)})}
+      catch(e){throw new Error('браузер не выдал push-подписку: '+(e as Error).name)}
+      try{await H.savePushSubscription(sub.toJSON() as {endpoint:string,keys:{p256dh:string,auth:string}})}
+      catch(e){try{await sub.unsubscribe()}catch{};throw new Error('не сохранилась на сервере: '+(e as Error).message)}
       setSt('subscribed')
-    }catch{setSt('error')}finally{setBusy(false)}}
-  if(st==='unsupported')return <div className="text-[13px] text-muted">Уведомления: браузер не поддерживает push.</div>
+    }catch(e){setErrMsg((e as Error).message);setSt('error')}finally{setBusy(false)}}
+  if(st==='checking')return null
+  if(st==='unsupported')return <div className="text-[13px] text-muted">Уведомления: этот браузер не поддерживает push.</div>
   if(st==='subscribed')return <div className="text-[13px] text-muted">Уведомления включены на этом устройстве. Доставка зависит от браузера и ОС.</div>
-  if(st==='denied')return <div className="text-[13px] text-muted">Уведомления запрещены в настройках браузера.</div>
+  if(st==='denied')return <div className="text-[13px] text-muted">Уведомления заблокированы браузером. Включить можно только в настройках сайта в браузере.</div>
   return <div className="space-y-1">
-    <button onClick={enable} disabled={busy} className="w-full h-14 rounded-[14px] border border-border bg-surface font-semibold text-[15px]">{busy?'Включаю…':'Включить уведомления'}</button>
-    {st==='error'&&<div className="text-[13px] text-danger">Подписка не сохранилась — попробуйте ещё раз.</div>}
-    {st==='granted'&&<div className="text-[13px] text-muted">Разрешение есть, завершаю подписку…</div>}
+    <button onClick={enable} disabled={busy} className="w-full h-14 rounded-[14px] border border-border bg-surface font-semibold text-[15px]">{busy?'Включаю…':st==='error'?'Попробовать ещё раз':'Включить уведомления'}</button>
+    {st==='error'&&<div className="text-[13px] text-danger">Не получилось включить: {errMsg}. Нажмите «Попробовать ещё раз».</div>}
+    {st==='ready'&&Notification.permission==='granted'&&<div className="text-[12px] text-muted">Разрешение уже дано; нажмите кнопку, чтобы завершить подписку.</div>}
     <div className="text-[12px] text-muted">Push приходит о новых нарядах. Доставка зависит от браузера и ОС; в демо не гарантируется.</div>
   </div>
 }

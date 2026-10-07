@@ -2,6 +2,10 @@
   "local": true,
   "results": [
     {
+      "name": "architecture-presence-only",
+      "status": "PASS"
+    },
+    {
       "name": "static-quality",
       "status": "PASS"
     },

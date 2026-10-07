@@ -7,16 +7,16 @@
 @import "@fontsource/inter/900.css";
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
-  --color-bg: #F2F2EF;
+  --color-bg: #FBFBFB;
   --color-surface: #FFFFFF;
-  --color-border: #E4E4DE;
-  --color-ink: #1B1B18;
-  --color-muted: #6B6B66;
-  --color-primary: #16402F;
+  --color-border: #E3E8E3;
+  --color-ink: #202526;
+  --color-muted: #6C7471;
+  --color-primary: #184B36;
   --color-primary-ink: #FFFFFF;
   --color-accent: #1F9D63;
   --color-danger: #D23B3B;
-  --color-warn: #C77E1F;
+  --color-warn: #B56618;
   --color-info: #0E7C6B;
   --radius-card: 18px;
   --radius-btn: 14px;

@@ -17,18 +17,25 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
     {to:'/handover', icon:Repeat, label:'Передача смены'},
     {to:'/report', icon:BarChart3, label:'Отчёт и рейтинг'},
   ]
-  return <div className="min-h-screen flex">
-    <aside className="w-60 shrink-0 bg-surface border-r border-border flex flex-col p-4 gap-1 sticky top-0 h-screen">
-      <div className="font-bold text-[1.1875rem] px-2 py-3">НарядAI<div className="text-[0.6875rem] font-medium text-muted">СМЕНА 01 · тестовый участок</div></div>
-      {items.map(i=><NavLink key={i.to} to={i.to} end={i.to==='/'} className={({isActive})=>cn('flex items-center gap-3 px-3 h-11 rounded-[12px] text-[0.875rem] font-medium', isActive?'bg-primary/10 text-primary':'text-ink hover:bg-bg')}>
-        <i.icon size={22}/><span className="flex-1">{i.label}</span>{i.badge?(<span className="bg-primary text-primary-ink text-[0.6875rem] font-bold px-2 py-0.5 rounded-full">{i.badge}</span>):null}</NavLink>)}
-      <div className="mt-auto space-y-2">
-        <div className="flex items-center gap-2 px-2"><div className="h-9 w-9 rounded-full bg-primary text-primary-ink grid place-items-center font-bold">{actor.name?.[0]}</div>
-          <div className="min-w-0"><div className="text-[0.8125rem] font-semibold truncate">{actor.name}</div><div className="text-[0.6875rem] text-muted">Демо-учётка</div></div></div>
-        <button className="flex items-center gap-2 px-3 h-10 text-[0.8125rem] text-muted w-full" onClick={async()=>{await H.logout();location.reload()}}><LogOut size={22}/>Выйти</button>
-        <div className="text-[0.625rem] text-muted px-2">Синтетические данные · тестовое облако</div>
+  return <div className="min-h-screen flex bg-bg">
+    <aside className="w-[248px] shrink-0 bg-white/70 border-r border-border flex flex-col px-[22px] py-8 sticky top-0 h-screen">
+      <div className="flex items-center gap-[11px] px-1">
+        <img src="/tekton-symbol.svg" alt="" className="w-[34px] h-[34px]"/>
+        <div className="text-[23px] font-bold tracking-[-1px]">НарядAI</div>
+      </div>
+      <div className="text-[12px] text-muted mt-3 mb-10 px-1">Мастер · рабочее пространство</div>
+      <nav className="flex flex-col">
+        {items.map(i=><NavLink key={i.to} to={i.to} end={i.to==='/'} className={({isActive})=>cn('flex items-center gap-3 px-[13px] py-4 rounded-[13px] mb-[7px] text-[15px]', isActive?'bg-[#edf1ee] text-[#174b35] font-bold':'text-[#69726e] hover:bg-black/[0.03]')}>
+          <i.icon size={22} strokeWidth={1.5}/><span className="flex-1">{i.label}</span>{i.badge?(<span className="bg-primary text-primary-ink text-[0.6875rem] font-bold px-2 py-0.5 rounded-full">{i.badge}</span>):null}</NavLink>)}
+      </nav>
+      <div className="mt-auto text-[11px] text-[#78807d] leading-[1.9]">
+        <div className="flex items-center gap-2 mb-2"><div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#e9eee9] to-[#d4ded5] text-[#4d6758] grid place-items-center font-bold text-[14px]">{actor.name?.split(' ').map((w:string)=>w[0]).slice(-2).join('')}</div>
+          <div className="min-w-0"><div className="text-[13px] font-semibold text-[#313936] truncate">{actor.name}</div><div>Демо-учётка</div></div></div>
+        <button className="flex items-center gap-2 h-10 text-[13px] text-muted" onClick={async()=>{await H.logout();location.reload()}}><LogOut size={18}/>Выйти</button>
+        <div className="mt-2"><strong className="text-[13px] text-[#313936]">Ptah AI</strong><br/>Помощник, не арбитр качества</div>
+        <div className="mt-2">Синтетические данные · тестовое облако</div>
       </div>
     </aside>
-    <main className="flex-1 min-w-0 p-6 max-w-[1200px]"><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
+    <main className="flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]"><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
   </div>
 }

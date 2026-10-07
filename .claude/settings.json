@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p=require('path');require(p.join(process.env.CLAUDE_PROJECT_DIR||process.cwd(),'.claude/scripts/hooks/block-no-verify.js'))\""
+            "command": "node -e \"const p=require('path'),c=require('child_process'),f=require('fs');const r=c.spawnSync(process.execPath,[p.join(process.env.CLAUDE_PROJECT_DIR||process.cwd(),'.claude/scripts/hooks/block-no-verify.js')],{input:f.readFileSync(0),encoding:'utf8'});if(r.stdout)process.stdout.write(r.stdout);if(r.stderr)process.stderr.write(r.stderr);process.exit(r.status===null?2:r.status)\""
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const p=require('path');require(p.join(process.env.CLAUDE_PROJECT_DIR||process.cwd(),'.claude/scripts/hooks/config-protection.js'))\""
+            "command": "node -e \"const p=require('path'),c=require('child_process'),f=require('fs');const r=c.spawnSync(process.execPath,[p.join(process.env.CLAUDE_PROJECT_DIR||process.cwd(),'.claude/scripts/hooks/config-protection.js')],{input:f.readFileSync(0),encoding:'utf8'});if(r.stdout)process.stdout.write(r.stdout);if(r.stderr)process.stderr.write(r.stderr);process.exit(r.status===null?2:r.status)\""
           }
         ]
       }

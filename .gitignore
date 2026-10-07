@@ -7,3 +7,9 @@ node_modules/
 playwright-report/
 test-results/
 tsconfig.tsbuildinfo
+android/.gradle/
+android/**/build/
+android/local.properties
+android/**/google-services.json
+*.jks
+*.keystore

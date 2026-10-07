@@ -1,0 +1,38 @@
+{
+  "synthetic": true,
+  "node": true,
+  "tests": [
+    {
+      "name": "bearing ranks first",
+      "ok": true
+    },
+    {
+      "name": "draft excluded",
+      "ok": true
+    },
+    {
+      "name": "source version and quote exact",
+      "ok": true
+    },
+    {
+      "name": "revoked excluded next request",
+      "ok": true
+    }
+  ],
+  "elapsed_ms": 57,
+  "ranked": [
+    {
+      "source_id": 1,
+      "score": 0.8944331969248049
+    },
+    {
+      "source_id": 2,
+      "score": 0.8101304471382693
+    }
+  ],
+  "not_tested": [
+    "Supabase integration",
+    "shared-host auth",
+    "semantic accuracy corpus"
+  ]
+}

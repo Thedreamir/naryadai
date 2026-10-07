@@ -20,7 +20,7 @@ export default function Issue({actor}:{actor:Actor}){
   const input='w-full h-14 px-4 rounded-[14px] border border-border bg-surface text-[16px]'
   return <div className="max-w-xl space-y-4">
     <div><h1 className="text-[26px] font-bold">Выдать наряд</h1>
-      <div className="text-[13px] text-muted">Исполнитель получит уведомление. Переходы фиксируются в журнале.</div></div>
+      <div className="text-[13px] text-muted">Исполнитель увидит наряд в своём списке. Push-уведомления в демо не проверены. Переходы фиксируются в журнале.</div></div>
     <form onSubmit={submit} className="space-y-4">
       <Card className="space-y-4">
         <label className="block"><span className="text-[13px] font-medium text-muted">Проблема и работы</span>

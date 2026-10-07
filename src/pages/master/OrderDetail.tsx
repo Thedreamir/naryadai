@@ -46,11 +46,13 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
     </Card>}
     {o.ai_result&&<Card className="space-y-2">
       <div className="flex items-center gap-2"><span className="font-semibold text-[15px]">Карточка оснований</span>
-        {(o.ai_result.mode==='live'||o.ai_result.mode==='cache')&&<Badge tone="teal">Вывод ИИ · не решение</Badge>}</div>
-      <div className="font-semibold">Модель считает: {o.ai_result.verdict==='rework'?'«Требует доработки»':o.ai_result.verdict==='accepted_with_notes'?'«Принято с замечаниями»':'«Нужна проверка мастером»'}</div>
-      <div className="text-[12px] text-muted">Утверждения ниже — вывод модели по описанию и фото, не подтверждённый осмотром{o.ai_result.model?' · '+o.ai_result.model:''}.</div>
+        {(o.ai_result.mode==='live'||o.ai_result.mode==='cache')?<Badge tone="teal">Вывод ИИ · не решение</Badge>:<Badge tone="gray">Проверка по правилам · не решение</Badge>}</div>
+      {o.ai_result.mode==='live'&&<div className="font-semibold">Модель считает: {o.ai_result.verdict==='rework'?'«Требует доработки»':o.ai_result.verdict==='accepted_with_notes'?'«Принято с замечаниями»':'«Нужна проверка мастером»'}</div>}
+      {o.ai_result.mode==='cache'&&<div className="font-semibold">Модель считала ранее (ответ из кэша проверок): {o.ai_result.verdict==='rework'?'«Требует доработки»':o.ai_result.verdict==='accepted_with_notes'?'«Принято с замечаниями»':'«Нужна проверка мастером»'}</div>}
+      {o.ai_result.mode!=='live'&&o.ai_result.mode!=='cache'&&<div className="font-semibold">Формальная проверка по правилам: {o.ai_result.verdict==='rework'?'«Требует доработки»':o.ai_result.verdict==='accepted_with_notes'?'«Принято с замечаниями»':'«Нужна проверка мастером»'}</div>}
+      <div className="text-[12px] text-muted">{o.ai_result.mode==='live'?'Утверждения ниже — вывод модели по описанию и фото, не подтверждённый осмотром':o.ai_result.mode==='cache'?'Утверждения ниже — кэшированный вывод модели от более ранней идентичной проверки, не повторный ответ модели':'Основания ниже — результат формальной проверки полей закрытия по правилам. Модель не участвовала.'}{o.ai_result.model&&(o.ai_result.mode==='live'||o.ai_result.mode==='cache')?' · '+o.ai_result.model:''}</div>
       <ul className="list-disc pl-5 text-[14px] space-y-0.5">{o.ai_result.reasons.map((r:string)=><li key={r}>{r}</li>)}</ul>
-      <div className="text-[12px] text-muted">{o.ai_result.mode==='live'?'Ответ языковой модели. Физический ремонт не подтверждён, оценка не калибрована.':o.ai_result.mode==='cache'?'Повторный ответ из кэша проверок.':'Проверка по правилам, модель не участвовала.'}{o.ai_result.fallback_reason?' '+o.ai_result.fallback_reason:''}</div>
+      <div className="text-[12px] text-muted">{o.ai_result.mode==='live'?'Ответ языковой модели. Физический ремонт не подтверждён, оценка не калибрована.':o.ai_result.mode==='cache'?'Повторный ответ из кэша проверок. Физический ремонт не подтверждён.':'Проверка по правилам, модель не участвовала.'}{o.ai_result.fallback_reason?' '+o.ai_result.fallback_reason:''}</div>
     </Card>}
     {['ai_review','completed'].includes(o.status)&&<Card className="space-y-3">
       <div className="font-semibold text-[15px]">Решение мастера</div>

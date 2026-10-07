@@ -25,7 +25,7 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
       <div className="mt-auto space-y-2">
         <div className="flex items-center gap-2 px-2"><div className="h-9 w-9 rounded-full bg-primary text-primary-ink grid place-items-center font-bold">{actor.name?.[0]}</div>
           <div className="min-w-0"><div className="text-[13px] font-semibold truncate">{actor.name}</div><div className="text-[11px] text-muted">Демо-учётка</div></div></div>
-        <button className="flex items-center gap-2 px-3 h-10 text-[13px] text-muted w-full" onClick={async()=>{await H.logout();location.reload()}}><LogOut size={16}/>Сменить роль</button>
+        <button className="flex items-center gap-2 px-3 h-10 text-[13px] text-muted w-full" onClick={async()=>{await H.logout();location.reload()}}><LogOut size={16}/>Выйти</button>
         <div className="text-[10px] text-muted px-2">Синтетические данные · тестовое облако</div>
       </div>
     </aside>

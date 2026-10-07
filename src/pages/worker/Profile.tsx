@@ -25,7 +25,7 @@ export default function Profile({actor}:{actor:Actor}){
       </div>
     </Card>
     <Card className="text-[13px] text-muted">Статистика по доступной истории демо-базы, не аттестация.</Card>
-    <Button size="big" variant="outline" className="w-full" onClick={async()=>{await H.logout();location.reload()}}>Сменить роль</Button>
+    <Button size="big" variant="outline" className="w-full" onClick={async()=>{await H.logout();location.reload()}}>Выйти</Button>
     <div className="text-[12px] text-muted text-center">Синтетические данные · тестовый проект</div>
   </div>
 }

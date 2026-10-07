@@ -76,3 +76,10 @@ end $$;
 revoke all on function public.worker_rating(timestamptz,timestamptz) from public;
 grant execute on function public.worker_rating(timestamptz,timestamptz) to authenticated;
 select pg_notify('pgrst','reload schema');
+-- service_role needs explicit table grants once RLS is on (employee upserts via admin API)
+grant select, insert, update, delete on public.sections to service_role;
+grant select, insert, update, delete on public.equipment to service_role;
+grant select, insert, update, delete on public.employees to service_role;
+grant select, insert, update, delete on public.fault_codes to service_role;
+grant select, insert, update, delete on public.materials to service_role;
+grant select, insert, update, delete on public.crews to service_role;

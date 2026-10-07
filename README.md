@@ -31,3 +31,6 @@ UI требует конфигурации Supabase и собственного 
 ## Библиотеки, реально использованные в коде
 
 React, TypeScript, Vite, Tailwind, Lucide, Supabase, qrcode. PDF.js и Transformers.js: Apache-2.0; multilingual-e5-small: MIT по карточке исходной модели. Это поисковые эмбеддинги, не генератор ответов. Hugging Face нужен для скачивания весов; текст обрабатывается локально. Пакет и модель проверены отдельно от установленных, но неиспользуемых библиотек.
+
+### Quality hooks
+ECC 2.2.3 core was installed locally. The committed subset contains portable no-verify/config-protection hooks and selected security/testing/TypeScript rules. Hooks fire only inside Claude Code; they are not build gates or evidence of runtime correctness. Run `npm run verify` separately. Tool observation, session storage, sponsor modules, and local state databases are not part of this subset.

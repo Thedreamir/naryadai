@@ -1,13 +1,13 @@
 import {useEffect, useState} from 'react'
 import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
-import {savedPeriod, periodBounds} from '../../lib/period'
+import {savedPeriod, periodBounds, type PeriodDays} from '../../lib/period'
 import {ACTIVE_STATUSES} from '../../lib/status'
 import {isTechnicalTitle, savedPresentation, setPresentation} from '../../lib/presentation'
 import type {Actor} from '../../App'
 export default function LeaderOverview({actor}:{actor:Actor}){
   const [st,setSt]=useState<any>(null); const [an,setAn]=useState<any[]|null>(null); const [radar,setRadar]=useState<any[]|null>(null)
-  const [bounds]=useState(()=>periodBounds(savedPeriod())); const [pres,setPres]=useState(savedPresentation())
+  const [days]=useState<PeriodDays>(savedPeriod()); const [bounds]=useState(()=>periodBounds(days)); const [pres,setPres]=useState(savedPresentation())
   useEffect(()=>{H.state().then(setSt).catch(()=>{});H.anomalies(bounds.since,bounds.until).then(setAn).catch(()=>setAn(null));H.repeatTop(bounds.since,bounds.until).then(setRadar).catch(()=>setRadar(null))},[bounds])
   if(!st) return <div className="text-muted py-10">Загрузка…</div>
   const visible=pres?st.orders.filter((o:any)=>!isTechnicalTitle(o.title)):st.orders; const hiddenN=st.orders.length-visible.length
@@ -21,7 +21,7 @@ export default function LeaderOverview({actor}:{actor:Actor}){
   const radarRows=Object.values(byEquip).sort((a,b)=>b.pairs-a.pairs||b.closed-a.closed).slice(0,5)
   const level=(r:{closed:number,pairs:number})=>r.pairs>=20||r.closed>=8?{label:'Высокий сигнал',dot:'#c0392b',bg:'#fbeaea',text:'#8f2424'}:r.pairs>=10||r.closed>=5?{label:'Средний сигнал',dot:'#c08c41',bg:'#fdf3e3',text:'#8a5a12'}:{label:'В норме',dot:'#3d8a5a',bg:'#e6f2ea',text:'#1e6b41'}
   const topRisk=radarRows[0]
-  const summary=topRisk?`За период: активных нарядов ${active.length}, в работе ${inWork.length}, на проверке ${review.length}, просрочено ${overdue.length}. Системный сигнал: «${topRisk.name}» — ${topRisk.pairs} повторных пар закрытий за период. Ptah AI предлагает назначить проверку причины; решение принимает мастер.`:`За период: активных нарядов ${active.length}, в работе ${inWork.length}, на проверке ${review.length}, просрочено ${overdue.length}. Повторных сигналов по оборудованию не выявлено.`
+  const summary=topRisk?`Сейчас: активных нарядов ${active.length}, в работе ${inWork.length}, на проверке ${review.length}, просрочено ${overdue.length}. За ${days} дней — системный сигнал: «${topRisk.name}», ${topRisk.pairs} повторных пар закрытий. Ptah AI предлагает назначить проверку причины; решение принимает мастер.`:`Сейчас: активных нарядов ${active.length}, в работе ${inWork.length}, на проверке ${review.length}, просрочено ${overdue.length}. За ${days} дней повторных сигналов по оборудованию не выявлено.`
   return <div className="space-y-[18px]">
     <Card className="border-l-[4px] border-l-[#174b35]">
       <div className="flex items-center justify-between mb-2"><h2 className="text-[15px] font-bold">Сводка Ptah AI</h2><span className="text-[11px] px-2 py-1 rounded-[7px] bg-[#edf1ee] text-[#174b35]">Советует, не решает</span></div>

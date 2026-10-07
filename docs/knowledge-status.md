@@ -1,11 +1,14 @@
-# Загрузка знаний: подготовлено, ещё не развёрнуто
+# Знания: подготовлено, не развёрнуто
 
-Файлы миграции 053 и UI подготовлены. До применения и проверки в действующей БД они не являются рабочей функцией.
+Обычная сборка скрывает функцию. VITE_KNOWLEDGE_PREVIEW=true только для локального QA. Миграция 053 и assistant-chat не применены в live.
 
-- Только синтетический текст/.txt до 12 КБ. PDF и сканы не поддерживаются.
-- Master/leader создают draft. Master/admin подтверждает увиденную версию с основанием, или отклоняет. Approved можно отозвать. История сохраняет текст/версию/автора.
-- Рабочий читает только approved. Модель получает только approved. Старые curated документы становятся draft, требуют проверки.
-- Перед внешней моделью подготовлено удаление email, длинных номеров, полных имён из справочника сотрудников. Это ограниченная защита, не гарантированная анонимизация: косвенные идентификаторы, части имён и неизвестные имена могут остаться. Реальные документы не разрешены.
-- Поиск пока keyword, не эмбеддинги. Бесплатная открытая модель пока не подключена. Не выдавать Gemini за open source.
+- TXT/PDF: локальный PDF.js, 2 МБ, 10 страниц, 12 000 символов. Сканы без OCR отклоняются. Только синтетика.
+- Draft -> утверждение увиденной версии -> approved -> revoke. Audit хранит снимки. 11 тестов минимальной локальной схемы, не всей схемы.
+- Transformers.js multilingual-e5-small q8, wasm в браузере. Веса скачиваются с Hugging Face; текст локален. Node inference проверен, браузерный ещё требует QA. Score не вероятность достоверности. Это эмбеддинги, не генеративная модель.
+- Повторное чтение БД после поиска удаляет устаревшие/отозванные результаты. Это не постоянная синхронизация всех открытых экранов.
+- Новая assistant-chat defaults rules-only: regex не даёт гарантии анонимизации. ALLOW_SYNTHETIC_EXTERNAL_CHAT разрешает только отдельный тест после проверки, не реальные материалы. Live-функция не менялась.
+- Требуются полный миграционный прогон, live цикл и проверка цитат/отзыва. До них блок не выполнен.
 
-Нужны: миграционный тест и RLS/role tests, draft-not-retrieved, approved-retrieved, revoke-not-retrieved, stale-version отказ, redaction tests, безопасное развёртывание Edge Function. До этого нельзя объявлять блок выполненным.
+Источники: https://huggingface.co/Xenova/multilingual-e5-small ; https://huggingface.co/intfloat/multilingual-e5-small ; https://huggingface.co/docs/transformers.js/en/pipelines ; https://mozilla.github.io/pdf.js/examples/
+
+Hard-test result: real PDF text extraction passed in local Chromium. In-browser E5 inference crashed the tab in the constrained test environment (about 2 GB total memory); Node success does not establish browser viability. Browser search remains failed/unverified and must not be presented as working. No production route is exposed by default.

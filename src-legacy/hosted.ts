@@ -83,7 +83,9 @@ export async function state() {
     }
   } catch { for (const o of ordersJoined) (o as any).intake_photos = [] }
   const eventsJoined = (events.data||[]).map((e:AnyOrder)=>({...e, actor: byId[e.actor_id]?.name||'—'}))
-  return {actor, orders: ordersJoined, employees, events: eventsJoined,
+  let permits: any[] = []
+  try { const {data: pr} = await s.from('employee_permits').select('*'); permits = pr||[] } catch { permits = [] }
+  return {actor, orders: ordersJoined, employees, events: eventsJoined, permits,
     equipment: Object.values(eqById), fault_codes: faults.data||[], materials: materials.data||[],
     notifications: notifications.data||[], work_norms: norms.data||[], backend: 'Supabase · тестовый проект (синтетические данные)'}
 }

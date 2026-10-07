@@ -6,7 +6,7 @@ import {cn} from '../../lib/utils'
 type Msg={from:'me'|'ai';text:string;mode?:string}
 const SR:any=(window as any).SpeechRecognition||(window as any).webkitSpeechRecognition
 export default function Assistant({actor}:{actor:Actor}){
-  const [msgs,setMsgs]=useState<Msg[]>([{from:'ai',text:'Задайте вопрос по наряду или оборудованию. Отвечаю только по данным системы и документации — если данных нет, скажу прямо.'}])
+  const [msgs,setMsgs]=useState<Msg[]>([{from:'ai',text:'Задайте вопрос по наряду или оборудованию. Отвечаю только по данным системы и демо-документации — если данных нет, скажу прямо.'}])
   const [input,setInput]=useState(''); const [busy,setBusy]=useState(false); const [err,setErr]=useState('')
   const [orderId,setOrderId]=useState<number|null>(null)
   const [listening,setListening]=useState(false); const recRef=useRef<any>(null)
@@ -30,7 +30,7 @@ export default function Assistant({actor}:{actor:Actor}){
   return <div className="flex flex-col" style={{height:'calc(100dvh - 8.5rem)'}}>
     <div className="tk-card p-2.5 mb-2 text-[10px] font-bold flex items-center gap-2" style={{color:'var(--tk-muted)'}}>
       <Bot size={13} className="text-tk-amber shrink-0"/>
-      Текстовый ассистент. Отвечает только по данным наряда и документации; без данных отвечает «нет данных». Ничего не меняет в нарядах.
+      Текстовый ассистент. Отвечает только по данным наряда и демо-документации (синтетической, не заводской); без данных отвечает «нет данных». Ничего не меняет в нарядах.
       {orderId&&<span className="text-tk-amber">· контекст: наряд #{orderId}</span>}
     </div>
     <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">

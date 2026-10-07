@@ -9,9 +9,9 @@ import {Camera, TriangleAlert, X, Check, ArrowLeft, ArrowRight, Package} from 'l
 import {cn} from '../../lib/utils'
 const DECLS=[
   'Подтверждаю лично: оборудование обесточено и заземлено согласно наряду-допуску',
-  'Подтверждаю лично: блокировки и предупреждающие плакаты (LOTO) вывешены',
-  'Подтверждаю лично: после работ выполнен контрольный запуск / осмотр'
+  'Подтверждаю лично: блокировки и предупреждающие плакаты (LOTO) вывешены'
 ]
+const DECL_POST='Подтверждаю лично: после работ выполнен контрольный запуск / осмотр'
 const TEMPLATES=['Узел осмотрен, заменена изношенная деталь, крепёж протянут по инструкции. Контрольный запуск выполнен — посторонних шумов нет.','Загрязнение устранено, смазка узла обновлена, работа восстановлена.','Причина — износ. Деталь заменена, люфтов и вибрации не выявлено.']
 function compress(f:File){return imageCompression(f,{maxSizeMB:0.35,maxWidthOrHeight:1600})}
 function read(f:Blob){return new Promise<string>(res=>{const r=new FileReader();r.onload=()=>res(String(r.result));r.readAsDataURL(f)})}
@@ -20,12 +20,13 @@ export default function OrderDetail({actor}:{actor:Actor}){
   const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
   const [permitKind,setPermitKind]=useState(''); const [permitNote,setPermitNote]=useState('')
   const [wiz,setWiz]=useState(false); const [step,setStep]=useState(0)
-  const [decl,setDecl]=useState<boolean[]>([false,false,false])
+  const [decl,setDecl]=useState<boolean[]>([false,false]); const [declPost,setDeclPost]=useState(false)
   const [works,setWorks]=useState(''); const [fault,setFault]=useState(''); const [materials,setMaterials]=useState('')
-  const [before,setBefore]=useState<string[]>([]); const [after,setAfter]=useState<string[]>([])
+  const [after,setAfter]=useState<string[]>([])
+  const [intakeBusy,setIntakeBusy]=useState(false)
   const load=()=>H.state().then(setSt).catch(e=>setErr(e.message))
   useEffect(()=>{load()},[id])
-  const openWiz=()=>{setWiz(true);setStep(0);setDecl([false,false,false]);setWorks('');setFault('');setMaterials('');setBefore([]);setAfter([])}
+  const openWiz=()=>{setWiz(true);setStep(0);setDecl([false,false]);setDeclPost(false);setWorks('');setFault('');setMaterials('');setAfter([])}
   const go=async(status:string,reason?:string,closure?:any)=>{setBusy(true);setErr('')
     try{await H.transition(o.id,{status,version:o.version,reason,closure});setWiz(false);await load();window.scrollTo(0,0)}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
   if(err&&!st) return <div className="tk-card p-4 text-tk-red">{err}</div>
@@ -33,15 +34,19 @@ export default function OrderDetail({actor}:{actor:Actor}){
   const o=st.orders.find((x:any)=>x.id===Number(id))
   if(!o||o.assignee_id!==actor.id) return <div className="tk-card p-4">Наряд не найден или назначен другому исполнителю.</div>
   const needPhoto=o.kind==='unplanned'
-  const masterBefore:string[]=o.before_photos||[]
+  const intake:any[]=Array.isArray(o.intake_photos)?o.intake_photos:[]
+  const masterBefore:string[]=[...(o.before_photos||[]),...intake.map((p:any)=>p.url).filter(Boolean)]
+  const intakeAllowed=['accepted','in_progress','rework','paused'].includes(o.status)
+  const doIntake=async(f:File|null|undefined)=>{if(!f||intakeBusy)return;setIntakeBusy(true);setErr('')
+    try{const url=await read(await compress(f));await H.recordIntakePhoto(o.id,url);await load()}catch(e){setErr((e as Error).message)}finally{setIntakeBusy(false)}}
   const doPermit=async()=>{setBusy(true);setErr('')
     try{await H.recordPermit(o.id,{kind:permitKind,note:permitNote,version:o.version});setPermitKind('');setPermitNote('');await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
   const allDecl=decl.every(Boolean)
-  const canSend=works.trim().length>=12&&!!fault&&(!needPhoto||after.length>0)
-  const complete=()=>go('completed',undefined,{works,fault_code:fault,materials:materials?[{name:materials,quantity:1}]:[],photos:after,before_photos:before.length?before:undefined,safety_declarations:DECLS.map((d,i)=>({text:d,confirmed:decl[i]}))})
-  const addPh=async(f:File|null|undefined,which:'before'|'after')=>{if(!f)return;const url=await read(await compress(f));which==='before'?setBefore(p=>[...p,url]):setAfter(p=>[...p,url])}
+  const canSend=works.trim().length>=12&&!!fault&&declPost&&(!needPhoto||after.length>0)
+  const complete=()=>go('completed',undefined,{works,fault_code:fault,materials:materials?[{name:materials,quantity:1}]:[],photos:after,safety_declarations:[...DECLS.map((d,i)=>({phase:'pre_work',text:d,confirmed:decl[i]})),{phase:'post_work',text:DECL_POST,confirmed:declPost}]})
+  const addPh=async(f:File|null|undefined)=>{if(!f)return;const url=await read(await compress(f));setAfter(p=>[...p,url])}
   const steps=['Безопасность','Отчёт','Фото']
-  const stepOk=[allDecl,works.trim().length>=12&&!!fault,(!needPhoto||after.length>0)]
+  const stepOk=[allDecl,works.trim().length>=12&&!!fault&&declPost,(!needPhoto||after.length>0)]
   return <div className="space-y-3">
     <button className="text-xs font-bold" style={{color:'var(--tk-muted)'}} onClick={()=>nav(-1)}>← Назад</button>
     <div className="tk-card p-3.5 space-y-2.5">
@@ -55,10 +60,18 @@ export default function OrderDetail({actor}:{actor:Actor}){
       <div className="text-xs" style={{color:'var(--tk-muted)'}}>{o.equipment} · {o.section} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
       {err&&<div className="text-xs text-tk-red font-bold">{err}</div>}
     </div>
-    {masterBefore.length>0?<div className="tk-card p-3 space-y-2">
-      <div className="text-[11px] font-black uppercase tracking-wider" style={{color:'var(--tk-muted)'}}>Фото до (от мастера)</div>
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">{masterBefore.map((p,i)=><img key={i} src={p} className="h-32 rounded-lg" alt="Фото до"/>)}</div>
-    </div>:<div className="tk-card p-3 text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует — снимите при приёмке в шаге «Фото» при закрытии.</div>}
+    <div className="tk-card p-3 space-y-2">
+      <div className="text-[11px] font-black uppercase tracking-wider" style={{color:'var(--tk-muted)'}}>Фото до (приёмка)</div>
+      {masterBefore.length>0&&<div className="flex gap-2 overflow-x-auto no-scrollbar">{masterBefore.map((p,i)=><img key={i} src={p} className="h-32 rounded-lg" alt="Фото до"/>)}</div>}
+      {masterBefore.length===0&&<div className="text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует.</div>}
+      {intakeAllowed&&<div>
+        <label className={cn("tk-sub w-full h-12 flex items-center justify-center gap-2 cursor-pointer text-xs font-black uppercase",intakeBusy&&'opacity-50')}>
+          <Camera size={15}/>{intakeBusy?'Загрузка…':'Снять фото приёмки (до начала работ)'}
+          <input type="file" accept="image/*" capture="environment" className="hidden" disabled={intakeBusy} onChange={e=>{doIntake(e.target.files?.[0]);e.target.value=''}}/></label>
+        <div className="text-[10px] mt-1" style={{color:'var(--tk-muted)'}}>Фиксируется с отметкой времени сервера; после сдачи наряда добавить нельзя. Время съёмки сервером не подтверждается.</div>
+      </div>}
+      {intake.length>0&&<div className="text-[10px]" style={{color:'var(--tk-muted)'}}>{intake.map((p:any)=>'Получено сервером '+new Date(p.server_received_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})).join(' · ')}</div>}
+    </div>
     {!o.permit_kind&&['issued','accepted','queued'].includes(o.status)&&<div className="tk-card p-3.5 space-y-2.5">
       <div className="text-[13px] font-black uppercase tracking-wide">Допуск к работе</div>
       <div className="text-[11px]" style={{color:'var(--tk-muted)'}}>Отметьте допуск перед началом — запись уходит в журнал.</div>
@@ -80,13 +93,13 @@ export default function OrderDetail({actor}:{actor:Actor}){
     {o.status==='queued'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={busy} onClick={()=>go('accepted')}>Принять из очереди</button>}
     {o.status==='in_progress'&&<>
       <button className="tk-touch tk-sub uppercase" disabled={busy} onClick={()=>go('paused','Пауза')}>Пауза</button>
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base" onClick={openWiz}>Закрыть наряд №{o.id}</button></>}
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base" onClick={openWiz}>Сдать наряд №{o.id} на проверку</button></>}
     {o.status==='paused'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase" disabled={busy} onClick={()=>go('in_progress')}>Продолжить</button>}
     {['completed','ai_review'].includes(o.status)&&<div className="tk-card p-4 text-center font-black text-tk-blue text-sm">На проверке у мастера</div>}
     {o.status==='rework'&&<div className="tk-card p-4 space-y-1.5 border-tk-red">
       <div className="font-black text-tk-red text-sm flex items-center gap-2"><TriangleAlert size={15}/>На доработке</div>
       {o.ai_result?.reason&&<div className="text-xs" style={{color:'var(--tk-muted)'}}>Проверка ИИ: {o.ai_result.reason}</div>}
-      <button className="tk-touch bg-tk-amber text-black w-full border border-amber-600 uppercase" onClick={openWiz}>Повторить закрытие</button></div>}
+      <button className="tk-touch bg-tk-amber text-black w-full border border-amber-600 uppercase" onClick={openWiz}>Сдать повторно</button></div>}
     {o.status==='closed'&&<div className="tk-card p-3.5 space-y-1.5">
       <span className="text-[10px] font-black px-2 py-0.5 rounded uppercase tk-sub">Закрыт</span>
       {o.ai_result?.human_score&&<div className="text-sm font-bold">Оценка мастера: {o.ai_result.human_score} / 5</div>}
@@ -97,7 +110,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
       <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl border flex flex-col max-h-[92dvh]" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
         <div className="p-3.5 border-b space-y-2.5" style={{borderColor:'var(--tk-border)'}}>
           <div className="flex justify-between items-center">
-            <h3 className="font-black text-xs uppercase tracking-wide text-tk-amber">Закрытие наряда №{o.id}</h3>
+            <h3 className="font-black text-xs uppercase tracking-wide text-tk-amber">Сдача наряда №{o.id} на проверку</h3>
             <button onClick={()=>setWiz(false)} className="w-8 h-8 tk-sub flex items-center justify-center rounded-lg"><X size={15}/></button>
           </div>
           <div className="flex gap-1.5">
@@ -139,30 +152,26 @@ export default function OrderDetail({actor}:{actor:Actor}){
               <div className="text-[11px] font-black uppercase mb-1 flex items-center gap-1" style={{color:'var(--tk-muted)'}}><Package size={12}/>Материалы (необязательно)</div>
               <input className="tk-input w-full h-12 px-3 text-sm" value={materials} onChange={e=>setMaterials(e.target.value)} placeholder="Например: подшипник 6204 — 1 шт"/>
             </div>
+            <label className={cn("tk-card p-3 flex items-start gap-2.5 cursor-pointer transition",declPost&&'border-tk-green')}>
+              <input type="checkbox" checked={declPost} onChange={()=>setDeclPost(v=>!v)} className="mt-0.5 w-5 h-5 accent-tk-green shrink-0"/>
+              <span className="text-xs font-bold leading-snug">{DECL_POST}</span>
+            </label>
           </div>}
           {step===2&&<div className="space-y-3">
-            {masterBefore.length>0&&<div>
-              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>До (от мастера)</div>
+            {masterBefore.length>0?<div>
+              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото до (зафиксировано при выдаче/приёмке)</div>
               <div className="flex gap-2 overflow-x-auto no-scrollbar">{masterBefore.map((p,i)=><img key={i} src={p} className="h-24 rounded-lg" alt="До"/>)}</div>
-            </div>}
-            {masterBefore.length===0&&<div>
-              <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото до (ваша приёмка){before.length===0?' — не обязательно':''}</div>
-              <div className="flex gap-2 flex-wrap items-center">
-                {before.map((p,i)=><img key={i} src={p} className="h-24 rounded-lg" alt="До приёмка"/>)}
-                <label className="h-24 w-24 tk-sub border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer text-[10px] font-bold" style={{color:'var(--tk-muted)'}}>
-                  <Camera size={18}/>Снять<input type="file" accept="image/*" capture="environment" className="hidden" onChange={e=>addPh(e.target.files?.[0],'before')}/></label>
-              </div>
-            </div>}
+            </div>:<div className="tk-sub p-2.5 text-[11px] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует — приёмочное фото снимается до начала работ, здесь его добавить нельзя.</div>}
             <div>
               <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото после{needPhoto?' (обязательно — внеплановый наряд)':''}</div>
               <div className="flex gap-2 flex-wrap items-center">
                 {after.map((p,i)=><img key={i} src={p} className="h-24 rounded-lg border-2 border-tk-green" alt="После"/>)}
                 <label className="h-24 w-24 border-2 border-dashed border-tk-green rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer text-[10px] font-bold text-tk-green">
-                  <Camera size={18}/>Снять<input type="file" accept="image/*" capture="environment" className="hidden" onChange={e=>addPh(e.target.files?.[0],'after')}/></label>
+                  <Camera size={18}/>Снять<input type="file" accept="image/*" capture="environment" className="hidden" onChange={e=>addPh(e.target.files?.[0])}/></label>
               </div>
             </div>
-            {(masterBefore.length>0||before.length>0)&&after.length>0&&<div className="grid grid-cols-2 gap-2">
-              <div className="text-center"><div className="text-[9px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>До</div><img src={(masterBefore[0]||before[0])} className="w-full h-28 object-cover rounded-lg border" style={{borderColor:'var(--tk-border)'}} alt="До"/></div>
+            {masterBefore.length>0&&after.length>0&&<div className="grid grid-cols-2 gap-2">
+              <div className="text-center"><div className="text-[9px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>До</div><img src={masterBefore[0]} className="w-full h-28 object-cover rounded-lg border" style={{borderColor:'var(--tk-border)'}} alt="До"/></div>
               <div className="text-center"><div className="text-[9px] font-black uppercase mb-1 text-tk-green">После</div><img src={after[0]} className="w-full h-28 object-cover rounded-lg border-2 border-tk-green" alt="После"/></div>
             </div>}
           </div>}

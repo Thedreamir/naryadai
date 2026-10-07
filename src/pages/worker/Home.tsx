@@ -67,15 +67,15 @@ export default function WorkerHome({actor}:{actor:Actor}){
       </div>}
       <div className="grid grid-cols-2 gap-2 text-xs font-bold">
         <div className="tk-sub p-2 rounded-lg border-l-4 border-l-tk-green">
-          <span className="text-[10px] block" style={{color:'var(--tk-muted)'}}>ДОПУСК</span>
-          <span className="text-tk-green font-black">{current.permit_kind?(current.permit_kind==='not_required'?'Не требуется':'Подтверждён'):'Не отмечен'}</span>
+          <span className="text-[10px] block" style={{color:'var(--tk-muted)'}}>ДОПУСК{current.permit_kind?'':' · неизвестен'}</span>
+          <span className={current.permit_kind?"text-tk-green font-black":"text-tk-amber font-black"}>{current.permit_kind?(current.permit_kind==='not_required'?'Не требуется':'Подтверждён'):'Не отмечен'}</span>
         </div>
         <div className="tk-sub p-2 rounded-lg border-l-4 border-l-tk-amber">
           <span className="text-[10px] block" style={{color:'var(--tk-muted)'}}>ОСТАЛОСЬ ВРЕМЕНИ</span>
           <Countdown deadline={current.deadline}/>
         </div>
       </div>
-      <Link to={'/orders/'+current.id} className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-sm">Закрыть наряд №{current.id}</Link>
+      <Link to={'/orders/'+current.id} className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-sm">Сдать на проверку №{current.id}</Link>
     </div>:<div className="tk-card p-3.5 space-y-2">
       <div className="text-[11px] font-black tracking-wider uppercase" style={{color:'var(--tk-muted)'}}>Свободен</div>
       <div className="text-[15px] font-bold">Нет наряда в работе{queue.length?' — следующий ждёт в «Нарядах»':''}</div>

@@ -1,0 +1,20 @@
+import {chromium} from '@playwright/test'
+const b=await chromium.launch()
+const pg=await (await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true})).newPage()
+await pg.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'})
+await pg.fill('input[type=email]','worker-a@naryadai.test')
+await pg.fill('input[type=password]',process.env.PW_WORKERA)
+await pg.click('button:has-text("Войти")'); await pg.waitForTimeout(7000)
+await pg.goto('http://127.0.0.1:4173/assistant'); await pg.waitForTimeout(1500)
+await pg.fill('input.tk-input','Как часто смазывать подшипники конвейера К-3 и какой смазкой?')
+await pg.locator('button:has(svg)').last().click()
+// wait for model answer (up to 40s)
+await pg.waitForTimeout(40000)
+await pg.screenshot({path:'/tmp/v9-18-assistant-answer.png'})
+// light wizard check
+await pg.goto('http://127.0.0.1:4173/settings'); await pg.waitForTimeout(800)
+await pg.click('button:has-text("Светлая")'); await pg.waitForTimeout(400)
+await pg.goto('http://127.0.0.1:4173/orders/532'); await pg.waitForTimeout(2000)
+const btn=pg.locator('button:has-text("Закрыть наряд")').first()
+if(await btn.count()){await btn.click(); await pg.waitForTimeout(700); await pg.screenshot({path:'/tmp/v9-19-light-wizard.png'})}
+await b.close(); console.log('done')

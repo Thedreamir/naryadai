@@ -66,6 +66,17 @@ export async function state() {
   const ordersJoined = (orders.data||[]).map((o:AnyOrder)=>({...o,
     equipment: eqById[o.equipment_id]?.name||'—', section: eqById[o.equipment_id]?.section||'—',
     assignee: byId[o.assignee_id]?.name||'—'}))
+  // Intake (before) photos: own table, mint signed URLs best-effort.
+  try {
+    const {data: intakeRows} = await s.from('order_intake_photos').select('*').order('id')
+    for (const o of ordersJoined) {
+      const ips = (intakeRows||[]).filter((r:any)=>r.order_id===o.id)
+      for (const p of ips) {
+        try { const {data:sd} = await s.storage.from('repair-photos').createSignedUrl(String(p.storage_path||''), 3600); (p as any).url = sd?.signedUrl||null } catch { (p as any).url = null }
+      }
+      ;(o as any).intake_photos = ips
+    }
+  } catch { for (const o of ordersJoined) (o as any).intake_photos = [] }
   const eventsJoined = (events.data||[]).map((e:AnyOrder)=>({...e, actor: byId[e.actor_id]?.name||'—'}))
   return {actor, orders: ordersJoined, employees, events: eventsJoined,
     equipment: Object.values(eqById), fault_codes: faults.data||[], materials: materials.data||[],
@@ -327,5 +338,20 @@ export async function assistantChat(message: string, orderId?: number): Promise<
   const {data, error} = await s.functions.invoke('assistant-chat', {body: {message, order_id: orderId ?? null}})
   if (error) throw new Error(translateError(error.message))
   if (data?.error) throw new Error(data.error)
+  return data
+}
+
+export async function recordIntakePhoto(id: number, dataUrl: string): Promise<any[]> {
+  const s = supabase!
+  const myId = await uid()
+  const {bytes, mime} = dataUrlToBytes(dataUrl)
+  if (bytes.length > 400000) throw new Error('Фото слишком большое')
+  const hash = await sha256Hex(bytes)
+  const ext = mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg'
+  const path = `${myId}/${id}-intake-${Date.now()}.${ext}`
+  const up = await s.storage.from('repair-photos').upload(path, bytes, {contentType: mime})
+  if (up.error) throw new Error('Фото не загрузилось в хранилище: '+up.error.message)
+  const {data, error} = await s.from('order_intake_photos').insert({order_id: id, uploaded_by: myId, storage_path: path, sha256: hash, byte_size: bytes.length, mime_type: mime, captured_client_at: new Date().toISOString()}).select().single()
+  if (error) { try { await s.storage.from('repair-photos').remove([path]) } catch {} ; throw new Error(translateError(error.message)) }
   return data
 }

@@ -64,3 +64,5 @@ body.glove-mode .tk-touch{min-height:88px !important;font-size:1.2rem !important
 .hud-wave-bar:nth-child(1){animation-delay:0s}.hud-wave-bar:nth-child(2){animation-delay:.15s}.hud-wave-bar:nth-child(3){animation-delay:.3s}.hud-wave-bar:nth-child(4){animation-delay:.45s}.hud-wave-bar:nth-child(5){animation-delay:.6s}
 .no-scrollbar::-webkit-scrollbar{display:none}
 .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+@keyframes tk-blink2{0%,93.5%,100%{opacity:0}94.5%,96%{opacity:1}}
+.blink-closed{opacity:0;animation:tk-blink2 4.8s ease-in-out infinite;pointer-events:none}

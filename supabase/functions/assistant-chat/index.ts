@@ -74,35 +74,6 @@ Deno.serve(async req=>{
   return {answer:'[Нет данных] '+NO_DATA,sources:[],source_id:'',mode:'rules',knowledge_used:false}};
  // Fail closed: regex masking cannot prove anonymization of arbitrary free text.
  // Keep chat rules-only until a separately reviewed synthetic-external test switch is set.
- if(Deno.env.get('ALLOW_SYNTHETIC_EXTERNAL_CHAT')!=='true'||!key||!model)return reply(fallback());
- try{
-  const {data:people}=await admin.from('employees').select('name');
-  const redact=(text:string)=>{let out=text.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[EMAIL]').replace(/\+?\d[\d\s()-]{8,}\d/g,'[NUMBER]');for(const p of people||[]){const n=String(p.name||'').trim();if(n.length>2)out=out.split(n).join('[PERSON]')}return out};
-  const payload=JSON.stringify({contents:[{role:'user',parts:[{text:instruction+'\n\n'+redact(contextBlock)+'\n\n[Вопрос рабочего] '+redact(message)}]}],generationConfig:{thinkingConfig:{thinkingBudget:1024},responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{answer:{type:'STRING'},source:{type:'STRING',enum:['Документация','История','Память','Контекст наряда','Нет данных']},source_id:{type:'STRING'}},required:['answer','source','source_id']}}});
-  let response:Response|null=null;
-  for(let attempt=0;attempt<4;attempt++){
-   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},signal:AbortSignal.timeout(25000),body:payload});
-   if(r.ok){response=r;break}
-   const body=(await r.text().catch(()=>'')).slice(0,200);
-   if((r.status===429||r.status===503)&&attempt<3){await new Promise(res=>setTimeout(res,4000*(attempt+1)));continue}
-   throw Error('model HTTP '+r.status+' '+body);
-  }
-  if(!response)throw Error('model retries exhausted');
-  const raw=await response.json();
-  const text=(raw?.candidates?.[0]?.content?.parts||[]).filter((c:any)=>!c?.thought).map((c:any)=>c?.text||'').join('').replace(/^```(?:json)?\s*|\s*```$/g,'').trim();
-  const parsed=JSON.parse(text);
-  if(typeof parsed.answer!=='string'||!parsed.answer.trim())throw Error('invalid model JSON');
-  parsed.answer=parsed.answer.trim().replace(/^\[(Документация|История|Память|Контекст наряда|Нет данных)\]\s*/,'');
-  const src=['Документация','История','Память','Контекст наряда','Нет данных'].includes(parsed.source)?parsed.source:'Нет данных';
-  // citation: only a validated source id from the provided set; never a guessed/first entry
-  const sid=String(parsed.source_id||'').replace(/\D+/g,'');
-  let cited:any=null,cite='',demoTag='';
-  if(src==='Документация'){cited=docs.find((d:any)=>String(d.id)===sid);if(cited){cite=` (источник #${cited.id}, версия ${cited.version}, утверждение ${cited.reviewed_at||'не указано'}, проверяющий ${cited.reviewed_by||'не указан'})`;demoTag=' (синтетический демо-документ)'}}
-  else if(src==='Память'){cited=memory.find((m:any)=>String(m.id)===sid);if(cited)cite=` (наряд #${cited.order_id}, версия ${cited.version}, полевая заметка, не норматив)`}
-  else if(src==='История'||src==='Контекст наряда'){cited=orderCtx&&(src==='Контекст наряда'?String(orderCtx.id)===sid:histIds.includes(sid))?(src==='Контекст наряда'?orderCtx:{id:sid}):null}
-  if(src!=='Нет данных'&&!cited)return reply({answer:'[Нет данных] '+NO_DATA,sources:[],source_id:'',mode:'live',model,knowledge_used:false,caveat:'model cited an unknown source id'});
-  const srcName=src==='Документация'?cited.title:src==='Память'?cited.title:null;
-  return reply({answer:`[${src}] ${parsed.answer.trim()}${cite}${demoTag}`,sources:srcName?[srcName]:[],source_id:sid,mode:'live',model,knowledge_used:src!=='Нет данных'});
- }catch(e){console.error('Assistant model failed',String(e));const f=fallback();return reply({...f,fallback_reason:('Модель недоступна: '+String(e).slice(0,160)+'. Ответ по правилам.')})}
+ return reply(fallback()); // External free-text chat disabled; rules-only until separately reviewed structured optional mode.
  }catch(e){console.error('Assistant request failed',String(e));return reply({error:'assistant request failed'},400)}
 });

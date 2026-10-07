@@ -1,0 +1,2 @@
+import {useState} from 'react'
+export default function LanguageToggle(){const [kz,setKz]=useState(()=>localStorage.getItem('tekton-language')==='kz');return <button aria-label="RU/KZ: черновой перевод навигации" onClick={()=>{localStorage.setItem('tekton-language',kz?'ru':'kz');setKz(!kz);window.dispatchEvent(new Event('tekton-language'))}} className="language-toggle">{kz?'KZ · жоба':'RU / KZ'}</button>}

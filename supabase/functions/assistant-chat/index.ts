@@ -36,23 +36,29 @@ Deno.serve(async req=>{
  {const q=admin.from('knowledge_docs').select('id,title,body,source_label,equipment_id').order('id').limit(12);
   const{data}=await q; docs=data||[]}
  const docText=docs.map((d:any)=>`«${d.title}» [${d.source_label}]: ${d.body}`).join('\n');
+ // approved repair memory only; revoked/rejected/candidate never enter retrieval
+ let memory:any[]=[];
+ {const{data}=await admin.from('repair_memory').select('id,title,body,version,equipment_id,order_id').eq('status','approved').order('id').limit(10); memory=data||[]}
+ const memText=memory.map((m:any)=>`«${m.title}» [Память · наряд #${m.order_id} · версия ${m.version} · проверено мастером]: ${m.body}`).join('\n');
  // ---- context: recent closures for same equipment (order history) ----
  let history:string[]=[];
  if(orderId){const{data:o}=await admin.from('orders').select('equipment_id').eq('id',orderId).maybeSingle();
   if(o){const{data:past}=await admin.from('orders').select('id,title,closure,closed_at').eq('equipment_id',o.equipment_id).eq('status','closed').order('closed_at',{ascending:false}).limit(3);
    history=(past||[]).map((p:any)=>`#${p.id} ${p.title}: ${p.closure?.works||''}`).filter((s:string)=>s.length>3)}}
  const key=Deno.env.get('GEMINI_API_KEY'),model=Deno.env.get('GEMINI_MODEL');
- const contextBlock=`[Контекст наряда] ${orderCtx?JSON.stringify(orderCtx):'нет'}\n[История по этому оборудованию] ${history.length?history.join(' | '):'нет'}\n[Документация] ${docText||'нет'}`;
- const instruction='Ты ассистент рабочего на заводе в системе НарядAI (демо, синтетические данные). Отвечай на русском, кратко (до 120 слов). ЖЁСТКИЕ ПРАВИЛА: 1) Отвечай только на основе разделов [Контекст наряда], [История по этому оборудованию] и [Документация] ниже. Общие знания модели о моментах затяжки, допусках, напряжениях, зазорах и любых численных параметрах использовать ЗАПРЕЩЕНО. 2) Если в этих разделах нет ответа — честно скажи, что данных нет, и предложи уточнить у мастера. 3) Помечай каждый ответ меткой источника: [Документация], [История], [Контекст наряда] или [Нет данных]. 4) Никогда не давай инструкций по включению/подаче напряжения на оборудование. 5) Никогда не утверждай, что статус наряда изменён, что работа принята или что безопасность подтверждена — ты только советуешь, решения принимает человек. 6) Вопросы вне работы отклоняй коротко.';
+ const contextBlock=`[Контекст наряда] ${orderCtx?JSON.stringify(orderCtx):'нет'}\n[История по этому оборудованию] ${history.length?history.join(' | '):'нет'}\n[Документация] ${docText||'нет'}\n[Память ремонтов] ${memText||'нет'}`;
+ const instruction='Ты ассистент рабочего на заводе в системе Tekton OS (Ptah AI) (демо, синтетические данные). Отвечай на русском, кратко (до 120 слов). ЖЁСТКИЕ ПРАВИЛА: 1) Отвечай только на основе разделов [Контекст наряда], [История по этому оборудованию] и [Документация] ниже. Общие знания модели о моментах затяжки, допусках, напряжениях, зазорах и любых численных параметрах использовать ЗАПРЕЩЕНО. 2) Если в этих разделах нет ответа — честно скажи, что данных нет, и предложи уточнить у мастера. 3) Помечай каждый ответ меткой источника: [Документация], [История], [Память], [Контекст наряда] или [Нет данных]. 4) Никогда не давай инструкций по включению/подаче напряжения на оборудование. 5) Никогда не утверждай, что статус наряда изменён, что работа принята или что безопасность подтверждена — ты только советуешь, решения принимает человек. 6) Вопросы вне работы отклоняй коротко.';
  const fallback=()=>{ // rules-only: keyword match into docs
   const words=message.toLowerCase().split(/[^a-zа-яё0-9]+/i).filter(w=>w.length>3);
   const hits=docs.filter(d=>words.some(w=>(d.title+' '+d.body).toLowerCase().includes(w)));
   if(hits.length){const d=hits[0];return {answer:`[Документация] ${d.title}: ${d.body}`,sources:[d.title],mode:'rules',knowledge_used:true}}
+  const mhits=memory.filter((m:any)=>words.some(w=>(m.title+' '+m.body).toLowerCase().includes(w)));
+  if(mhits.length){const m=mhits[0];return {answer:`[Память] ${m.title} (наряд #${m.order_id}, версия ${m.version}, проверено мастером): ${m.body}`,sources:[m.title],mode:'rules',knowledge_used:true}}
   if(orderCtx)return {answer:`[Контекст наряда] По наряду #${orderCtx.id} могу подсказать статус, срок и оборудование. По вашему вопросу в документации данных нет — уточните у мастера.`,sources:[],mode:'rules',knowledge_used:false};
   return {answer:'[Нет данных] '+NO_DATA,sources:[],mode:'rules',knowledge_used:false}};
  if(!key||!model)return reply(fallback());
  try{
-  const response=await fetch('https://generativelanguage.googleapis.com/v1beta/interactions',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},signal:AbortSignal.timeout(20000),body:JSON.stringify({model,input:instruction+'\n\n'+contextBlock+'\n\n[Вопрос рабочего] '+message,response_format:{type:'text',mime_type:'application/json',schema:{type:'object',properties:{answer:{type:'string'},source:{type:'string',enum:['Документация','История','Контекст наряда','Нет данных']},doc_title:{type:'string'}},required:['answer','source']}}})});
+  const response=await fetch('https://generativelanguage.googleapis.com/v1beta/interactions',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},signal:AbortSignal.timeout(20000),body:JSON.stringify({model,input:instruction+'\n\n'+contextBlock+'\n\n[Вопрос рабочего] '+message,response_format:{type:'text',mime_type:'application/json',schema:{type:'object',properties:{answer:{type:'string'},source:{type:'string',enum:['Документация','История','Память','Контекст наряда','Нет данных']},doc_title:{type:'string'}},required:['answer','source']}}})});
   if(!response.ok)throw Error('model HTTP '+response.status);
   const raw=await response.json();
   const steps=Array.isArray(raw?.steps)?raw.steps:[];

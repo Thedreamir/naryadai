@@ -1,10 +1,10 @@
 import {useEffect, useState} from 'react'
 import * as H from '../../lib/data'
 import {Link} from 'react-router-dom'
-import {ChevronRight} from 'lucide-react'
+import {ChevronRight, Timer} from 'lucide-react'
+import {PriorChip} from '../../components/PriorChip'
 import type {Actor} from '../../App'
 import {cn} from '../../lib/utils'
-const PRIOR:Record<string,string>={emergency:'⚡ Аварийный',high:'⚡ Высокий',normal:'Обычный',planned:'Плановый',medium:'Средний',low:'Низкий'}
 const stLabel:Record<string,string>={issued:'Выдан',queued:'Очередь',accepted:'Принят',in_progress:'В работе',paused:'Пауза',rework:'Доработка'}
 export default function WorkerOrders({actor}:{actor:Actor}){
   const [st,setSt]=useState<any>(null); const [err,setErr]=useState('')
@@ -24,8 +24,8 @@ export default function WorkerOrders({actor}:{actor:Actor}){
       <span className="text-[10px] font-black whitespace-nowrap uppercase" style={{color:'var(--tk-muted)'}}>{stLabel[o.status]||o.status}</span>
     </div>
     <div className="flex items-center justify-between text-[10px]">
-      <span className={cn('font-black uppercase',o.priority==='emergency'?'text-tk-red':o.priority==='high'?'text-tk-amber':'')} style={['emergency','high'].includes(o.priority)?undefined:{color:'var(--tk-muted)'}}>{PRIOR[o.priority]||o.priority}</span>
-      <span className="font-bold" style={{color:'var(--tk-muted)'}}>⏱ {new Date(o.deadline).toLocaleDateString('ru',{day:'numeric',month:'short'})}</span>
+      <PriorChip p={o.priority} className="text-[10px]"/>
+      <span className="font-bold inline-flex items-center gap-1" style={{color:'var(--tk-muted)'}}><Timer size={11} strokeWidth={2.5}/>{new Date(o.deadline).toLocaleDateString('ru',{day:'numeric',month:'short'})}</span>
       <ChevronRight size={13} style={{color:'var(--tk-muted)'}}/>
     </div>
   </Link>

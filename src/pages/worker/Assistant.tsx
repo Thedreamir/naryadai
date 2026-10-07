@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react'
 import * as H from '../../lib/data'
-import {Send, Mic, MicOff, Bot, UserRound} from 'lucide-react'
+import {Send, Mic, MicOff, Bot, UserRound, BookOpen} from 'lucide-react'
 import type {Actor} from '../../App'
 import {cn} from '../../lib/utils'
 type Msg={from:'me'|'ai';text:string;mode?:string;sources?:string[]}
@@ -39,7 +39,7 @@ export default function Assistant({actor}:{actor:Actor}){
           {m.from==='me'?<UserRound size={13}/>:<Bot size={13}/>}</div>
         <div className={cn("rounded-xl px-3 py-2 text-xs max-w-[80%] leading-relaxed",m.from==='me'?'bg-tk-slate text-white':'tk-card')}>
           {m.text}
-          {m.sources&&m.sources.length>0&&<div className="text-[9px] mt-1 opacity-70">Источник: {m.sources.join('; ')}</div>}
+          {m.sources&&m.sources.length>0&&<div className="text-[9px] mt-1 opacity-70 inline-flex items-center gap-1"><BookOpen size={10}/>Источник: {m.sources.join('; ')}</div>}
           {m.mode&&<div className="text-[9px] mt-1 opacity-60">{m.mode==='live'?'ответ модели Gemini (демо, бесплатный тариф)':'ответ по правилам без модели'} · учебная документация — не применять на реальном оборудовании</div>}
         </div>
       </div>)}

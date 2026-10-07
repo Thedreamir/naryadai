@@ -1,7 +1,8 @@
 import {useEffect, useState} from 'react'
 import * as H from '../../lib/data'
 import {Link, useNavigate} from 'react-router-dom'
-import {MapPin, Phone, ChevronRight, TriangleAlert} from 'lucide-react'
+import {MapPin, Phone, ChevronRight, TriangleAlert, Lightbulb, Zap, Clock, ClipboardCheck, ShieldCheck, Timer} from 'lucide-react'
+import {PriorChip} from '../../components/PriorChip'
 import type {Actor} from '../../App'
 function Countdown({deadline}:{deadline:string}){
   const [,tick]=useState(0)
@@ -43,14 +44,14 @@ export default function WorkerHome({actor}:{actor:Actor}){
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <button onClick={()=>nav('/orders/'+emergency.id)} className="bg-white text-tk-red font-black text-xs py-2 px-1 rounded-lg active:scale-95 uppercase leading-tight text-center min-w-0">Принять срочно</button>
-        <button onClick={()=>dismiss(emergency.id)} className="bg-red-950 text-white font-bold text-xs py-2 px-1 rounded-lg border border-red-500/40 active:scale-95 uppercase leading-tight text-center min-w-0">Позже</button>
+        <button onClick={()=>nav('/orders/'+emergency.id)} className="bg-white text-tk-red font-black text-xs py-2 px-1 rounded-lg active:scale-95 uppercase leading-tight min-w-0 inline-flex items-center justify-center gap-1"><Zap size={13} strokeWidth={2.5}/>Принять срочно</button>
+        <button onClick={()=>dismiss(emergency.id)} className="bg-red-950 text-white font-bold text-xs py-2 px-1 rounded-lg border border-red-500/40 active:scale-95 uppercase leading-tight min-w-0 inline-flex items-center justify-center gap-1"><Clock size={13}/>Позже</button>
       </div>
     </div>}
     {current?<div className="tk-card p-3.5 space-y-3">
       <div className="flex items-center justify-between">
-        <span className={"text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider "+(current.priority==='emergency'?'bg-tk-red text-white':current.priority==='high'?'bg-tk-amber text-black':'tk-sub')}>
-          {current.priority==='emergency'?'⚡ Аварийный':current.priority==='high'?'⚡ Высокий приоритет':'Обычный'}
+        <span className={"text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 "+(current.priority==='emergency'?'bg-tk-red text-white':current.priority==='high'?'bg-tk-amber text-black':'tk-sub')}>
+          {current.priority==='emergency'?<><TriangleAlert size={11} strokeWidth={2.5}/>Аварийный</>:current.priority==='high'?<><Zap size={11} strokeWidth={2.5}/>Высокий приоритет</>:'Обычный'}
         </span>
         <span className="text-xs font-mono font-bold" style={{color:'var(--tk-muted)'}}>№ {current.id}</span>
       </div>
@@ -59,7 +60,7 @@ export default function WorkerHome({actor}:{actor:Actor}){
         <div className="font-bold flex items-center gap-1.5"><MapPin size={13} className="text-tk-amber"/><span>{eqName(current)}{current.section?' ('+current.section+')':''}</span></div>
       </div>
       {note&&<div className="bg-tk-amber/10 border border-tk-amber/40 rounded-lg p-2 text-xs flex items-center gap-2">
-        <span className="text-sm">💡</span>
+        <Lightbulb size={15} className="text-tk-amber shrink-0"/>
         <div className="text-[11px] leading-tight">
           <strong className="text-tk-amber block">Последняя запись по этому узлу:</strong>
           «{note.works}»
@@ -75,7 +76,7 @@ export default function WorkerHome({actor}:{actor:Actor}){
           <Countdown deadline={current.deadline}/>
         </div>
       </div>
-      <Link to={'/orders/'+current.id} className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-sm">Сдать на проверку №{current.id}</Link>
+      <Link to={'/orders/'+current.id} className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-sm inline-flex items-center justify-center gap-2"><ClipboardCheck size={17}/>Сдать на проверку №{current.id}</Link>
     </div>:<div className="tk-card p-3.5 space-y-2">
       <div className="text-[11px] font-black tracking-wider uppercase" style={{color:'var(--tk-muted)'}}>Свободен</div>
       <div className="text-[15px] font-bold">Нет наряда в работе{queue.length?' — следующий ждёт в «Нарядах»':''}</div>

@@ -5,7 +5,8 @@ import * as H from '../../lib/data'
 import {eventLabel} from '../../lib/status'
 import VoiceButton from './VoiceButton'
 import type {Actor} from '../../App'
-import {Camera, TriangleAlert, X, Check, ArrowLeft, ArrowRight, Package} from 'lucide-react'
+import {Camera, TriangleAlert, X, Check, ArrowLeft, ArrowRight, Package, Ban, Clock, Play, Pause, SendHorizontal, ShieldCheck, ShieldOff, History, FileText} from 'lucide-react'
+import {PriorChip} from '../../components/PriorChip'
 import {cn} from '../../lib/utils'
 const DECLS=[
   'Подтверждаю лично: требования безопасности выполнены согласно утверждённой для этой задачи процедуре (включая обесточивание, заземление и LOTO, если они требуются процедурой)',
@@ -56,11 +57,11 @@ export default function OrderDetail({actor}:{actor:Actor}){
   const steps=['Безопасность','Отчёт','Фото']
   const stepOk=[allDecl,works.trim().length>=12&&!!fault,(!needPhoto||after.length>0)]
   return <div className="space-y-3">
-    <button className="text-xs font-bold" style={{color:'var(--tk-muted)'}} onClick={()=>nav(-1)}>← Назад</button>
+    <button className="text-xs font-bold inline-flex items-center gap-1" style={{color:'var(--tk-muted)'}} onClick={()=>nav(-1)}><ArrowLeft size={13}/>Назад</button>
     <div className="tk-card p-3.5 space-y-2.5">
       <div className="flex items-center justify-between">
         <span className={"text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider "+(o.priority==='emergency'?'bg-tk-red text-white':o.priority==='high'?'bg-tk-amber text-black':'tk-sub')}>
-          {o.priority==='emergency'?'⚡ Аварийный':o.priority==='high'?'⚡ Высокий':'Обычный'} · {o.kind==='planned'?'Плановый':'Внеплановый'}
+          <PriorChip p={o.priority} inherit/> · {o.kind==='planned'?'Плановый':'Внеплановый'}
         </span>
         <span className="text-xs font-mono font-bold" style={{color:'var(--tk-muted)'}}>№ {o.id}</span>
       </div>
@@ -88,19 +89,19 @@ export default function OrderDetail({actor}:{actor:Actor}){
     {!o.permit_kind&&['issued','accepted','queued'].includes(o.status)&&<div className="tk-card p-3.5 space-y-2.5">
       <div className="text-[13px] font-black uppercase tracking-wide">Допуск к работе</div>
       <div className="text-[11px]" style={{color:'var(--tk-muted)'}}>Отметьте допуск перед началом — запись уходит в журнал.</div>
-      <div className="grid grid-cols-2 gap-2">{[['confirmed','Допуск подтверждён'],['not_required','Не требуется']].map(([k,l])=>
-        <button key={k} onClick={()=>setPermitKind(k)} className={cn("tk-touch border",permitKind===k?'bg-tk-amber text-black border-amber-600':'tk-sub')}>{l}</button>)}</div>
+      <div className="grid grid-cols-2 gap-2">{[['confirmed','Допуск подтверждён',ShieldCheck],['not_required','Не требуется',ShieldOff]].map(([k,l,I]:any)=>
+        <button key={k} onClick={()=>setPermitKind(k)} className={cn("tk-touch border inline-flex items-center justify-center gap-1.5",permitKind===k?'bg-tk-amber text-black border-amber-600':'tk-sub')}><I size={15}/>{l}</button>)}</div>
       {permitKind==='confirmed'&&<>
         <input className="tk-input w-full h-12 px-3 text-sm" placeholder="Номер допуска и кто подтвердил" value={permitNote} onChange={e=>setPermitNote(e.target.value)}/>
         <div className="text-[10px]" style={{color:'var(--tk-muted)'}}>Нужны номер (цифры) и фамилия — проверяется на сервере.</div></>}
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={!permitKind||busy||(permitKind==='confirmed'&&permitNote.trim().length<8)} onClick={doPermit}>Отметить допуск</button>
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={!permitKind||busy||(permitKind==='confirmed'&&permitNote.trim().length<8)} onClick={doPermit}><ShieldCheck size={16}/>Отметить допуск</button>
     </div>}
     {o.permit_kind&&<div className="tk-card p-3 text-xs font-bold"><span className="text-tk-green">{o.permit_kind==='not_required'?'Допуск не требуется':'Допуск подтверждён'}</span><span style={{color:'var(--tk-muted)'}}>{o.permit_note?' · '+o.permit_note:''}</span></div>}
     {o.status==='issued'&&<div className="space-y-2">
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={busy||!o.permit_kind} onClick={()=>go('accepted')}>Принять назначение</button>
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy||!o.permit_kind} onClick={()=>go('accepted')}><Check size={16}/>Принять назначение</button>
       <div className="grid grid-cols-2 gap-2">
-        <button className="tk-touch tk-sub uppercase" disabled={busy} onClick={()=>go('queued','В очередь после текущего')}>В очередь</button>
-        <button className="tk-touch tk-sub text-tk-red uppercase" disabled={busy} onClick={()=>{const r=prompt('Причина отказа');if(r)go('rejected',r)}}>Не могу</button>
+        <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>go('queued','В очередь после текущего')}><Clock size={15}/>В очередь</button>
+        <button className="tk-touch tk-sub text-tk-red uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>{const r=prompt('Причина отказа');if(r)go('rejected',r)}}><Ban size={15}/>Не могу</button>
       </div></div>}
     {(o.status==='accepted'||(o.status==='in_progress'&&recordedPre.length<DECLS.length))&&<div className="tk-card p-3.5 space-y-2.5">
       <div className="text-[13px] font-black uppercase tracking-wide">Перед началом работ</div>
@@ -113,7 +114,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
         <span className="text-xs font-bold leading-snug">{d}</span>
       </label>)}
       {err&&<div className="text-xs text-tk-red font-bold">{err}</div>}
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={busy||startBusy||!startDecl.slice(0,DECLS.length).every(Boolean)} onClick={async()=>{
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy||startBusy||!startDecl.slice(0,DECLS.length).every(Boolean)} onClick={async()=>{
         setStartBusy(true);setErr('')
         try{
           if(o.status==='accepted'){
@@ -123,23 +124,23 @@ export default function OrderDetail({actor}:{actor:Actor}){
             await H.recordDeclarations(o.id,'pre_work_late',DECLS);await load()
           }
         }catch(e){setErr((e as Error).message)}finally{setStartBusy(false)}
-      }}>{startBusy?'Фиксация…':o.status==='accepted'?'Подтвердить и начать работу':'Зафиксировать (после начала)'}</button>
+      }}><Play size={16}/>{startBusy?'Фиксация…':o.status==='accepted'?'Подтвердить и начать работу':'Зафиксировать (после начала)'}</button>
     </div>}
-    {o.status==='queued'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40" disabled={busy} onClick={()=>go('accepted')}>Принять из очереди</button>}
+    {o.status==='queued'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={busy} onClick={()=>go('accepted')}><Check size={16}/>Принять из очереди</button>}
     {o.status==='in_progress'&&<>
-      <button className="tk-touch tk-sub uppercase" disabled={busy} onClick={()=>go('paused','Пауза')}>Пауза</button>
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base" onClick={openWiz}>Сдать наряд №{o.id} на проверку</button></>}
-    {o.status==='paused'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase" disabled={busy} onClick={()=>go('in_progress')}>Продолжить</button>}
+      <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={busy} onClick={()=>go('paused','Пауза')}><Pause size={15}/>Пауза</button>
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={17}/>Сдать наряд №{o.id} на проверку</button></>}
+    {o.status==='paused'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase inline-flex items-center justify-center gap-2" disabled={busy} onClick={()=>go('in_progress')}><Play size={16}/>Продолжить</button>}
     {['completed','ai_review'].includes(o.status)&&<div className="tk-card p-4 text-center font-black text-tk-blue text-sm">На проверке у мастера</div>}
     {o.status==='rework'&&<div className="tk-card p-4 space-y-1.5 border-tk-red">
       <div className="font-black text-tk-red text-sm flex items-center gap-2"><TriangleAlert size={15}/>На доработке</div>
       {o.ai_result?.reason&&<div className="text-xs" style={{color:'var(--tk-muted)'}}>Проверка ИИ: {o.ai_result.reason}</div>}
-      <button className="tk-touch bg-tk-amber text-black w-full border border-amber-600 uppercase" onClick={openWiz}>Сдать повторно</button></div>}
+      <button className="tk-touch bg-tk-amber text-black w-full border border-amber-600 uppercase inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={16}/>Сдать повторно</button></div>}
     {o.status==='closed'&&<div className="tk-card p-3.5 space-y-1.5">
       <span className="text-[10px] font-black px-2 py-0.5 rounded uppercase tk-sub">Закрыт</span>
       {o.ai_result?.human_score&&<div className="text-sm font-bold">Оценка мастера: {o.ai_result.human_score} / 5</div>}
       {o.closure?.works&&<div className="text-xs" style={{color:'var(--tk-muted)'}}>{o.closure.works}</div>}</div>}
-    <div className="tk-card p-3"><div className="text-[11px] font-black uppercase tracking-wider mb-1" style={{color:'var(--tk-muted)'}}>Журнал</div>
+    <div className="tk-card p-3"><div className="text-[11px] font-black uppercase tracking-wider mb-1 inline-flex items-center gap-1.5" style={{color:'var(--tk-muted)'}}><History size={12}/>Журнал</div>
       {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[11px] py-1 border-t first:border-0" style={{color:'var(--tk-muted)',borderColor:'var(--tk-border)'}}>{e.actor} · {eventLabel(e.new_status)} · {new Date(e.created_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</div>
     {wiz&&<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{background:'rgba(0,0,0,0.8)'}}>
       <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl border flex flex-col max-h-[92dvh]" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
@@ -185,7 +186,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
                 <VoiceButton onText={t=>setWorks(w=>w?w+' '+t:t)}/>
               </div>
               <div className="text-[10px] mt-1" style={{color:'var(--tk-muted)'}}>Голос заполняет только текст отчёта (браузерная распознавалка). Подтверждения безопасности ставятся вручную.</div>
-              <div className="flex gap-1.5 flex-wrap mt-1.5">{TEMPLATES.map((t,i)=><button key={i} onClick={()=>setWorks(t)} className="text-[10px] font-bold tk-sub px-2 py-1 rounded-lg">Шаблон {i+1}</button>)}</div>
+              <div className="flex gap-1.5 flex-wrap mt-1.5">{TEMPLATES.map((t,i)=><button key={i} onClick={()=>setWorks(t)} className="text-[10px] font-bold tk-sub px-2 py-1 rounded-lg inline-flex items-center gap-1"><FileText size={11}/>Шаблон {i+1}</button>)}</div>
             </div>
             <div>
               <div className="text-[11px] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Шифр неисправности</div>

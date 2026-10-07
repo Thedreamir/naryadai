@@ -1,0 +1,12 @@
+import {chromium} from '@playwright/test'
+const b=await chromium.launch()
+const pg=await (await b.newContext({viewport:{width:1440,height:900}})).newPage()
+await pg.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'})
+await pg.fill('input[type=email]','master@naryadai.test')
+await pg.fill('input[type=password]',process.env.PW_MASTER)
+await pg.click('button:has-text("Войти")'); await pg.waitForTimeout(7000)
+await pg.goto('http://127.0.0.1:4173/report',{waitUntil:'networkidle'}); await pg.waitForTimeout(3000)
+await pg.screenshot({path:'/tmp/v8m-04-report.png'})
+await pg.goto('http://127.0.0.1:4173/handover',{waitUntil:'networkidle'}); await pg.waitForTimeout(2500)
+await pg.screenshot({path:'/tmp/v8m-05-handover.png'})
+await b.close(); console.log('done')

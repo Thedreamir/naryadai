@@ -3,6 +3,7 @@ import * as H from '../../lib/data'
 import {Card} from '../../components/ui/card'
 import {Button} from '../../components/ui/button'
 import type {Actor} from '../../App'
+import {statusOf} from '../../lib/status'
 export default function Handover({actor}:{actor:Actor}){
   const [st,setSt]=useState<any>(null)
   useEffect(()=>{H.state().then(setSt).catch(()=>{})},[])
@@ -25,7 +26,7 @@ export default function Handover({actor}:{actor:Actor}){
     {overdue.length>0&&<Card className="border-warn/40"><div className="font-semibold text-[14px] mb-1">Просроченные</div>
       {overdue.map((o:any)=><div key={o.id} className="text-[13px] py-1 border-t border-border first:border-0">#{o.id} · {o.title} — {o.assignee}, срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>)}</Card>}
     {byW.map(({w,list}:any)=><Card key={w.id}><div className="font-semibold text-[14px] mb-1">{w.name}</div>
-      {list.map((o:any)=><div key={o.id} className="text-[13px] py-1 border-t border-border first:border-0">#{o.id} · {o.title} · {o.status}</div>)}</Card>)}
+      {list.map((o:any)=><div key={o.id} className="text-[13px] py-1 border-t border-border first:border-0">#{o.id} · {o.title} · {statusOf(o.status).label}</div>)}</Card>)}
     <Card><div className="font-semibold text-[14px] mb-1">Ждут проверки мастером</div>
       {review.length?review.map((o:any)=><div key={o.id} className="text-[13px] py-1 border-t border-border first:border-0">#{o.id} · {o.title} — {o.assignee}</div>):<div className="text-[13px] text-muted">Нет</div>}</Card>
     <div className="text-[12px] text-muted">Сводка из текущего состояния демо-базы; не официальный документ.</div>

@@ -19,3 +19,5 @@ F3: client catch boundary now covers upload/insert/RPC and tracks paths immediat
 Photo EXIF gate: decode/re-encode pixels at hosted dataURL upload boundary, fail closed; original fallback removed. Synthetic APP1 Exif+GPS/device marker Chromium test passed, invalid type rejected; object URL/bitmap released in finally. Not a comprehensive image-security corpus and not deployed. No temp files are created in this browser path.
 
 F5/F6: shared read-only state refresh hook on core master/worker lists, order subscription + online invalidation + unsubscribe + generation guard. Fixture forced error and retry passed; cross-session Supabase propagation not tested. Voice dialog labelled/focus trap/Escape/abort, reduced-motion CSS; Chromium keyboard test passed, speech/device untested. Knowledge lazy import, no latency gain claim.
+
+Preflight: 56 local migration numbers contiguous; env missing -> FAIL, live alignment NOT RUN. F13 actual shared completionElapsed helper tests include invalid/reversed timestamps; server-completed event lookup source staged, DB integration not tested. Pause-inclusive elapsed is not active labor time.

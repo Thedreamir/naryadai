@@ -18,17 +18,17 @@ export default function WorkerShell({actor, children}:{actor:Actor, children:Rea
   const openHud=()=>window.dispatchEvent(new CustomEvent('naryadai:open-hud'))
   return <div className="h-dvh flex flex-col" style={{background:'var(--tk-bg)',color:'var(--tk-ink)'}}>
     <header className="shrink-0 z-20 border-b px-3.5 py-2.5 flex items-center justify-between" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2.5 min-w-0">
         <div className="w-11 h-11 rounded-lg bg-tk-amber text-black flex items-center justify-center font-black text-base shrink-0">НА</div>
         <div>
-          <h1 className="font-extrabold text-sm tracking-tight uppercase flex items-center gap-1.5 leading-none">
+          <h1 className="font-extrabold text-sm tracking-tight uppercase flex items-center gap-1.5 leading-none whitespace-nowrap">
             <span>НарядAI</span>
-            {glove&&<span className="text-[0.5625rem] bg-tk-amber/20 text-tk-amber border border-tk-amber/50 px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"><HeroIcon name="handRaised" size={19}/>ПЕРЧАТКА</span>}
+            {glove&&<span title="Режим перчаток включён" className="shrink-0 bg-tk-amber/20 text-tk-amber border border-tk-amber/50 p-1 rounded flex items-center"><HeroIcon name="handRaised" size={16}/></span>}
           </h1>
           <p className="text-[0.5625rem] font-bold mt-0.5 leading-tight" style={{color:'var(--tk-muted)'}}>Тестовый проект · синтетические данные</p>
         </div>
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
         <button onClick={openHud} className="bg-tk-amber text-black font-black text-[0.6875rem] px-2.5 py-1.5 rounded-lg border border-amber-600 active:scale-95 flex items-center gap-1 uppercase tracking-wide">
           <HeroIcon name="phone" active size={22}/>AI
         </button>

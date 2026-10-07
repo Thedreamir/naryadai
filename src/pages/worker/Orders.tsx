@@ -1,3 +1,4 @@
+import {useOrderState} from '../../lib/use-order-state'
 import {useEffect, useState} from 'react'
 import * as H from '../../lib/data'
 import {Link} from 'react-router-dom'
@@ -7,9 +8,9 @@ import type {Actor} from '../../App'
 import {cn} from '../../lib/utils'
 const stLabel:Record<string,string>={issued:'Выдан',queued:'Очередь',accepted:'Принят',in_progress:'В работе',paused:'Пауза',rework:'Доработка'}
 export default function WorkerOrders({actor}:{actor:Actor}){
-  const [st,setSt]=useState<any>(null); const [err,setErr]=useState('')
-  useEffect(()=>{H.state().then(setSt).catch(e=>setErr(e.message))},[])
+  const {st,error:stateError,refresh}=useOrderState(); const [err,setErr]=useState('')
   if(err) return <div className="tk-card p-4 text-tk-red">{err}</div>
+  if(stateError)return <div role="alert" className="p-4 border rounded-xl">Данные недоступны: {stateError}<button className="min-h-12 block mt-2 border rounded-xl px-4" onClick={refresh}>Повторить</button></div>
   if(!st) return <div className="py-10 text-center" style={{color:'var(--tk-muted)'}}>Загрузка…</div>
   const mine=st.orders.filter((o:any)=>o.assignee_id===actor.id&&['issued','queued','accepted','in_progress','paused','rework'].includes(o.status))
   const active=mine.filter((o:any)=>['in_progress','rework'].includes(o.status))

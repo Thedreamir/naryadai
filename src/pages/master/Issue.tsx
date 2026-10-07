@@ -34,8 +34,10 @@ export default function Issue({actor}:{actor:Actor}){
       const perms=(permitsByW[w.id]||[]).map((p:any)=>({...p,expired:new Date(p.valid_until)<new Date()}))
       const avail=inWork?2:q?1:0
       const score=(2-avail)*100+(onEq.length*10)+((otPct||0))-(rw*15)
-      return {w,inWork,q,onEq:onEq.length,otPct,rw,perms,avail,score}
-    }).sort((a:any,b:any)=>b.score-a.score).slice(0,2)})()
+      return {w,inWork,q,onEq:onEq.length,otPct,rw,perms,avail,score,ok:perms.some((p:any)=>!p.expired)}
+    }).sort((a:any,b:any)=>((b.ok?1:0)-(a.ok?1:0))||b.score-a.score)})()
+  const eligible=cands.filter((c:any)=>c.ok).slice(0,2)
+  const refused=cands.filter((c:any)=>!c.ok)
   const memoryHint=(()=>{if(!eq)return null
     const since=Date.now()-30*86400000
     const n=st.orders.filter((o:any)=>String(o.equipment_id)===String(eq)&&new Date(o.created_at).getTime()>=since).length
@@ -61,9 +63,9 @@ export default function Issue({actor}:{actor:Actor}){
           <select required className={"mt-1 "+input} value={eq} onChange={e=>setEq(e.target.value)}>
             <option value="">Выбрать…</option>
             {st.equipment.map((x:any)=><option key={x.id} value={x.id}>{x.name} · {x.section}</option>)}</select></label>
-        {cands.length>0&&<Card className="border-primary/40 bg-primary/5 !p-3.5 space-y-2">
+        {eligible.length>0&&<Card className="border-primary/40 bg-primary/5 !p-3.5 space-y-2">
           <div className="text-[12px] font-semibold text-muted uppercase">Автоподбор по правилам · рекомендация, не решение</div>
-          {cands.map((c:any,i:number)=>(<div key={c.w.id} className="space-y-1 pb-2 border-b border-border/50 last:border-0 last:pb-0">
+          {eligible.map((c:any,i:number)=>(<div key={c.w.id} className="space-y-1 pb-2 border-b border-border/50 last:border-0 last:pb-0">
             <div className="flex items-center justify-between gap-3">
               <div className="text-[14px]"><b>{i+1}. {c.w.name}</b> · {c.w.specialty||'—'}{c.w.brigade?' · '+c.w.brigade:''}</div>
               <button type="button" onClick={()=>setAssignee(c.w.id)} className="h-9 px-4 rounded-full text-[13px] font-semibold bg-primary text-primary-ink shrink-0">Выбрать</button>
@@ -80,6 +82,7 @@ export default function Issue({actor}:{actor:Actor}){
           </div>))}
           <div className="text-[11px] text-muted">Критерии: доступность, опыт на этом узле, доля закрытий в срок, переделки, действующие допуски. Финальный выбор за мастером.</div>
         </Card>}
+        {refused.length>0&&<Card className="!p-3 text-[12px] text-muted">Не в подборе (нет действующего допуска): {refused.map((c:any)=>c.w.name).join(', ')}. Назначение таких исполнителей возможно только вручную на ответственность мастера.</Card>}
         {memoryHint&&<Card className="!p-3 text-[13px]">На этом узле <b>{memoryHint} нарядов за 30 дней</b> — проверьте причину повторов перед постановкой следующего.</Card>}
         {stockHint.length>0&&<Card className="!p-3 text-[13px] text-muted">Часто расходуется на этом узле: {stockHint.join(', ')}. Остатки в демо не ведутся (дорожная карта: 1С).</Card>}
         <label className="block"><span className="text-[13px] font-medium text-muted">Исполнитель</span>

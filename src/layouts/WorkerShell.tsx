@@ -1,16 +1,16 @@
 import type {ReactNode} from 'react'
 import {NavLink, useLocation, useNavigate} from 'react-router-dom'
 import {motion} from 'framer-motion'
-import HeroIcon from '../components/HeroIcon'
-import type {HeroName} from '../components/HeroIcon'
+import PhIcon from '../components/PhIcon'
+import type {PhName} from '../components/PhIcon'
 import type {Actor} from '../App'
 import {cn} from '../lib/utils'
 import {usePrefs} from '../ui/prefs'
-const tabs:{to:string;icon:HeroName;label:string}[] = [
-  {to:'/', icon:'wrenchScrewdriver', label:'В работе'},
-  {to:'/orders', icon:'clipboardDocumentCheck', label:'Наряды'},
-  {to:'/assistant', icon:'chatBubbleLeftRight', label:'AI чат'},
-  {to:'/settings', icon:'cog6Tooth', label:'Настройки'},
+const tabs:{to:string;icon:PhName;label:string}[] = [
+  {to:'/', icon:'wrench', label:'В работе'},
+  {to:'/orders', icon:'clipboardText', label:'Наряды'},
+  {to:'/assistant', icon:'chatsCircle', label:'AI чат'},
+  {to:'/settings', icon:'gearSix', label:'Настройки'},
   {to:'/profile', icon:'userCircle', label:'Профиль'},
 ]
 export default function WorkerShell({actor, children}:{actor:Actor, children:ReactNode}){
@@ -23,17 +23,17 @@ export default function WorkerShell({actor, children}:{actor:Actor, children:Rea
         <div>
           <h1 className="font-extrabold text-sm tracking-tight uppercase flex items-center gap-1.5 leading-none whitespace-nowrap">
             <span>НарядAI</span>
-            {glove&&<span title="Режим перчаток включён" className="shrink-0 bg-tk-amber/20 text-tk-amber border border-tk-amber/50 p-1 rounded flex items-center"><HeroIcon name="handRaised" size={16}/></span>}
+            {glove&&<span title="Режим перчаток включён" className="shrink-0 bg-tk-amber/20 text-tk-amber border border-tk-amber/50 p-1 rounded flex items-center"><PhIcon name="hand" size={16}/></span>}
           </h1>
           <p className="text-[0.5625rem] font-bold mt-0.5 leading-tight" style={{color:'var(--tk-muted)'}}>Тестовый проект · синтетические данные</p>
         </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         <button onClick={openHud} className="bg-tk-amber text-black font-black text-[0.6875rem] px-2.5 py-1.5 rounded-lg border border-amber-600 active:scale-95 flex items-center gap-1 uppercase tracking-wide">
-          <HeroIcon name="phone" active size={22}/>AI
+          <PhIcon name="phone" active size={22}/>AI
         </button>
         <button onClick={()=>nav('/settings')} className="w-10 h-10 rounded-lg bg-tk-slate text-white flex items-center justify-center active:scale-95" title="Настройки">
-          <HeroIcon name="cog6Tooth" size={22}/>
+          <PhIcon name="gearSix" size={22}/>
         </button>
       </div>
     </header>
@@ -42,7 +42,7 @@ export default function WorkerShell({actor, children}:{actor:Actor, children:Rea
       <div className="max-w-md mx-auto grid grid-cols-5 h-20">
         {tabs.map(t=><NavLink key={t.to} to={t.to} end={t.to==='/'} className={({isActive})=>cn('flex flex-col items-center justify-center w-full h-full transition', isActive?'text-tk-amber':'')} style={undefined as any}>
           {({isActive})=><span className={cn('flex flex-col items-center justify-center',isActive?'text-tk-amber':'') } style={isActive?undefined:{color:'var(--tk-muted)'}}>
-            <HeroIcon name={t.icon} active={isActive} size={22} className="mb-0.5"/><span className="text-[0.5rem] font-black uppercase tracking-tight leading-none px-0.5 text-center">{t.label}</span>
+            <PhIcon name={t.icon} active={isActive} size={24} className="mb-0.5"/><span className="text-[0.5rem] font-black uppercase tracking-tight leading-none px-0.5 text-center">{t.label}</span>
           </span>}
         </NavLink>)}
       </div>

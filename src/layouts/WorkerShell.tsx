@@ -28,14 +28,7 @@ export default function WorkerShell({actor, children}:{actor:Actor, children:Rea
           <p className="text-[0.5625rem] font-bold mt-0.5 leading-tight" style={{color:'var(--tk-muted)'}}>Тестовый проект · синтетические данные</p>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 shrink-0">
-        <button onClick={openHud} className="bg-tk-amber text-black font-black text-[0.6875rem] px-2.5 py-1.5 rounded-lg border border-amber-600 active:scale-95 flex items-center gap-1 uppercase tracking-wide">
-          <PhIcon name="chatsCircle" active size={22}/>AI
-        </button>
-        <button onClick={()=>nav('/settings')} className="w-12 h-12 rounded-lg bg-tk-slate text-white flex items-center justify-center active:scale-95" title="Настройки">
-          <PhIcon name="gearSix" size={22}/>
-        </button>
-      </div>
+
     </header>
     <main className="flex-1 overflow-y-auto w-full max-w-md mx-auto p-3 pb-16"><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
     <nav className="shrink-0 border-t w-full" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)',paddingBottom:'env(safe-area-inset-bottom)'}}>

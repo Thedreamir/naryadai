@@ -32,7 +32,7 @@ export default function Board({actor}:{actor:Actor}){
     review:visible.filter((o:any)=>['completed','ai_review'].includes(o.status)).length,
     closed:visible.filter((o:any)=>o.status==='closed').length}
   const crew=st.employees.filter((e:any)=>e.role==='worker').map((w:any)=>{
-    const mine=visible.filter((o:any)=>o.assignee_id===w.id&&o.status!=='closed'&&o.status!=='rejected')
+    const mine=st.orders.filter((o:any)=>o.assignee_id===w.id&&o.status!=='closed'&&o.status!=='rejected'&&o.status!=='cancelled')
     const work=mine.find((o:any)=>['in_progress','paused','rework'].includes(o.status))
     const q=mine.filter((o:any)=>['issued','queued','accepted'].includes(o.status)).length
     const stt=!w.on_shift?{tone:'gray',label:'не на смене'}:work?{tone:'amber',label:(work.status==='paused'?'пауза':'в работе')+' #'+work.id}:q?{tone:'primary',label:'очередь '+q}:{tone:'teal',label:'свободен'}
@@ -48,25 +48,11 @@ export default function Board({actor}:{actor:Actor}){
   return <div className="board space-y-5">
     <div className="flex items-end justify-between"><div><h1 className="text-[26px] font-bold">Наряды смены</h1>
       <div className="text-[13px] text-muted">Выдать → выполнить → проверить</div></div>
-      <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-[13px] text-muted"><input type="checkbox" checked={pres} onChange={e=>{setPres(e.target.checked);setPresentation(e.target.checked)}}/>Скрыть технические{pres&&hiddenN>0?` (${hiddenN})`:''}</label><Link to="/issue" className="bg-primary text-primary-ink h-11 px-5 rounded-[13px] font-semibold inline-flex items-center">+ Выдать наряд</Link></div></div>
-    {overdue.length>0&&<Card className="border-warn/40 bg-warn/5 space-y-1">
-      <div className="font-semibold text-[14px]">Контроль сроков</div>
-      {overdue.slice(0,5).map((o:any)=><div key={o.id} className="text-[13px] text-warn flex justify-between"><span>Просрочен наряд #{o.id}: {o.title}</span><span>{new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>)}
-    </Card>}
-    {rep&&rep.length>0&&<Card className="border-primary/40 bg-primary/5 space-y-1.5">
-      <div className="flex items-center justify-between"><div className="font-semibold text-[14px]">Повторные ремонты</div>
-        <span className="text-[11px] text-muted">Сигнал, не диагноз</span></div>
-      {rep.slice(0,3).map((r:any)=><div key={r.equipment+r.fault_code} className="text-[13px] flex justify-between gap-3">
-        <span className="truncate">{r.equipment} · шифр {r.fault_code}</span>
-        <span className="text-muted shrink-0">закрыто за 90 дн: {r.closed_count} · пар закрытий в окне повтора: {r.pairs_within_window}</span></div>)}
-      <Explain title="Что означают повторы">Пара = два закрытых наряда на том же оборудовании с тем же шифром в пределах окна повтора (по шифру, по умолчанию 7 дн). Закономерности заложены в синтетические данные для демонстрации. Это сигнал для анализа причин, не оценка исполнителей.</Explain>
-    </Card>}
+      <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-[13px] text-muted"><input type="checkbox" checked={pres} onChange={e=>{setPres(e.target.checked);setPresentation(e.target.checked)}}/>Скрыть тестовые{pres&&hiddenN>0?` (${hiddenN})`:''}</label><Link to="/issue" className="bg-primary text-primary-ink h-11 px-5 rounded-[13px] font-semibold inline-flex items-center">+ Выдать наряд</Link></div></div>
     <div className="grid grid-cols-4 gap-3">
       {[['Активные',counts.active],['В работе',counts.work],['На проверке',counts.review],['Закрыто',counts.closed]].map(([l,v])=>
         <Card key={l}><div className="text-[13px] text-muted">{l}</div><div className="text-[36px] font-bold leading-tight"><NumberTicker value={v as number}/></div></Card>)}
     </div>
-    <div className="flex gap-2 flex-wrap">{st.equipment.map((eq:any)=><Link key={eq.id} to={'/equipment/'+eq.id} className="min-h-11 inline-flex items-center text-[12px] px-3 border border-border rounded-full">{eq.name} · QR</Link>)}</div>
-    <div className="text-[12px] text-muted">Счётчики по доступной истории, не по текущей смене</div>
     <Card className="space-y-2">
       <div className="flex items-center justify-between"><div className="font-semibold text-[14px]">Исполнители смены</div>
         <span className="text-[11px] text-muted">зелёный — свободен · жёлтый — в работе · синий — есть очередь · серый — не на смене</span></div>
@@ -84,7 +70,7 @@ export default function Board({actor}:{actor:Actor}){
     {view==='list'?<div className="grid grid-cols-2 gap-3">
       {list.map((o:any)=><Link to={'/orders/'+o.id} key={o.id}><Card className="space-y-1 hover:border-primary/40 transition">
         <div className="flex items-center justify-between"><span className="text-[12px] text-muted">#{o.id} · {o.section}</span><Badge tone={statusOf(o.status).tone as any}>{statusOf(o.status).label}</Badge></div>
-        <div className="font-semibold text-[15px]">{o.title}</div>
+        <div className="order-card-title font-semibold text-[15px]">{o.title}</div>
         <div className="text-[12px] text-muted">{o.equipment} · {o.assignee} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{new Date(o.deadline).getTime()<now&&o.status!=='closed'?' · просрочен':''}</div>
       </Card></Link>)}
     </div>:<div className="grid grid-cols-3 gap-3 items-start">
@@ -99,5 +85,21 @@ export default function Board({actor}:{actor:Actor}){
         {col.length>12&&<div className="text-[11px] text-muted">ещё {col.length-12} — см. список</div>}
       </div>})}
     </div>}
+    <details className="visual-explain"><summary>Оборудование и QR</summary><div>    <div className="flex gap-2 flex-wrap">{st.equipment.map((eq:any)=><Link key={eq.id} to={'/equipment/'+eq.id} className="min-h-11 inline-flex items-center text-[12px] px-3 border border-border rounded-full">{eq.name} · QR</Link>)}</div>
+    <div className="text-[12px] text-muted">Счётчики по доступной истории, не по текущей смене</div>
+</div></details>
+    <details className="visual-explain"><summary>Сроки и повторные ремонты</summary><div>    {overdue.length>0&&<Card className="border-warn/40 bg-warn/5 space-y-1">
+      <div className="font-semibold text-[14px]">Контроль сроков</div>
+      {overdue.slice(0,5).map((o:any)=><div key={o.id} className="text-[13px] text-warn flex justify-between"><span>Просрочен наряд #{o.id}: {o.title}</span><span>{new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>)}
+    </Card>}
+    {rep&&rep.length>0&&<Card className="border-primary/40 bg-primary/5 space-y-1.5">
+      <div className="flex items-center justify-between"><div className="font-semibold text-[14px]">Повторные ремонты</div>
+        <span className="text-[11px] text-muted">Сигнал, не диагноз</span></div>
+      {rep.slice(0,3).map((r:any)=><div key={r.equipment+r.fault_code} className="text-[13px] flex justify-between gap-3">
+        <span className="truncate">{r.equipment} · шифр {r.fault_code}</span>
+        <span className="text-muted shrink-0">закрыто за 90 дн: {r.closed_count} · пар закрытий в окне повтора: {r.pairs_within_window}</span></div>)}
+      <Explain title="Что означают повторы">Пара = два закрытых наряда на том же оборудовании с тем же шифром в пределах окна повтора (по шифру, по умолчанию 7 дн). Закономерности заложены в синтетические данные для демонстрации. Это сигнал для анализа причин, не оценка исполнителей.</Explain>
+    </Card>}
+</div></details>
   </div>
 }

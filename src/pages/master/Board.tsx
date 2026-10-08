@@ -71,7 +71,7 @@ export default function Board({actor}:{actor:Actor}){
       {list.map((o:any)=><Link to={'/orders/'+o.id} key={o.id}><Card className="space-y-1 hover:border-primary/40 transition">
         <div className="flex items-center justify-between"><span className="text-[12px] text-muted">#{o.id} · {o.section}</span><Badge tone={statusOf(o.status).tone as any}>{statusOf(o.status).label}</Badge></div>
         <div className="order-card-title font-semibold text-[15px]">{o.title}</div>
-        <div className="text-[12px] text-muted">{o.equipment} · {o.assignee} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{new Date(o.deadline).getTime()<now&&o.status!=='closed'?' · просрочен':''}</div>
+        <div className="text-[12px] text-muted">{o.equipment} · {o.assignee} · срок {new Date(o.deadline).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{new Date(o.deadline).getTime()<now&&o.status!=='closed'?' · просрочен':''}</div>
       </Card></Link>)}
     </div>:<div className="grid grid-cols-3 gap-3 items-start">
       {KCOLS.map(([k,label,match])=>{const col=scoped.filter((o:any)=>{if(o.status==='closed'||o.status==='rejected')return false;const isOD=new Date(o.deadline).getTime()<now;return k==='overdue'?isOD:(!isOD&&match(o))})
@@ -80,7 +80,7 @@ export default function Board({actor}:{actor:Actor}){
         {col.slice(0,12).map((o:any)=><Link to={'/orders/'+o.id} key={k+o.id}><Card className={cn('space-y-1 !p-3 hover:border-primary/40 transition mb-2',k==='overdue'&&'border-warn/50')}>
           <div className="flex items-center justify-between"><span className="text-[11px] text-muted">#{o.id}</span><Badge tone={statusOf(o.status).tone as any}>{statusOf(o.status).label}</Badge></div>
           <div className="font-semibold text-[13px] leading-snug">{o.title}</div>
-          <div className="text-[11px] text-muted">{o.assignee} · {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+          <div className="text-[11px] text-muted">{o.assignee} · {new Date(o.deadline).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
         </Card></Link>)}
         {col.length>12&&<div className="text-[11px] text-muted">ещё {col.length-12} — см. список</div>}
       </div>})}
@@ -90,14 +90,14 @@ export default function Board({actor}:{actor:Actor}){
 </div></details>
     <details className="visual-explain"><summary>Сроки и повторные ремонты</summary><div>    {overdue.length>0&&<Card className="border-warn/40 bg-warn/5 space-y-1">
       <div className="font-semibold text-[14px]">Контроль сроков</div>
-      {overdue.slice(0,5).map((o:any)=><div key={o.id} className="text-[13px] text-warn flex justify-between"><span>Просрочен наряд #{o.id}: {o.title}</span><span>{new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>)}
+      {overdue.slice(0,5).map((o:any)=><div key={o.id} className="text-[13px] text-warn flex justify-between"><span>Просрочен наряд #{o.id}: {o.title}</span><span>{new Date(o.deadline).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>)}
     </Card>}
     {rep&&rep.length>0&&<Card className="border-primary/40 bg-primary/5 space-y-1.5">
-      <div className="flex items-center justify-between"><div className="font-semibold text-[14px]">Повторные ремонты</div>
+      <div className="flex items-center justify-between"><div className="font-semibold text-[14px]">Повторные ремонты · проверить</div>
         <span className="text-[11px] text-muted">Сигнал, не диагноз</span></div>
       {rep.slice(0,3).map((r:any)=><div key={r.equipment+r.fault_code} className="text-[13px] flex justify-between gap-3">
         <span className="truncate">{r.equipment} · шифр {r.fault_code}</span>
-        <span className="text-muted shrink-0">закрыто за 90 дн: {r.closed_count} · пар закрытий в окне повтора: {r.pairs_within_window}</span></div>)}
+        <span className="text-muted shrink-0">{r.closed_count} закрытий за 90 дней · {r.pairs_within_window} близких пар</span></div>)}
       <Explain title="Что означают повторы">Пара = два закрытых наряда на том же оборудовании с тем же шифром в пределах окна повтора (по шифру, по умолчанию 7 дн). Закономерности заложены в синтетические данные для демонстрации. Это сигнал для анализа причин, не оценка исполнителей.</Explain>
     </Card>}
 </div></details>

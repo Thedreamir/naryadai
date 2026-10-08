@@ -27,7 +27,7 @@ export default function Assistant({actor}:{actor:Actor}){
     rec.onerror=()=>{setListening(false);setErr('Микрофон недоступен или распознавание прервано — введите текст.')}
     setListening(true);try{rec.start()}catch{setListening(false)}
   }
-  return <section className="assistant-page">
+  return <section className={"assistant-page "+(msgs.length===0?"assistant-empty":"")}>
     <div className="assistant-intro tk-card">
       <div className="assistant-title"><span><Headset size={26}/></span><div><h2>Помощник по наряду</h2><p>{orderId?'Наряд #'+orderId:'Вопрос по работе'}</p></div></div>
       <div className="assistant-boundaries"><span><BookOpen size={17}/>По данным системы</span><span><ShieldCheck size={17}/>Не меняет наряд</span></div>

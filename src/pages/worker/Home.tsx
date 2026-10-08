@@ -11,7 +11,7 @@ function Countdown({deadline}:{deadline:string}){
   const ms=new Date(deadline).getTime()-Date.now()
   const over=ms<0; const s=Math.abs(Math.floor(ms/1000))
   const hh=String(Math.floor(s/3600)).padStart(2,'0'), mm=String(Math.floor(s%3600/60)).padStart(2,'0'), ss=String(s%60).padStart(2,'0')
-  return <span className={"font-mono font-black "+(over?'text-tk-red':'text-tk-amber')}>{over?'-':''}{hh}:{mm}:{ss}</span>
+  return <><div className={"deadline-digits "+(over?'text-tk-red':'text-tk-amber')}>{hh}<span>:</span>{mm}<span>:</span>{ss}</div><div className="deadline-caption">{over?'Срок пропущен на':'Осталось до срока'}</div></>
 }
 export default function WorkerHome({actor}:{actor:Actor}){
   const {st,error:stateError,refresh}=useOrderState(); const [err,setErr]=useState('')
@@ -56,6 +56,7 @@ export default function WorkerHome({actor}:{actor:Actor}){
         <button onClick={()=>dismiss(emergency.id)} className="bg-red-950 text-white font-bold text-xs py-2 px-1 rounded-lg border border-red-500/40 active:scale-95 uppercase leading-tight min-w-0 inline-flex items-center justify-center gap-1"><Clock size={19}/>Позже</button>
       </div>
     </div>}
+    {current&&<section className="worker-deadline-panel" aria-label="Срок текущего наряда"><div className="deadline-top"><Timer size={22}/><strong>Срок наряда №{current.id}</strong></div><Countdown deadline={current.deadline}/><div className="deadline-date">Срок: {new Date(current.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div></section>}
     {current?<div className="tk-card p-3.5 space-y-3">
       <div className="flex items-center justify-between">
         <span className={"text-[0.625rem] font-black px-2 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 "+(current.priority==='emergency'?'bg-tk-red text-white':current.priority==='high'?'bg-tk-amber text-black':'tk-sub')}>
@@ -74,15 +75,12 @@ export default function WorkerHome({actor}:{actor:Actor}){
           «{note.works}»
         </div>
       </div>}
-      <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+      <div className="text-xs font-bold">
         <div className="tk-sub p-2 rounded-lg border-l-4 border-l-tk-green">
           <span className="text-[0.625rem] block" style={{color:'var(--tk-muted)'}}>ДОПУСК{current.permit_kind?'':' · неизвестен'}</span>
           <span className={current.permit_kind?"text-tk-green font-black":"text-tk-amber font-black"}>{current.permit_kind?(current.permit_kind==='not_required'?'Не требуется':'Подтверждён'):'Не отмечен'}</span>
         </div>
-        <div className="tk-sub p-2 rounded-lg border-l-4 border-l-tk-amber">
-          <span className="text-[0.625rem] block" style={{color:'var(--tk-muted)'}}>ОСТАЛОСЬ ВРЕМЕНИ</span>
-          <Countdown deadline={current.deadline}/>
-        </div>
+
       </div>
       <Link to={'/orders/'+current.id} className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-sm inline-flex items-center justify-center gap-2"><ClipboardCheck size={19}/>Сдать на проверку №{current.id}</Link>
     </div>:<div className="tk-card p-3.5 space-y-2">

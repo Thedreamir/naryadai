@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const path=new URL('../supabase/functions/review-order/index.ts',import.meta.url);
+const tmp=new URL('../supabase/functions/review-order/qa-handler.ts',import.meta.url);
+fs.writeFileSync(tmp,fs.readFileSync(path,'utf8').replace("import { createClient } from 'npm:@supabase/supabase-js@2.117.2';","const createClient = globalThis.__qaCreateClient;").replace('Deno.serve(', 'globalThis.__qaServe('));
+let callback, failTable, writes;
+const order={id:102,version:1,status:'completed',title:'Замена подшипника',kind:'repair',priority:'normal',deadline:'2026-10-09T00:00:00Z',created_at:'2026-10-08T10:00:00Z',closure:{works:'Замена подшипника с проверкой результата',fault_code:'F01',materials:[],photos:['data:image/png;base64,AQID']}};
+globalThis.__qaServe=f=>callback=f;
+globalThis.__qaCreateClient=()=>({auth:{getUser:async()=>({data:{user:{id:'master'}}})},from(table){let mode='read', columns='';const q={};for(const f of ['select','eq','neq','in','order','limit','maybeSingle','single'])q[f]=()=>q;q.select=c=>{columns=c;return q};q.update=()=>{mode='update';writes++;return q};q.insert=()=>{mode='insert';return q};q.upsert=()=>q;q.then=(ok,bad)=>{let r;if(mode==='update')r={data:{id:102,version:2},error:null};else if(mode==='insert')r={data:null,error:null};else if(table===failTable)r={data:null,error:{code:'QA_READ_FAILURE',message:'independent injected failure'}};else r={error:null,data:table==='orders'?(columns==='*'?order:[]):table==='employees'?[{name:'Employee'}]:table==='order_events'?[{new_status:'completed',created_at:'2026-10-08T11:00:00Z'}]:table==='fault_codes'?[{code:'F01'}]:[]};if(table==='employees'&&columns==='role,is_active'&&mode==='read'&&table!==failTable)r={data:{role:'master',is_active:true},error:null};return Promise.resolve(r).then(ok,bad)};return q}});
+await import(tmp.href);
+for(const table of ['order_intake_photos','order_photos','order_events','fault_codes','materials','work_norms']){failTable=table;writes=0;const res=await callback(new Request('http://local/review',{method:'POST',headers:{Authorization:'Bearer local-fixture','Content-Type':'application/json'},body:JSON.stringify({id:102,version:1})}));console.log(JSON.stringify({failedRead:table,status:res.status,orderWrites:writes,response:await res.json()}))}
+fs.unlinkSync(tmp);

@@ -1,3 +1,4 @@
+import DemoTour from '../../components/DemoTour'
 import {Explain,RatingFactors} from '../../components/VisualBlocks'
 import {savedPeriod,setPeriod,periodBounds,within,type PeriodDays} from '../../lib/period'
 import {useEffect, useState} from 'react'
@@ -15,7 +16,7 @@ export default function Profile({actor}:{actor:Actor}){
   // Headline uses the same 90-day window as the five-factor rating so the numbers match.
   const hClosed=rt?Number(rt.closed):closed.length
   const hOnTime=rt&&Number(rt.closed)?Math.round(Number(rt.on_time)/Number(rt.closed)*100):(closed.length?Math.round(closed.filter((o:any)=>o.closed_at&&new Date(o.closed_at)<=new Date(o.deadline)).length/closed.length*100):null)
-  return <div className="space-y-3">
+  return <div className="space-y-3"><div className="tk-card p-3"><p>Как устроена смена</p><DemoTour audience="worker"/></div>
     <div className="tk-card p-3.5 flex items-center gap-3">
       <div className="w-12 h-12 rounded-full bg-tk-slate text-white flex items-center justify-center text-lg font-black">{actor.name?.[0]||'?'}</div>
       <div><div className="font-black text-sm">{actor.name}</div><div className="text-[0.6875rem]" style={{color:'var(--tk-muted)'}}>Исполнитель · {actor.email}</div></div>
@@ -28,7 +29,7 @@ export default function Profile({actor}:{actor:Actor}){
     {rt&&<div className="tk-card p-3.5 space-y-1">
       <div className="flex items-baseline justify-between"><span className="text-[0.625rem] font-bold uppercase" style={{color:'var(--tk-muted)'}}>Мой рейтинг (пять факторов)</span>
         <span className="text-xl font-black text-tk-amber">{rt.total??"Нет данных"}</span></div>
-      <span className="visual-tag">{rt.factors_available}/5 факторов · синтетический рейтинг</span>
+      <span className="visual-tag">{rt.factors_available}/5 факторов · расчёт рейтинга</span>
       <RatingFactors rating={rt}/>
       <Explain title="Расчёт и причины отказов"><p>{rt.explanation}</p><p>Подтверждено: {rt.rejects_justified} · неоправдано: {rt.rejects_unjustified} · неизвестно: {rt.rejects_unclassified}</p><p>Веса: качество 30 · в срок 25 · без доработок 20 · объём 15 · без отказов 10.</p></Explain>
     </div>}

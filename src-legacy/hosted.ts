@@ -48,7 +48,7 @@ async function stateOnline() {
   const s = supabase!
   const myId = await uid()
   const [emp, orders, events, equipment, sections, faults, materials, notifications, norms] = await Promise.all([
-    s.from('employees').select('*'),
+    s.from('employees').select('id,name,role,specialty,on_shift,email,is_active,brigade'),
     s.from('orders').select('*').eq('cancelled',false).order('id', {ascending:false}).limit(600),
     s.from('order_events').select('*').order('id', {ascending:false}).limit(2000),
     s.from('equipment').select('*'),
@@ -120,7 +120,8 @@ export async function transition(id: number, x: {status:string,version:number,re
     const myId = await uid()
     const evidence = []
     const uploadOne = async (dataUrl: string, i: number, phase: string) => {
-      const {bytes, mime} = dataUrlToBytes(await sanitizeDataUrl(dataUrl))
+      const canonical = await sanitizeDataUrl(dataUrl)
+      const {bytes, mime} = dataUrlToBytes(canonical)
       if (bytes.length > 400000) throw new Error('Фото слишком большое')
       const hash = await sha256Hex(bytes)
       const ext = mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg'
@@ -129,10 +130,10 @@ export async function transition(id: number, x: {status:string,version:number,re
       if (up.error) throw new Error('Фото не загрузилось в хранилище: '+up.error.message)
       uploadedPaths.push(path)
       const dup = await s.from('order_photos').select('order_id').eq('sha256', hash).neq('order_id', id).limit(1)
-      const ins = await s.from('order_photos').insert({order_id: id, uploaded_by: myId, sha256: hash, byte_size: bytes.length, mime_type: mime}).select('id').single()
+      const ins = await s.from('order_photos').insert({order_id: id, uploaded_by: myId, sha256: hash, byte_size: bytes.length, mime_type: mime, kind: phase}).select('id').single()
       if (ins.error) throw new Error('Запись фото отклонена: '+ins.error.message)
       uploadedRowIds.push(ins.data.id)
-      return {sha256: hash, server_received_at: new Date().toISOString(), byte_size: bytes.length, phase,
+      return {canonical,sha256: hash, server_received_at: new Date().toISOString(), byte_size: bytes.length, phase,
         storage_path: path, duplicate_order_id: dup.data?.[0]?.order_id||null,
         limits: 'Время получения сервером, не доказательство времени съёмки'}
     }
@@ -141,7 +142,7 @@ export async function transition(id: number, x: {status:string,version:number,re
     const beforePhotos: string[] = closure.before_photos||[]
     const beforeEvidence = []
     for (let i=0;i<beforePhotos.length;i++) beforeEvidence.push(await uploadOne(beforePhotos[i], i, 'before'))
-    closure = {...closure, photo_evidence: evidence, client_recorded_at: new Date().toISOString()}
+    closure = {...closure, photos:evidence.map(p=>p.canonical),photo_evidence:evidence.map(({canonical,...e})=>e), client_recorded_at: new Date().toISOString()}
     if (beforeEvidence.length) closure = {...closure, before_photos: undefined, before_photo_evidence: beforeEvidence}
     if (evidence.some(p=>p.duplicate_order_id)) closure = {...closure, duplicate_warning: true}
   }
@@ -190,18 +191,21 @@ export async function markReportSeen(id: number) {
 
 async function reviewOrder(id: number, version: number) {
   const s = supabase!
-  try {
-    const {data, error} = await s.functions.invoke('review-order', {body: {id, version}})
-    if (error) throw error
-    if (data?.error) throw new Error(data.error)
-    return data
-  } catch (e) {
-    // The model/function path failed: run the same deterministic rule layer server-side.
-    // Fails closed (needs_master) and the client never writes ai_result itself.
-    const {data, error: fbError} = await s.rpc('review_fallback', {p_order_id: id, p_expected_version: version})
-    if (fbError) throw new Error(translateError(fbError.message))
-    return data
+  const userId = await uid()
+  const {data, error} = await s.functions.invoke('review-order', {body: {id, version}})
+  if (error || data?.error) {
+    // An uncertain response may follow a committed review. No automatic replay
+    // or RPC fallback: refresh the stored order before deciding what remains.
+    throw new Error('Ответ проверки не подтверждён. Обновите наряд и проверьте состояние; автоматический повтор не выполнен.')
   }
+  if (!data?.result || data.id !== id || !Number.isInteger(data.version))
+    throw new Error('Неполный ответ проверки. Обновите наряд; повторная проверка не запущена.')
+  try { sessionStorage.setItem('tekton-review-receipt:'+userId+':'+id, JSON.stringify({version:data.version,archived:typeof data.archived==='boolean'?data.archived:null})) } catch { /* receipt persistence unavailable */ }
+  return data
+}
+
+export function reviewArchiveReceipt(userId:string, id:number, version:number) {
+  try { const x=JSON.parse(sessionStorage.getItem('tekton-review-receipt:'+userId+':'+id)||'null');return x?.version===version?x:null } catch { return null }
 }
 
 export async function createOrder(x: {title:string,kind:string,equipment_id:number,assignee_id:string,priority:string,deadline:string,before_photos?:string[]}) {
@@ -237,7 +241,7 @@ export async function report(since?: string, until?: string) {
   if (error) throw new Error(error.message)
   const {data: ratingsView, error: e2} = await s.from('employee_ratings').select('*')
   if (e2) throw new Error(e2.message)
-  const {data: emps} = await s.from('employees').select('*').eq('role','worker')
+  const {data: emps} = await s.from('employees').select('id,name,role,specialty,on_shift,email,is_active,brigade').eq('role','worker')
   const fullById: Record<string,any> = {}; (ratingsView||[]).forEach(r=>fullById[r.id]=r)
   const byAssignee: Record<string,any> = {}
   for (const r of rows||[]) {
@@ -309,12 +313,7 @@ export async function setHumanScore(id: number, score: number, comment: string) 
   return data
 }
 
-export async function shiftSummary(stats: any) {
-  const s = supabase!
-  const {data, error} = await s.functions.invoke('shift-summary', {body: stats})
-  if (error) throw new Error(translateError(error.message))
-  return data
-}
+export async function shiftSummary(_stats: any) { throw new Error('Сводка ИИ временно недоступна. Используйте отчёт по нарядам.') }
 
 export async function equipmentHistory(equipmentId: number) {
   const s = supabase!

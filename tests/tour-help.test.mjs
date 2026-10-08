@@ -1,0 +1,2 @@
+import{test}from'node:test';import assert from'node:assert/strict';import{help,helpForRoute}from'../src/lib/tour-help.mjs';
+for(const [role,path,key] of [['master','/orders/124','review'],['worker','/orders/124','worker'],['master','/report','report'],['worker','/report','rating'],['master','/issue','report'],['master','/review','review'],['worker','/assistant','assistant'],['worker','/profile','rating'],['master','/equipment/1','equipment'],['master','/','master'],['worker','/','worker']])test(role+path,()=>assert.equal(helpForRoute(role,path),help[key]));

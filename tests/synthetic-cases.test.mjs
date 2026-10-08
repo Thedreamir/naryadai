@@ -1,0 +1,4 @@
+import test from'node:test';import assert from'node:assert/strict';import{syntheticHistory,detectSynthetic,demoKnowledge}from'../demo/synthetic-cases.mjs';
+test('synthetic generator deterministic and labelled',()=>{const a=syntheticHistory();assert.deepEqual(a,syntheticHistory());assert.ok(a.length>=500);assert.ok(a.every(o=>o.synthetic&&!o.include_in_live_rating&&o.title.includes('(Т)')))});
+test('four planted signals found by independent aggregate',()=>{const d=detectSynthetic(syntheticHistory());assert.equal(d.frequency_ratio,3);assert.equal(d.same_code_count,270);assert.equal(d.post_planned_within48h,13);assert.equal(d.material_spikes.length,1)});
+test('knowledge carries provenance not industrial expertise',()=>assert.ok(demoKnowledge.every(k=>k.source.includes('Синтетический')&&k.source.includes('не заводской норматив'))));

@@ -1,0 +1,5 @@
+import{test}from'node:test';import assert from'node:assert/strict';import fs from'node:fs';
+test('rules-only review no free text call path, active employee and service RPC',()=>{const s=fs.readFileSync('supabase/functions/review-order/index.ts','utf8');assert.match(s,/const workMatch = null/);assert.doesNotMatch(s,/await llmWorkMatch\(llmPayload/);assert.match(s,/employee.is_active !== true/);assert.match(s,/admin.rpc\('commit_ai_review'/)});
+test('summary disabled before body or model calls',()=>{const s=fs.readFileSync('supabase/functions/shift-summary/index.ts','utf8');assert.match(s,/SUMMARY_DISABLED/);assert.doesNotMatch(s,/fetch\(|req.json\(/)});
+test('employee client has no star secret fetch',()=>assert.doesNotMatch(fs.readFileSync('src-legacy/hosted.ts','utf8'),/from\('employees'\).select\('\*'\)/));
+test('report template no fabricated positive facts',()=>{const s=fs.readFileSync('src/pages/worker/OrderDetail.tsx','utf8');assert.doesNotMatch(s,/const TEMPLATES=/)});

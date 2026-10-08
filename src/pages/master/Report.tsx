@@ -19,10 +19,10 @@ function reportCsv(headers:string[],rows:unknown[][]):string {
 function closedOrderCsv(orders:any[],bounds:{since:string,until:string}):string {
  const lo=Date.parse(bounds.since),hi=Date.parse(bounds.until)
  const selected=orders.filter(o=>o.status==='closed'&&Date.parse(o.closed_at)>=lo&&Date.parse(o.closed_at)<hi).sort((a,b)=>Number(a.id)-Number(b.id))
- return reportCsv(['Синтетический отчёт','Период от (включительно)','Период до (не включительно)','Наряд','Оборудование','Участок','Исполнитель','Дата закрытия','Оценка мастера'],selected.map(o=>['Не аттестация персонала',bounds.since,bounds.until,o.id,o.equipment,o.section,o.assignee,o.closed_at,o.ai_result?.human_score??'']))
+ return reportCsv(['Отчёт по учебному набору','Период от (включительно)','Период до (не включительно)','Наряд','Оборудование','Участок','Исполнитель','Дата закрытия','Оценка мастера'],selected.map(o=>['Не аттестация персонала',bounds.since,bounds.until,o.id,o.equipment,o.section,o.assignee,o.closed_at,o.ai_result?.human_score??'']))
 }
 function ratingCsv(rows:any[],bounds:{since:string,until:string}):string {
- return reportCsv(['Синтетический рейтинг','Период от (включительно)','Период до (не включительно)','Исполнитель','Балл','Доступно факторов','Качество','В срок','Без доработок','Объём','Без отказов'],rows.map(r=>['Не аттестация персонала',bounds.since,bounds.until,r.name,r.total,r.factors_available,r.f_quality,r.f_ontime,r.f_rework,r.f_volume,r.f_rejects]))
+ return reportCsv(['Рейтинг по учебному набору','Период от (включительно)','Период до (не включительно)','Исполнитель','Балл','Доступно факторов','Качество','В срок','Без доработок','Объём','Без отказов'],rows.map(r=>['Не аттестация персонала',bounds.since,bounds.until,r.name,r.total,r.factors_available,r.f_quality,r.f_ontime,r.f_rework,r.f_volume,r.f_rejects]))
 }
 
 const GREEN='#16402F', ACC='#1F9D63', WARN='#C77E1F', RED='#D23B3B', MUT='#B9B9B2'
@@ -59,7 +59,7 @@ export default function Report({actor}:{actor:Actor}){
   if(!st||!data) return <div role={loadError?'alert':'status'} className="text-muted py-10">{loadError||'Загрузка…'}</div>
   return <div className="space-y-4">
     <div><h1 className="text-[26px] font-bold">Отчёт и рейтинг</h1>
-      <div className="text-[13px] text-muted">Синтетический отчёт · не аттестация</div><label className="text-[13px] flex gap-2 items-center mt-2">Период <select aria-label="Период отчёта" value={days} onChange={e=>{const d=Number(e.target.value) as PeriodDays;setDays(d);setPeriod(d);setBounds(periodBounds(d))}} className="border border-border rounded-[10px] p-2">{[7,30,90].map(n=><option key={n} value={n}>{n} дней</option>)}</select></label><Explain title="Границы периода и источники">{new Date(bounds.since).toLocaleString('ru')} - {new Date(bounds.until).toLocaleString('ru')} · Asia/Almaty. Закрытия и оценки по дате закрытия; сигналы по дате выдачи. Очереди - текущий срез.</Explain></div>
+      <div className="text-[13px] text-muted">Отчёт по учебному набору · не аттестация</div><label className="text-[13px] flex gap-2 items-center mt-2">Период <select aria-label="Период отчёта" value={days} onChange={e=>{const d=Number(e.target.value) as PeriodDays;setDays(d);setPeriod(d);setBounds(periodBounds(d))}} className="border border-border rounded-[10px] p-2">{[7,30,90].map(n=><option key={n} value={n}>{n} дней</option>)}</select></label><Explain title="Границы периода и источники">{new Date(bounds.since).toLocaleString('ru')} - {new Date(bounds.until).toLocaleString('ru')} · Asia/Almaty. Закрытия и оценки по дате закрытия; сигналы по дате выдачи. Очереди - текущий срез.</Explain></div>
     <div className="flex flex-wrap gap-2"><Button disabled={loading||!!loadError} onClick={()=>download('orders')}>CSV закрытых нарядов</Button><Button variant="outline" disabled={loading||!!loadError||rt===null} onClick={()=>download('ratings')}>CSV рейтинга</Button></div>
     <div className="text-[12px] text-muted">CSV для Excel: выбранный период, UTF-8. Не XLSX/PDF. Только явные поля отчёта, без фото-ссылок, контактов и текста ремонта.</div>
     {loading&&<p role="status" className="text-[13px] text-muted">Обновление периода… экспорт временно отключён.</p>}
@@ -93,7 +93,7 @@ export default function Report({actor}:{actor:Actor}){
       {rt&&rt.length===0&&<div className="text-[13px] text-muted py-2">Закрытых нарядов за период нет</div>}
     </Card>
     {rt&&rt.length>0&&<Card><h2 className="font-semibold text-[15px] mb-2">Рейтинг бригад</h2>
-      <div className="text-[12px] text-muted mb-3">Средний балл исполнителей бригады за период (те же пять факторов). Синтетические демо-данные.</div>
+      <div className="text-[12px] text-muted mb-3">Средний балл исполнителей бригады за период (те же пять факторов). Источник: учебный набор данных.</div>
       <div className="overflow-x-auto" role="region" aria-label="Таблица отчёта, прокрутка по горизонтали"><table className="w-full text-[14px]"><thead><tr className="text-left text-[12px] text-muted"><th className="py-2">Бригада</th><th>Средний балл</th><th>Исполнителей с рейтингом</th></tr></thead>
       <tbody>{Object.entries((rt||[]).reduce((acc:any,r:any)=>{const b=st.employees.find((x:any)=>x.id===r.worker_id)?.brigade||'Без бригады';(acc[b]=acc[b]||[]).push(r.total);return acc},{})).map(([b,arr]:any)=>{
         const nums=(arr as any[]).filter((x:any)=>typeof x==='number')
@@ -114,7 +114,7 @@ export default function Report({actor}:{actor:Actor}){
       {refusals.filter(e=>within(e.created_at,bounds)&&e.reason && !['no_materials','no_permit','busy_emergency','wrong_specialty','unjustified'].includes(e.reason.split(':')[0])).length===0&&<p className="text-muted text-[13px]">Спорных причин нет.</p>}
     </Card>
     <Card><div className="font-semibold text-[15px] mb-2">Аномалии и рекомендации ({days} дней)</div>
-      <div className="text-[12px] text-muted mb-3">Правила и статистика по демо-истории, не вывод ИИ-модели. Каждый сигнал — повод для анализа, не доказанная закономерность; закономерности заложены в синтетические данные для демонстрации.</div>
+      <div className="text-[12px] text-muted mb-3">Правила и статистика по истории учебного набора, не вывод ИИ-модели. Каждый сигнал — повод для анализа, не доказанная закономерность; закономерности заложены в учебный набор данных для демонстрации.</div>
       <div className="space-y-2.5">
         {(an||[]).map((a:any,i:number)=><div key={i} className="border border-border rounded-[12px] p-3">
           <div className="text-[13px] font-semibold">{{top_equipment:'Топ проблемного оборудования',repeat_fault:'Повторная неисправность',post_pm_failure:'Поломки после ППР',material_outlier:'Аномальный расход материала'}[a.kind as string]||a.kind} · {a.subject}</div>
@@ -132,6 +132,6 @@ export default function Report({actor}:{actor:Actor}){
           <td className="font-bold">{r.avg?r.avg.toFixed(1)+' / 5':'—'}</td></tr>)}</tbody></table></div>
       {data.ratings.length===0&&<div className="text-[13px] text-muted py-2">Оценок пока нет</div>}
     </Card>
-    <div className="text-[12px] text-muted">Сумма дневных столбцов: {data.byDay.reduce((n,x)=>n+x.count,0)} · закрыто в периоде: {data.closedCount}. Закрыто с оценкой: {data.scoredCount} из {data.closedCount}. Графики строятся на синтетических данных.</div>
+    <div className="text-[12px] text-muted">Сумма дневных столбцов: {data.byDay.reduce((n,x)=>n+x.count,0)} · закрыто в периоде: {data.closedCount}. Закрыто с оценкой: {data.scoredCount} из {data.closedCount}. Графики строятся на учебном наборе данных.</div>
   </div>
 }

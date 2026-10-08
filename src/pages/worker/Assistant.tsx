@@ -30,7 +30,7 @@ export default function Assistant({actor}:{actor:Actor}){
   return <section className={"assistant-page assistant-chat "+(msgs.length===0?"assistant-empty":"")}>
     <div className="assistant-intro tk-card">
       <div className="assistant-title"><span><Headset size={26}/></span><div><h2>Ptah AI</h2><p>{orderId?'Наряд #'+orderId:'Вопрос по работе'}</p></div></div>
-      <p className="assistant-demo"><Info size={16}/>Демо. Не применять на реальном оборудовании.</p>
+      <p className="assistant-demo"><Info size={16}/>Подсказка, решает человек.</p>
     </div>
     {msgs.length===0&&<div className="assistant-start"><p>Начать разговор</p><button disabled={busy} onClick={()=>send('Какой срок у моего текущего наряда?')}><Clock3 size={23}/><span>Срок наряда</span><Send size={17}/></button><button disabled={busy} onClick={()=>send('Что известно об оборудовании моего текущего наряда?')}><Wrench size={23}/><span>Оборудование</span><Send size={17}/></button></div>}
     <div className="assistant-messages" aria-live="polite">
@@ -40,7 +40,7 @@ export default function Assistant({actor}:{actor:Actor}){
         <div className={cn("rounded-xl px-3 py-2 assistant-bubble max-w-[85%] leading-relaxed",m.from==='me'?'bg-tk-slate text-white':'tk-card')}>
           {m.text}
           {m.sources&&m.sources.length>0&&<div className="text-[0.5625rem] mt-1 opacity-70 inline-flex items-center gap-1"><BookOpen size={22}/>Источник: {m.sources.join('; ')}</div>}
-          {m.mode&&<div className="text-[0.5625rem] mt-1 opacity-60">{m.mode==='live'?'ИИ · демо':'По правилам · демо'}</div>}
+          {m.mode&&<div className="text-[0.5625rem] mt-1 opacity-60">{m.mode==='live'?'ИИ':'По правилам'}</div>}
         </div>
       </div>)}
       {busy&&<div className="flex gap-2"><div className="w-8 h-8 rounded-lg bg-tk-amber text-black flex items-center justify-center"><Headset size={19}/></div>

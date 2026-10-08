@@ -39,16 +39,16 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
       </nav>
       <div className="mt-auto text-[11px] text-[#78807d] leading-[1.9]">
         <div className="flex items-center gap-2 mb-2"><div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#e9eee9] to-[#d4ded5] text-[#4d6758] grid place-items-center font-bold text-[14px]">{actor.name?.split(' ').map((w:string)=>w[0]).slice(-2).join('')}</div>
-          <div className="min-w-0"><div className="text-[13px] font-semibold text-[#313936] truncate">{actor.name}</div><div>Демо-учётка</div></div></div>
+          <div className="min-w-0"><div className="text-[13px] font-semibold text-[#313936] truncate">{actor.name}</div><div>Учётная запись</div></div></div>
         <button className="flex items-center gap-2 h-10 text-[13px] text-muted" onClick={async()=>{await H.logout();location.reload()}}><LogOut size={18}/>Выйти</button>
         <div className="mt-2"><strong className="text-[13px] text-[#313936]">Ptah AI</strong><br/>Помощник, не арбитр качества</div>
         <div className="mt-1">{'dreamir | dream labs | <O>'}</div>
-        <div className="mt-2">Синтетические данные · тестовое облако</div>
+        <div className="mt-2">Tekton OS · рабочее пространство</div>
       </div>
     </aside>
-    <header className="workspace-mobile-header"><img src="/tekton-symbol.svg" alt=""/><strong>Tekton OS</strong><LanguageToggle/><DemoTour/><button aria-label="Открыть меню" onClick={()=>setMenuOpen(true)}>Меню</button></header>
+    <header className="workspace-mobile-header"><img src="/tekton-symbol.svg" alt=""/><strong>Tekton OS</strong><DemoTour/><button aria-label="Открыть меню" onClick={()=>setMenuOpen(true)}>Меню</button></header>
     <nav className="workspace-bottom" aria-label="Навигация мастера">{items.filter(i=>['/','/review','/issue','/report'].includes(i.to)).map(i=><NavLink to={i.to} end={i.to==='/'} key={i.to}><i.icon size={22}/><span>{label(i.to==='/issue'?'Выдать':i.to==='/report'?'Отчёт':i.label)}</span></NavLink>)}<button onClick={()=>setMenuOpen(true)}><Brain size={22}/><span>{label('Ещё')}</span></button></nav>
-    {menuOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setMenuOpen(false)}><section role="dialog" aria-modal="true" aria-label="Меню мастера" className="workspace-sheet" onClick={e=>e.stopPropagation()}><p className="text-[12px] text-muted">{kz?'Қазақша навигация: аударма жобасы. Мәтіндер RU.':'KZ: только навигация · черновик'}</p><button autoFocus className="sheet-close" onClick={()=>setMenuOpen(false)}>Закрыть</button>{items.map(i=><NavLink to={i.to} key={i.to} onClick={()=>setMenuOpen(false)}>{label(i.label)}</NavLink>)}<button onClick={async()=>{await H.logout();location.reload()}}>Выйти</button></section></div>}
+    {menuOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setMenuOpen(false)}><section role="dialog" aria-modal="true" aria-label="Меню мастера" className="workspace-sheet" onClick={e=>e.stopPropagation()}><LanguageToggle/><p className="text-[12px] text-muted">{kz?'Қазақша навигация: аударма жобасы. Мәтіндер RU.':'KZ: только навигация · черновик'}</p><button autoFocus className="sheet-close" onClick={()=>setMenuOpen(false)}>Закрыть</button>{items.map(i=><NavLink to={i.to} key={i.to} onClick={()=>setMenuOpen(false)}>{label(i.label)}</NavLink>)}<button onClick={async()=>{await H.logout();location.reload()}}>Выйти</button></section></div>}
     <main className="workspace-main flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]"><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
   </div>
 }

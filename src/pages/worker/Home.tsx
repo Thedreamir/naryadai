@@ -22,10 +22,10 @@ export default function WorkerHome({actor}:{actor:Actor}){
   const nav=useNavigate()
   const [liveAlerts,setLiveAlerts]=useState<any[]>([])
   useEffect(()=>H.watchNotifications((n:any)=>setLiveAlerts(a=>[n,...a].slice(0,3))),[])
-  const mine=st?st.orders.filter((o:any)=>o.assignee_id===actor.id&&(!pres||!isTechnicalTitle(o.title))):[]
+  const mine=st?st.orders.filter((o:any)=>o.assignee_id===actor.id):[]
   const current=mine.find((o:any)=>o.status==='in_progress')
-  const queue=mine.filter((o:any)=>['issued','queued','accepted','paused'].includes(o.status))
-  const emergency=mine.find((o:any)=>o.priority==='emergency'&&o.status==='issued'&&!dismissed.includes(o.id))
+  const queue=mine.filter((o:any)=>['issued','queued','accepted','paused'].includes(o.status)&&(!pres||!isTechnicalTitle(o.title)))
+  const emergency=mine.find((o:any)=>o.priority==='emergency'&&o.status==='issued'&&!dismissed.includes(o.id)&&(!pres||!isTechnicalTitle(o.title)))
   useEffect(()=>{ // real shift note: last closure note for current order's equipment
     if(!current){setNote(null);return}
     H.equipmentHistory(current.equipment_id).then((h:any)=>{

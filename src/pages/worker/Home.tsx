@@ -18,14 +18,13 @@ export default function WorkerHome({actor}:{actor:Actor}){
   const {st,error:stateError,refresh}=useOrderState(); const [err,setErr]=useState('')
   const [pres,setPres]=useState(savedPresentation())
   const [note,setNote]=useState<any>(null)
-  const [dismissed,setDismissed]=useState<number[]>(()=>{try{return JSON.parse(sessionStorage.getItem('tk-em-dismissed')||'[]')}catch{return[]}})
   const nav=useNavigate()
   const [liveAlerts,setLiveAlerts]=useState<any[]>([])
   useEffect(()=>H.watchNotifications((n:any)=>setLiveAlerts(a=>[n,...a].slice(0,3))),[])
   const mine=st?st.orders.filter((o:any)=>o.assignee_id===actor.id):[]
   const current=mine.find((o:any)=>o.status==='in_progress')
   const queue=mine.filter((o:any)=>['issued','queued','accepted','paused'].includes(o.status)&&(!pres||!isTechnicalTitle(o.title)))
-  const emergency=mine.find((o:any)=>o.priority==='emergency'&&o.status==='issued'&&!dismissed.includes(o.id)&&(!pres||!isTechnicalTitle(o.title)))
+  const emergency=mine.find((o:any)=>o.priority==='emergency'&&o.status==='issued'&&(!pres||!isTechnicalTitle(o.title)))
   useEffect(()=>{ // real shift note: last closure note for current order's equipment
     if(!current){setNote(null);return}
     H.equipmentHistory(current.equipment_id).then((h:any)=>{
@@ -33,14 +32,14 @@ export default function WorkerHome({actor}:{actor:Actor}){
       setNote(last?{works:last.closure.works,when:last.closed_at||last.updated_at}:null)
     }).catch(()=>setNote(null))
   },[current?.id])
-  const dismiss=(id:number)=>{const d=[...dismissed,id];setDismissed(d);sessionStorage.setItem('tk-em-dismissed',JSON.stringify(d))}
+  
   if(err) return <div className="tk-card p-4 text-tk-red">{err}</div>
   if(stateError)return <div role="alert" className="tk-card p-4">Данные недоступны: {stateError}<button className="tk-touch tk-sub w-full mt-2" onClick={refresh}>Повторить</button></div>
   if(!st) return <div className="py-10 text-center" style={{color:'var(--tk-muted)'}}>Загрузка нарядов…</div>
   const eqName=(o:any)=>o.equipment||st.equipment.find((e:any)=>e.id===o.equipment_id)?.name||'—'
   const alerts=[...liveAlerts,...(st.notifications||[])].filter((n:any,i:number,arr:any[])=>arr.findIndex((x:any)=>x.id===n.id)===i).filter((n:any)=>!pres||!/(?:#|№)\s*(\d+)/.test(n.message)||!st.orders.some((o:any)=>isTechnicalTitle(o.title)&&new RegExp('(?:#|№)\\s*'+o.id+'\\b').test(n.message))).slice(0,3)
   return <div className="space-y-3">{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.</div>}
-    {current&&<section className="worker-deadline-panel" aria-label="Срок текущего наряда"><div className="deadline-top"><Timer size={22}/><strong>Срок наряда №{current.id}</strong></div><Countdown deadline={current.deadline}/><div className="deadline-date">Срок: {new Date(current.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div></section>}
+    {current&&<section className="worker-deadline-panel" aria-label="Срок текущего наряда"><div className="deadline-top"><Timer size={22}/><strong>Срок наряда №{current.id}</strong></div><Countdown deadline={current.deadline}/><div className="deadline-date">Срок: {new Date(current.deadline).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div></section>}
     {current?<div className="tk-card p-3.5 space-y-3">
       <div className="flex items-center justify-between">
         <span className={"text-[0.625rem] font-black px-2 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 "+(current.priority==='emergency'?'bg-tk-red text-white':current.priority==='high'?'bg-tk-amber text-black':'tk-sub')}>
@@ -85,7 +84,7 @@ export default function WorkerHome({actor}:{actor:Actor}){
       </div>
       <div className="grid grid-cols-2 gap-2">
         <button onClick={()=>nav('/orders/'+emergency.id)} className="bg-white text-tk-red font-black text-xs py-2 px-1 rounded-lg active:scale-95 uppercase leading-tight min-w-0 inline-flex items-center justify-center gap-1"><Zap size={19} strokeWidth={2.5}/>Открыть наряд</button>
-        <button onClick={()=>dismiss(emergency.id)} className="bg-red-950 text-white font-bold text-xs py-2 px-1 rounded-lg border border-red-500/40 active:scale-95 uppercase leading-tight min-w-0 inline-flex items-center justify-center gap-1"><Clock size={19}/>Позже</button>
+        <button onClick={()=>nav('/orders/'+emergency.id)} className="bg-red-950 text-white font-bold text-xs py-2 px-1 rounded-lg border border-red-500/40 active:scale-95 uppercase leading-tight min-w-0 inline-flex items-center justify-center gap-1"><Clock size={19}/>Не могу · причина</button>
       </div>
     </div>}</div></details>
     <button onClick={()=>window.dispatchEvent(new CustomEvent('naryadai:open-hud'))} className="tk-card p-3 w-full cursor-pointer transition flex items-center justify-between text-left">

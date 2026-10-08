@@ -1,3 +1,4 @@
+import DemoTour from '../components/DemoTour'
 import {isTechnicalTitle,savedPresentation} from '../lib/presentation'
 import LanguageToggle from '../components/LanguageToggle'
 import {kzNavigation} from '../lib/language'
@@ -32,7 +33,7 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
         <div className="text-[23px] font-bold tracking-[-1px]">Tekton OS</div>
       </div>
       <div className="text-[12px] text-muted mt-3 mb-10 px-1">Мастер · рабочее пространство</div>
-      <LanguageToggle/><nav className="flex flex-col">
+      <DemoTour/><LanguageToggle/><nav className="flex flex-col">
         {items.map(i=><NavLink key={i.to} to={i.to} end={i.to==='/'} className={({isActive})=>cn('flex items-center gap-3 px-[13px] py-4 rounded-[13px] mb-[7px] text-[15px]', isActive?'bg-[#edf1ee] text-[#174b35] font-bold':'text-[#69726e] hover:bg-black/[0.03]')}>
           <i.icon size={22} strokeWidth={1.5}/><span className="flex-1">{label(i.label)}</span>{i.badge?(<span className="bg-primary text-primary-ink text-[0.6875rem] font-bold px-2 py-0.5 rounded-full">{i.badge}</span>):null}</NavLink>)}
       </nav>
@@ -45,7 +46,7 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
         <div className="mt-2">Синтетические данные · тестовое облако</div>
       </div>
     </aside>
-    <header className="workspace-mobile-header"><img src="/tekton-symbol.svg" alt=""/><strong>Tekton OS</strong><LanguageToggle/><span>Мастер</span><button aria-label="Открыть меню" onClick={()=>setMenuOpen(true)}>Меню</button></header>
+    <header className="workspace-mobile-header"><img src="/tekton-symbol.svg" alt=""/><strong>Tekton OS</strong><LanguageToggle/><DemoTour/><button aria-label="Открыть меню" onClick={()=>setMenuOpen(true)}>Меню</button></header>
     <nav className="workspace-bottom" aria-label="Навигация мастера">{items.filter(i=>['/','/review','/issue','/report'].includes(i.to)).map(i=><NavLink to={i.to} end={i.to==='/'} key={i.to}><i.icon size={22}/><span>{label(i.to==='/issue'?'Выдать':i.to==='/report'?'Отчёт':i.label)}</span></NavLink>)}<button onClick={()=>setMenuOpen(true)}><Brain size={22}/><span>{label('Ещё')}</span></button></nav>
     {menuOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setMenuOpen(false)}><section role="dialog" aria-modal="true" aria-label="Меню мастера" className="workspace-sheet" onClick={e=>e.stopPropagation()}><p className="text-[12px] text-muted">{kz?'Қазақша навигация: аударма жобасы. Мәтіндер RU.':'KZ: только навигация · черновик'}</p><button autoFocus className="sheet-close" onClick={()=>setMenuOpen(false)}>Закрыть</button>{items.map(i=><NavLink to={i.to} key={i.to} onClick={()=>setMenuOpen(false)}>{label(i.label)}</NavLink>)}<button onClick={async()=>{await H.logout();location.reload()}}>Выйти</button></section></div>}
     <main className="workspace-main flex-1 min-w-0 px-[38px] py-8 max-w-[1280px]"><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>

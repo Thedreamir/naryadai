@@ -1,3 +1,4 @@
+import {Explain,RatingFactors} from '../../components/VisualBlocks'
 import {savedPeriod,setPeriod,periodBounds,within,type PeriodDays} from '../../lib/period'
 import {Button} from '../../components/ui/button'
 import {useEffect, useMemo, useState} from 'react'
@@ -58,7 +59,7 @@ export default function Report({actor}:{actor:Actor}){
   if(!st||!data) return <div role={loadError?'alert':'status'} className="text-muted py-10">{loadError||'Загрузка…'}</div>
   return <div className="space-y-4">
     <div><h1 className="text-[26px] font-bold">Отчёт и рейтинг</h1>
-      <div className="text-[13px] text-muted">Выбранный период · все доступные участки · не аттестация персонала</div><label className="text-[13px] flex gap-2 items-center mt-2">Период <select aria-label="Период отчёта" value={days} onChange={e=>{const d=Number(e.target.value) as PeriodDays;setDays(d);setPeriod(d);setBounds(periodBounds(d))}} className="border border-border rounded-[10px] p-2">{[7,30,90].map(n=><option key={n} value={n}>{n} дней</option>)}</select></label><div className="text-[12px] text-muted mt-1">{new Date(bounds.since).toLocaleString('ru')} - {new Date(bounds.until).toLocaleString('ru')} · Asia/Almaty. Закрытия/оценки по дате закрытия; сигналы по дате выдачи. Активные и проверка - текущий срез, не события периода.</div></div>
+      <div className="text-[13px] text-muted">Синтетический отчёт · не аттестация</div><label className="text-[13px] flex gap-2 items-center mt-2">Период <select aria-label="Период отчёта" value={days} onChange={e=>{const d=Number(e.target.value) as PeriodDays;setDays(d);setPeriod(d);setBounds(periodBounds(d))}} className="border border-border rounded-[10px] p-2">{[7,30,90].map(n=><option key={n} value={n}>{n} дней</option>)}</select></label><Explain title="Границы периода и источники">{new Date(bounds.since).toLocaleString('ru')} - {new Date(bounds.until).toLocaleString('ru')} · Asia/Almaty. Закрытия и оценки по дате закрытия; сигналы по дате выдачи. Очереди - текущий срез.</Explain></div>
     <div className="flex flex-wrap gap-2"><Button disabled={loading||!!loadError} onClick={()=>download('orders')}>CSV закрытых нарядов</Button><Button variant="outline" disabled={loading||!!loadError||rt===null} onClick={()=>download('ratings')}>CSV рейтинга</Button></div>
     <div className="text-[12px] text-muted">CSV для Excel: выбранный период, UTF-8. Не XLSX/PDF. Только явные поля отчёта, без фото-ссылок, контактов и текста ремонта.</div>
     {loading&&<p role="status" className="text-[13px] text-muted">Обновление периода… экспорт временно отключён.</p>}
@@ -85,11 +86,9 @@ export default function Report({actor}:{actor:Actor}){
         </div></Card>
     </div>
     <Card><div className="font-semibold text-[15px] mb-2">Рейтинг исполнителей (пять факторов)</div>
-      <div className="text-[12px] text-muted mb-3">Веса команды: качество 30 · в срок 25 · без доработок 20 · объём и сложность 15 · без отказов 10. Качество — только оценки мастера; выводы ИИ в балл не входят. Фактор без данных исключается, веса перенормируются — видно в пояснении.</div>
-      <div className="overflow-x-auto" role="region" aria-label="Таблица отчёта, прокрутка по горизонтали"><table className="w-full text-[14px]"><thead><tr className="text-left text-[12px] text-muted"><th className="py-2">Исполнитель</th><th className="min-w-[65px]">Балл</th><th className="min-w-[65px]">Полнота<br/>факторов</th><th>Составляющие</th></tr></thead>
-        <tbody>{(rt||[]).map((r:any)=><tr key={r.worker_id} className="border-t border-border align-top"><td className="py-2.5 font-medium">{r.name}</td>
-          <td className="font-bold text-[16px]">{r.total??"Нет закрытой работы"}</td><td>{r.factors_available}/5</td>
-          <td className="text-[12px] text-muted py-2.5">{r.explanation}<div>Отказы: оправдано {r.rejects_justified} · без причины/неоправдано {r.rejects_unjustified} · требуют проверки {r.rejects_unclassified}. {r.f_rejects===null?"Фактор отказов исключён: данные неполные.":""}</div></td></tr>)}</tbody></table></div>
+      <div className="visual-tag">Только оценки мастера · нет данных = фактор исключён</div>
+      <div className="visual-rating-list mt-4">{(rt||[]).map((r:any)=><article className="visual-rating-card" key={r.worker_id}><div className="visual-rating-head"><div><h3>{r.name}</h3><span className="visual-tag">{r.factors_available}/5 факторов</span></div><div className="visual-rating-score">{r.total??'—'}<small className="block text-[10px] font-normal">из 100</small></div></div><RatingFactors rating={r}/><Explain title="Почему такой балл"><p>{r.explanation}</p><p>Отказы: оправдано {r.rejects_justified} · неоправдано {r.rejects_unjustified} · требуют проверки {r.rejects_unclassified}.</p></Explain></article>)}</div>
+      <Explain title="Веса пяти факторов">Качество 30 · в срок 25 · без доработок 20 · объём 15 · без отказов 10. Объём - приближение, не замеренная трудоёмкость. Выводы ИИ не входят в оценку.</Explain>
       {rt===null&&<div className="text-[13px] text-muted py-2">Рейтинг недоступен</div>}
       {rt&&rt.length===0&&<div className="text-[13px] text-muted py-2">Закрытых нарядов за период нет</div>}
     </Card>

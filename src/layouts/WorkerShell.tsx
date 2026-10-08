@@ -30,7 +30,7 @@ export default function WorkerShell({actor, children}:{actor:Actor, children:Rea
       </div>
 
     </header>
-    <main className="flex-1 overflow-y-auto w-full max-w-md mx-auto p-3 pb-16"><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
+    <main className={'flex-1 overflow-y-auto w-full max-w-md mx-auto p-3 pb-16 '+(loc.pathname==='/assistant'?' worker-chat-main':'')+''}><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
     <nav className="shrink-0 border-t w-full" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)',paddingBottom:'env(safe-area-inset-bottom)'}}>
       <div className="max-w-md mx-auto grid grid-cols-5 h-20">
         {tabs.map(t=><NavLink key={t.to} to={t.to} end={t.to==='/'} className={({isActive})=>cn('flex flex-col items-center justify-center w-full h-full transition', isActive?'text-tk-amber':'')} style={undefined as any}>

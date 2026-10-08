@@ -33,6 +33,7 @@ export default function Profile({actor}:{actor:Actor}){
       <Explain title="Расчёт и причины отказов"><p>{rt.explanation}</p><p>Подтверждено: {rt.rejects_justified} · неоправдано: {rt.rejects_unjustified} · неизвестно: {rt.rejects_unclassified}</p><p>Веса: качество 30 · в срок 25 · без доработок 20 · объём 15 · без отказов 10.</p></Explain>
     </div>}
     <div className="tk-card p-3 text-[0.625rem]" style={{color:'var(--tk-muted)'}}>Статистика по доступной истории демо-базы — не аттестация и не рейтинг персонала.</div>
+    <p className="text-center text-[0.625rem]" style={{color:'var(--tk-muted)'}}>Tekton OS · Dreamer Labs</p>
     <button onClick={async()=>{await H.logout();location.reload()}} className="tk-touch tk-sub w-full text-tk-red uppercase text-sm"><LogOut size={19} className="inline mr-1.5"/>Выйти</button>
   </div>
 }

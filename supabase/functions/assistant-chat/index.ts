@@ -1,3 +1,4 @@
+import {almatyDeadline} from '../_shared/order-time.mjs';
 // assistant-chat: worker assistant. Answers TEXT only, grounded in OWNED order context +
 // curated knowledge_docs + approved repair memory. Never invents specs; never changes
 // order/safety state; never instructs to energize equipment. Free Gemini model via env;
@@ -21,7 +22,7 @@ Deno.serve(async req=>{
  const token=req.headers.get('Authorization');if(!token)return reply({error:'authentication required'},401);
  const db=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:token}}});
  const{data:{user},error:authError}=await db.auth.getUser();if(authError||!user)return reply({error:'invalid session'},401);
- const{data:employee}=await db.from('employees').select('role,name').eq('id',user.id).single();if(!employee)return reply({error:'employee required'},403);
+ const{data:employee}=await db.from('employees').select('role,name,is_active').eq('id',user.id).single();if(!employee||employee.is_active!==true)return reply({error:'employee required'},403);
  const body=await req.json();
  const message=String(body?.message||'').trim();
  if(message.length<2)return reply({error:'empty message'},400);
@@ -37,7 +38,7 @@ Deno.serve(async req=>{
  const orderId=Number(body?.order_id);
  if(orderId){
   const{data:o}=await admin.from('orders').select('id,title,status,kind,priority,deadline,equipment_id,assignee_id,equipment(name)').eq('id',orderId).maybeSingle();
-  if(o&&o.assignee_id===user.id)orderCtx={id:o.id,title:o.title,status:o.status,kind:o.kind,priority:o.priority,deadline:o.deadline,equipment:(o as any).equipment?.name||null,equipment_id:o.equipment_id};
+  if(o&&o.assignee_id===user.id)orderCtx={id:o.id,title:o.title,status:o.status,kind:o.kind,priority:o.priority,deadline:o.deadline,deadline_almaty:almatyDeadline(o.deadline),timezone:'Asia/Almaty',equipment:(o as any).equipment?.name||null,equipment_id:o.equipment_id};
  }
  // ---- context: curated knowledge docs (equipment-scoped first when an owned order is given) ----
  let docs:any[]=[];
@@ -70,6 +71,7 @@ Deno.serve(async req=>{
   if(dBest)return {answer:`[Документация] ${dBest.d.title} (${dBest.d.source_label}, версия ${dBest.d.version}, утверждение ${dBest.d.reviewed_at||'не указано'}, проверяющий ${dBest.d.reviewed_by||'не указан'}): ${dBest.d.body}`,sources:[dBest.d.title],source_id:String(dBest.d.id),mode:'rules',knowledge_used:true};
   const mBest=memory.map((m:any)=>({m,s:score(m.title+' '+m.body,ws)})).filter(x=>x.s>=2).sort((a,b)=>b.s-a.s||a.m.id-b.m.id)[0];
   if(mBest){const m=mBest.m;return {answer:`[Память] ${m.title} (наряд #${m.order_id}, версия ${m.version}, полевая заметка, не норматив). Текст заметки дословно, без проверки: «${m.body}»`,sources:[m.title],source_id:String(m.id),mode:'rules',knowledge_used:true}}
+  if(orderCtx&&/(срок|дедлайн|когда.*(сдать|законч|выполн))/i.test(message))return {answer:`[Контекст наряда] Срок наряда #${orderCtx.id}: ${orderCtx.deadline_almaty||'не подтверждён, уточните у мастера'}.`,sources:['Контекст наряда'],source_id:String(orderCtx.id),mode:'rules',knowledge_used:false};
   if(orderCtx)return {answer:`[Контекст наряда] По наряду #${orderCtx.id} могу подсказать статус, срок и оборудование. По вашему вопросу в документации данных нет — уточните у мастера.`,sources:[],source_id:String(orderCtx.id),mode:'rules',knowledge_used:false};
   return {answer:'[Нет данных] '+NO_DATA,sources:[],source_id:'',mode:'rules',knowledge_used:false}};
  // Fail closed: regex masking cannot prove anonymization of arbitrary free text.

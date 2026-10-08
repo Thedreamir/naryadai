@@ -1,4 +1,5 @@
 import DemoTour from '../components/DemoTour'
+import {useLocale} from '../lib/locale'
 import type {ReactNode} from 'react'
 import {NavLink, useLocation} from 'react-router-dom'
 import {motion} from 'framer-motion'
@@ -16,7 +17,7 @@ const tabs:{to:string;icon:PhName;label:string}[] = [
   {to:'/profile', icon:'userCircle', label:'Профиль'},
 ]
 export default function WorkerShell({actor, children}:{actor:Actor, children:ReactNode}){
-  const loc=useLocation(); const {glove}=usePrefs()
+  const {t}=useLocale();const loc=useLocation(); const {glove}=usePrefs()
   return <div className="worker-workspace h-dvh flex flex-col" style={{background:'var(--tk-bg)',color:'var(--tk-ink)'}}>
     <header className="worker-topbar shrink-0 z-20 px-3.5 py-2.5 flex items-center justify-between" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
       <div className="flex items-center gap-2.5 min-w-0">
@@ -26,16 +27,16 @@ export default function WorkerShell({actor, children}:{actor:Actor, children:Rea
             <span>Tekton OS</span>
             {glove&&<span title="Режим перчаток включён" className="shrink-0 bg-tk-amber/20 text-tk-amber border border-tk-amber/50 p-1 rounded flex items-center"><PhIcon name="hand" size={16}/></span>}
           </h1>
-          <p className="text-[0.5625rem] font-bold mt-0.5 leading-tight" style={{color:'var(--tk-muted)'}}>Тестовый проект · синтетические данные</p>
+          
         </div>
       </div>
-      <DemoTour/><NavLink to="/settings" aria-label="Настройки" className="worker-top-settings"><PhIcon name="gearSix" size={24}/></NavLink>
+      <DemoTour audience="worker"/>
     </header>
     <main className={'flex-1 overflow-y-auto w-full max-w-md mx-auto p-3 pb-16 '+(loc.pathname==='/assistant'?' worker-chat-main':'')+''}><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
     <nav className="worker-floating-nav shrink-0" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)',paddingBottom:'env(safe-area-inset-bottom)'}}>
       <div className="max-w-md mx-auto grid grid-cols-5 h-20">
-        {tabs.map(t=><NavLink key={t.to} to={t.to} end={t.to==='/'} className={({isActive})=>cn('worker-tab flex flex-col items-center justify-center w-full h-full transition',t.to==='/assistant'?' worker-ai-tab':'',isActive?' worker-tab-active text-tk-amber':'')} style={undefined as any}>
-          {({isActive})=><span className="flex flex-col items-center justify-center gap-1" style={{color:isActive?'#f59e0b':'var(--tk-muted)'}}>{t.to==='/assistant'?<span className="worker-ptah-avatar"><picture><source media="(prefers-reduced-motion: reduce)" srcSet="/1-ptah-avatar.png"/><img src="/2-ptah-blink.webp" alt=""/></picture></span>:t.to==='/'?<RepairTabIcon size={24}/>:<PhIcon name={t.icon} active={isActive} size={24}/>}<span className="text-[10px] font-bold tracking-tight text-center">{t.label}</span></span>}
+        {tabs.map(tab=><NavLink key={tab.to} to={tab.to} end={tab.to==='/'} className={({isActive})=>cn('worker-tab flex flex-col items-center justify-center w-full h-full transition',tab.to==='/assistant'?' worker-ai-tab':'',isActive?' worker-tab-active text-tk-amber':'')} style={undefined as any}>
+          {({isActive})=><span className="flex flex-col items-center justify-center gap-1" style={{color:isActive?'#f59e0b':'var(--tk-muted)'}}>{tab.to==='/assistant'?<span className="worker-ptah-avatar"><picture><source media="(prefers-reduced-motion: reduce)" srcSet="/1-ptah-avatar.png"/><img src="/2-ptah-blink.webp" alt=""/></picture></span>:tab.to==='/'?<RepairTabIcon size={24}/>:<PhIcon name={tab.icon} active={isActive} size={24}/>}<span className="text-[10px] font-bold tracking-tight text-center">{t(tab.label)}</span></span>}
         </NavLink>)}
       </div>
     </nav>

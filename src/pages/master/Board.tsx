@@ -1,3 +1,4 @@
+import {awaitingWorkOverdue} from '../../lib/deadline-state.mjs'
 import {Explain} from '../../components/VisualBlocks'
 import {useOrderState} from '../../lib/use-order-state'
 import {useEffect, useState} from 'react'
@@ -26,7 +27,7 @@ export default function Board({actor}:{actor:Actor}){
   const hiddenN=st.orders.length-visible.length
   const scoped=visible.filter((o:any)=>(section==='all'||o.section===section)&&(priority==='all'||o.priority===priority)&&(equipment==='all'||String(o.equipment_id)===equipment)&&(worker==='all'||o.assignee_id===worker))
   const list = scoped.filter((o:any)=>f==='all'?o.status!=='closed':f==='active'?ACTIVE_STATUSES.includes(o.status):f==='review'?['completed','ai_review'].includes(o.status):o.status==='closed')
-  const overdue = visible.filter((o:any)=>o.status!=='closed'&&new Date(o.deadline).getTime()<now)
+  const overdue = visible.filter((o:any)=>awaitingWorkOverdue(o,now))
   const counts={active:visible.filter((o:any)=>ACTIVE_STATUSES.includes(o.status)).length,
     work:visible.filter((o:any)=>o.status==='in_progress').length,
     review:visible.filter((o:any)=>['completed','ai_review'].includes(o.status)).length,
@@ -43,12 +44,12 @@ export default function Board({actor}:{actor:Actor}){
     ['accepted','Принятые',(o:any)=>o.status==='accepted'],
     ['work','В работе',(o:any)=>['in_progress','paused','rework'].includes(o.status)],
     ['review','Выполненные',(o:any)=>['completed','ai_review'].includes(o.status)],
-    ['overdue','Просроченные',(o:any)=>o.status!=='closed'&&o.status!=='rejected'&&new Date(o.deadline).getTime()<now],
+    ['overdue','Просроченные',(o:any)=>awaitingWorkOverdue(o,now)],
   ]
   return <div className="board space-y-5">
     <div className="flex items-end justify-between"><div><h1 className="text-[26px] font-bold">Наряды смены</h1>
       <div className="text-[13px] text-muted">Выдать → выполнить → проверить</div></div>
-      <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-[13px] text-muted"><input type="checkbox" checked={pres} onChange={e=>{setPres(e.target.checked);setPresentation(e.target.checked)}}/>Скрыть тестовые{pres&&hiddenN>0?` (${hiddenN})`:''}</label><Link to="/issue" className="bg-primary text-primary-ink h-11 px-5 rounded-[13px] font-semibold inline-flex items-center">+ Выдать наряд</Link></div></div>
+      <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-[13px] text-muted"><input type="checkbox" checked={pres} onChange={e=>{setPres(e.target.checked);setPresentation(e.target.checked)}}/>Скрыть технические{pres&&hiddenN>0?` (${hiddenN})`:''}</label><Link to="/issue" className="bg-primary text-primary-ink h-11 px-5 rounded-[13px] font-semibold inline-flex items-center">+ Выдать наряд</Link></div></div>
     <div className="grid grid-cols-4 gap-3">
       {[['Активные',counts.active],['В работе',counts.work],['На проверке',counts.review],['Закрыто',counts.closed]].map(([l,v])=>
         <Card key={l}><div className="text-[13px] text-muted">{l}</div><div className="text-[36px] font-bold leading-tight"><NumberTicker value={v as number}/></div></Card>)}
@@ -71,10 +72,10 @@ export default function Board({actor}:{actor:Actor}){
       {list.map((o:any)=><Link to={'/orders/'+o.id} key={o.id}><Card className="space-y-1 hover:border-primary/40 transition">
         <div className="flex items-center justify-between"><span className="text-[12px] text-muted">#{o.id} · {o.section}</span><Badge tone={statusOf(o.status).tone as any}>{statusOf(o.status).label}</Badge></div>
         <div className="order-card-title font-semibold text-[15px]">{o.title}</div>
-        <div className="text-[12px] text-muted">{o.equipment} · {o.assignee} · срок {new Date(o.deadline).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{new Date(o.deadline).getTime()<now&&o.status!=='closed'?' · просрочен':''}</div>
+        <div className="text-[12px] text-muted">{o.equipment} · {o.assignee} · срок {new Date(o.deadline).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{awaitingWorkOverdue(o,now)?' · просрочен':''}</div>
       </Card></Link>)}
     </div>:<div className="grid grid-cols-3 gap-3 items-start">
-      {KCOLS.map(([k,label,match])=>{const col=scoped.filter((o:any)=>{if(o.status==='closed'||o.status==='rejected')return false;const isOD=new Date(o.deadline).getTime()<now;return k==='overdue'?isOD:(!isOD&&match(o))})
+      {KCOLS.map(([k,label,match])=>{const col=scoped.filter((o:any)=>{if(o.status==='closed'||o.status==='rejected')return false;const isOD=awaitingWorkOverdue(o,now);return k==='overdue'?isOD:(!isOD&&match(o))})
         return <div key={k} className="space-y-2">
         <div className={cn('text-[12px] font-semibold uppercase tracking-wide',k==='overdue'?'text-warn':'text-muted')}>{label} · {col.length}</div>
         {col.slice(0,12).map((o:any)=><Link to={'/orders/'+o.id} key={k+o.id}><Card className={cn('space-y-1 !p-3 hover:border-primary/40 transition mb-2',k==='overdue'&&'border-warn/50')}>
@@ -98,7 +99,7 @@ export default function Board({actor}:{actor:Actor}){
       {rep.slice(0,3).map((r:any)=><div key={r.equipment+r.fault_code} className="text-[13px] flex justify-between gap-3">
         <span className="truncate">{r.equipment} · шифр {r.fault_code}</span>
         <span className="text-muted shrink-0">{r.closed_count} закрытий за 90 дней · {r.pairs_within_window} близких пар</span></div>)}
-      <Explain title="Что означают повторы">Пара = два закрытых наряда на том же оборудовании с тем же шифром в пределах окна повтора (по шифру, по умолчанию 7 дн). Закономерности заложены в синтетические данные для демонстрации. Это сигнал для анализа причин, не оценка исполнителей.</Explain>
+      <Explain title="Что означают повторы">Пара = два закрытых наряда на том же оборудовании с тем же шифром в пределах окна повтора (по шифру, по умолчанию 7 дн). Закономерности заложены в учебный набор данных для демонстрации. Это сигнал для анализа причин, не оценка исполнителей.</Explain>
     </Card>}
 </div></details>
   </div>

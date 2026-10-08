@@ -1,3 +1,5 @@
+import PhotoCompare from '../../components/PhotoCompare'
+import {reviewDisplay,reviewArchiveDisplay,reviewPresentation} from '../../lib/ai-review-display.mjs'
 import {useEffect, useState} from 'react'
 import {useParams, useNavigate} from 'react-router-dom'
 import * as H from '../../lib/data'
@@ -10,6 +12,7 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
   const {id}=useParams(); const nav=useNavigate()
   const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
   const [assignee,setAssignee]=useState(''); const [priority,setPriority]=useState('normal'); const [manageReason,setManageReason]=useState('')
+  const [archiveReceipt,setArchiveReceipt]=useState<any>(null)
   const [score,setScore]=useState(4); const [compare,setCompare]=useState(false)
   const load=()=>H.state().then(setSt).catch(e=>setErr(e.message))
   useEffect(()=>{load()},[id])
@@ -18,9 +21,11 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
   const o=st.orders.find((x:any)=>x.id===Number(id))
   if(!o) return <Card>Наряд не найден.</Card>
   const go=async(status:string,reason?:string,extra?:any)=>{setBusy(true);setErr('')
-    try{await H.transition(o.id,{status,version:o.version,reason,...extra});await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
+    try{const response=await H.transition(o.id,{status,version:o.version,reason,...extra});if(status==='ai_review')setArchiveReceipt(response);await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
   const manage=async(action:'reassign'|'priority'|'cancel')=>{if(action==='cancel'&&!confirm('Отменить наряд? Дальнейшие действия будут заблокированы. Это не подтверждает остановку физических работ.'))return;setBusy(true);setErr('');try{await H.manageOrder(o.id,action,{assignee,priority,reason:manageReason});if(action==='cancel')nav('/');else await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
-  const before:string[]=o.before_photos||[]; const after:string[]=(o.closure?.photos)||[]
+  const receipt=archiveReceipt?.version===o.version?archiveReceipt:H.reviewArchiveReceipt(actor.id,o.id,o.version)
+  const presentation=reviewPresentation(o.ai_result,receipt)
+  const before:string[]=[...(o.before_photos||[]),...(o.intake_photos||[]).filter((p:any)=>p.phase==='before_intake'&&p.url).map((p:any)=>p.url)]; const after:string[]=(o.closure?.photos)||[]
   return <div className="space-y-4 max-w-3xl">{err&&<Card role="alert" className="text-danger">{err}</Card>}
     <button className="text-muted text-[14px]" onClick={()=>nav(-1)}>← Назад</button>
     <div><div className="text-[12px] text-muted">НАРЯД #{o.id} · {o.section} · {o.assignee}</div>
@@ -34,10 +39,7 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
       <div className="flex items-center justify-between"><div className="font-semibold text-[15px]">Фото до / после</div>
         {before.length>0&&after.length>0&&<Button variant="outline" onClick={()=>setCompare(c=>!c)}>{compare?'Обычный вид':'Сравнить до/после'}</Button>}</div>
       {compare&&before.length>0&&after.length>0?
-        <div className="grid grid-cols-2 gap-3">
-          <div><div className="text-[12px] text-muted mb-1">До</div>{before.map((p,i)=><img key={i} src={p} className="rounded-[14px] w-full" alt="Фото до"/>)}</div>
-          <div><div className="text-[12px] text-muted mb-1">После</div>{after.map((p,i)=><img key={i} src={p} className="rounded-[14px] w-full" alt="Фото после"/>)}</div>
-        </div>:
+        <PhotoCompare before={before[0]} after={after[0]}/>:
         <div className="flex gap-3 flex-wrap">{before.length===0&&after.length>0&&<div className="text-[13px] text-muted self-center">Фото до отсутствует — сравнение недоступно.</div>}{before.map((p,i)=><div key={'b'+i}><div className="text-[12px] text-muted mb-1">До</div><img src={p} className="h-36 rounded-[14px]" alt="Фото до"/></div>)}
         {after.map((p,i)=><div key={'a'+i}><div className="text-[12px] text-muted mb-1">После</div><img src={p} className="h-36 rounded-[14px]" alt="Фото после"/></div>)}</div>}
       {o.closure?.photo_evidence?.map((p:any)=><div key={p.sha256} className="text-[12px] text-muted">Фото получено сервером: {new Date(p.server_received_at).toLocaleString('ru')} · {Math.round(p.byte_size/1024)} КБ.{p.duplicate_order_id?` Совпадает с фото наряда #${p.duplicate_order_id}.`:''} Время съёмки не подтверждено.</div>)}
@@ -47,18 +49,19 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
       {o.closure.fault_code&&<div className="text-[13px] text-muted mt-1">Шифр: {o.closure.fault_code}</div>}</Card>}
     {o.status==='completed'&&<Card className="space-y-3 border-primary/40">
       <div className="font-semibold text-[15px]">Проверка закрытия</div>
-      <Button size="big" className="w-full" disabled={busy} onClick={()=>go('ai_review')}>Проверить закрытие (ИИ)</Button>
-      <div className="text-[12px] text-muted">Ответ языковой модели — не решение; при сбое сработает проверка по правилам. Решение принимает мастер.</div>
+      <Button size="big" className="w-full" disabled={busy} onClick={()=>go('ai_review')}>Проверить отчёт</Button>
+      <div className="text-[12px] text-muted">Проверка по правилам. При ошибке обновите наряд, автоматического повтора нет. Решение принимает мастер.</div>
     </Card>}
     {o.ai_result&&<Card className="space-y-2">
-      <div className="flex items-center gap-2"><span className="font-semibold text-[15px]">Карточка оснований</span>
-        {(o.ai_result.mode==='live'||o.ai_result.mode==='cache')?<Badge tone="teal">Вывод ИИ · не решение</Badge>:<Badge tone="gray">Проверка по правилам · не решение</Badge>}</div>
-      {o.ai_result.mode==='live'&&<div className="font-semibold">Модель считает: {o.ai_result.verdict==='rework'?'«Требует доработки»':o.ai_result.verdict==='accepted_with_notes'?'«Принято с замечаниями»':'«Нужна проверка мастером»'}</div>}
-      {o.ai_result.mode==='cache'&&<div className="font-semibold">Модель считала ранее (ответ из кэша проверок): {o.ai_result.verdict==='rework'?'«Требует доработки»':o.ai_result.verdict==='accepted_with_notes'?'«Принято с замечаниями»':'«Нужна проверка мастером»'}</div>}
-      {o.ai_result.mode!=='live'&&o.ai_result.mode!=='cache'&&<div className="font-semibold">Формальная проверка по правилам: {o.ai_result.verdict==='rework'?'«Требует доработки»':o.ai_result.verdict==='accepted_with_notes'?'«Принято с замечаниями»':'«Нужна проверка мастером»'}</div>}
-      <div className="text-[12px] text-muted">{o.ai_result.mode==='live'?'Утверждения ниже — вывод модели по описанию и фото, не подтверждённый осмотром':o.ai_result.mode==='cache'?'Утверждения ниже — кэшированный вывод модели от более ранней идентичной проверки, не повторный ответ модели':'Основания ниже — результат формальной проверки полей закрытия по правилам. Модель не участвовала.'}{o.ai_result.model&&(o.ai_result.mode==='live'||o.ai_result.mode==='cache')?' · '+o.ai_result.model:''}</div>
-      <ul className="list-disc pl-5 text-[14px] space-y-0.5">{o.ai_result.reasons.map((r:string)=><li key={r}>{r}</li>)}</ul>
-      <div className="text-[12px] text-muted">{o.ai_result.mode==='live'?'Ответ языковой модели. Физический ремонт не подтверждён, оценка не калибрована.':o.ai_result.mode==='cache'?'Повторный ответ из кэша проверок. Физический ремонт не подтверждён.':'Проверка по правилам, модель не участвовала.'}{o.ai_result.fallback_reason?' '+o.ai_result.fallback_reason:''}</div>
+      <div className="flex items-center gap-2"><span className="font-semibold text-[15px]">Карточка оснований</span><Badge tone="gray">Проверка отчёта</Badge></div>
+      <div role="status" className="text-[12px] text-muted">{reviewArchiveDisplay(archiveReceipt?.version===o.version?archiveReceipt:H.reviewArchiveReceipt(actor.id,o.id,o.version)).label}</div>
+      <div className="font-semibold">{presentation.verdictLabel}</div>
+      <div className="text-[14px]">Оценка проверки: {presentation.scoreLabel}</div>
+      {o.ai_result.report_master&&<details><summary className="min-h-12 flex items-center text-[13px] cursor-pointer">Подробный отчёт мастеру</summary><p className="whitespace-pre-line text-[13px]">{o.ai_result.report_master}</p></details>}
+      <div className="text-[12px] text-muted">{reviewDisplay(o.ai_result).detail}</div>
+      <ul className="list-disc pl-5 text-[14px] space-y-0.5">{(o.ai_result.reasons||[]).map((r:string,i:number)=><li key={i}>{r}</li>)}</ul>
+      <div className="text-[12px] text-muted">Физическое выполнение ремонта не подтверждено. Решение принимает мастер. Оценка не калибрована на данных предприятия.</div>
+      {(o.ai_result.limitations||[]).map((x:string,i:number)=><div className="text-[12px] text-muted" key={i}>{x}</div>)}
     </Card>}
     {o.status==='ai_review'&&<Card className="space-y-3">
       <div className="font-semibold text-[15px]">Решение мастера</div>

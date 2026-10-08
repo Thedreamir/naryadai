@@ -32,11 +32,11 @@ export default function LeaderHome({actor}:{actor:Actor}){
       </nav>
       <div className="mt-auto text-[11px] text-[#78807d] leading-[1.9]">
         <div className="flex items-center gap-2 mb-2"><div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#e9eee9] to-[#d4ded5] text-[#4d6758] grid place-items-center font-bold text-[14px]">{actor.name?.split(' ').map((w:string)=>w[0]).slice(-2).join('')}</div>
-          <div className="min-w-0"><div className="text-[13px] font-semibold text-[#313936] truncate">{actor.name}</div><div>Демо-учётка</div></div></div>
+          <div className="min-w-0"><div className="text-[13px] font-semibold text-[#313936] truncate">{actor.name}</div><div>Учётная запись</div></div></div>
         <button className="flex items-center gap-2 h-10 text-[13px] text-muted" onClick={async()=>{await H.logout();location.reload()}}><LogOut size={18}/>Выйти</button>
         <div className="mt-2"><strong className="text-[13px] text-[#313936]">Ptah AI</strong><br/>Помощник, не арбитр качества</div>
         <div className="mt-1">{'dreamir | dream labs | <O>'}</div>
-        <div className="mt-2">Синтетические данные · тестовое облако</div>
+        <div className="mt-2">Tekton OS · рабочее пространство</div>
       </div>
     </aside>
     <header className="workspace-mobile-header"><img src="/tekton-symbol.svg" alt=""/><strong>Tekton OS</strong><LanguageToggle/><span>{label('Обзор')}</span><button aria-label="Открыть меню" onClick={()=>setMenuOpen(true)}>Меню</button></header>

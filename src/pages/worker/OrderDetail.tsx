@@ -1,3 +1,4 @@
+import PhotoCapture from '../../components/PhotoCapture'
 import {loadDraft,saveDraft,clearDraft} from '../../lib/report-draft'
 import {useEffect, useState} from 'react'
 import {useParams, useNavigate} from 'react-router-dom'
@@ -14,7 +15,6 @@ const DECLS=[
   'Подтверждаю лично: использую средства защиты, зона работ безопасна'
 ]
 const DECL_POST='Подтверждаю лично: после работ выполнен контрольный запуск / осмотр'
-const TEMPLATES=['Узел осмотрен, заменена изношенная деталь, крепёж протянут по инструкции. Контрольный запуск выполнен — посторонних шумов нет.','Загрязнение устранено, смазка узла обновлена, работа восстановлена.','Причина — износ. Деталь заменена, люфтов и вибрации не выявлено.']
 function compress(f:File){return sanitizePhoto(f)}
 function read(f:Blob){return new Promise<string>(res=>{const r=new FileReader();r.onload=()=>res(String(r.result));r.readAsDataURL(f)})}
 export default function OrderDetail({actor}:{actor:Actor}){
@@ -25,6 +25,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
   const [decl,setDecl]=useState<boolean[]>([false,false]); const [declPost,setDeclPost]=useState(false)
   const [works,setWorks]=useState(''); const [fault,setFault]=useState(''); const [,setMaterials]=useState('')
   const [materialRows,setMaterialRows]=useState<{name:string,quantity:number,unit:string}[]>([]);const [draftNote,setDraftNote]=useState('');const [online,setOnline]=useState(navigator.onLine);useEffect(()=>{const f=()=>setOnline(navigator.onLine);window.addEventListener('online',f);window.addEventListener('offline',f);return()=>{window.removeEventListener('online',f);window.removeEventListener('offline',f)}},[]);const [after,setAfter]=useState<string[]>([])
+  const [captureOpen,setCaptureOpen]=useState(false)
   const [intakeBusy,setIntakeBusy]=useState(false)
   const [startDecl,setStartDecl]=useState<boolean[]>([false,false]); const [startBusy,setStartBusy]=useState(false)
   const load=()=>H.state().then(setSt).catch(e=>setErr(e.message))
@@ -60,7 +61,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
     try{const clean=await sanitizePhoto(f);const url=await read(clean);setAfter(p=>[...p,url])}catch(e){setErr('Фото не отправлено: '+(e as Error).message)}}
   const steps=['Безопасность','Отчёт','Фото']
   const stepOk=[allDecl,works.trim().length>=12&&!!fault,(!needPhoto||after.length>0)]
-  return <div className="space-y-3">{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.</div>}
+  return <div className="space-y-3">{captureOpen&&<PhotoCapture reference={masterBefore[0]} onClose={()=>setCaptureOpen(false)} onCapture={async f=>{const clean=await sanitizePhoto(f);const url=await read(clean);setAfter(p=>[...p,url])}}/>}{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.</div>}
     <button className="text-xs font-bold inline-flex items-center gap-1" style={{color:'var(--tk-muted)'}} onClick={()=>nav(-1)}><ArrowLeft size={19}/>Назад</button>
     <div className="tk-card p-3.5 space-y-2.5">
       <div className="flex items-center justify-between">
@@ -198,7 +199,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
             <div>
               <div className="text-[0.6875rem] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Что сделано и как проверено (мин. 12 символов)</div>
               <div className="flex gap-2 items-start">
-                <textarea className="tk-input flex-1 min-h-24 p-3 text-sm" value={works} onChange={e=>setWorks(e.target.value)} placeholder="Например: узел осмотрен, заменена деталь…"/>
+                <textarea className="tk-input flex-1 min-h-24 p-3 text-sm" value={works} onChange={e=>setWorks(e.target.value)} placeholder="Что сделали? Как проверили? Что осталось?"/>
                 <VoiceButton onText={t=>setWorks(w=>w?w+' '+t:t)}/>
               </div>
               <div className="text-[0.625rem] mt-1" style={{color:'var(--tk-muted)'}}>Голос заполняет только текст отчёта (браузерная распознавалка). Подтверждения безопасности ставятся вручную.</div>
@@ -229,8 +230,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
               <div className="text-[0.6875rem] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Фото после{needPhoto?' (обязательно — внеплановый наряд)':''}</div>
               <div className="flex gap-2 flex-wrap items-center">
                 {after.map((p,i)=><img key={i} src={p} className="h-24 rounded-lg border-2 border-tk-green" alt="После"/>)}
-                <label className="h-24 w-24 border-2 border-dashed border-tk-green rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer text-[0.625rem] font-bold text-tk-green">
-                  <Camera size={22}/>Снять<input type="file" accept="image/*" capture="environment" className="hidden" onChange={e=>addPh(e.target.files?.[0])}/></label>
+                <button type="button" className="tk-sub min-h-16 w-full rounded-xl flex items-center justify-center gap-2 font-bold" onClick={()=>setCaptureOpen(true)}><Camera size={22}/>Снять с ориентиром</button>
               </div>
             </div>
             {masterBefore.length>0&&after.length>0&&<div className="grid grid-cols-2 gap-2">
@@ -248,4 +248,4 @@ export default function OrderDetail({actor}:{actor:Actor}){
       </div>
     </div>}
   </div>
-}
+        }

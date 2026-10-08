@@ -1,3 +1,4 @@
+import {attachTelegramSurface} from './lib/telegram-surface'
 import {lazy,Suspense} from 'react'
 const Knowledge=lazy(()=>import('./pages/master/Knowledge'))
 import Equipment from './pages/master/Equipment'
@@ -26,6 +27,7 @@ import Memory from './pages/master/Memory'
 import LeaderHome from './pages/leader/LeaderHome'
 export type Actor = {id:string, email:string, role:string, name:string}
 export default function App(){
+  useEffect(()=>attachTelegramSurface(),[])
   const [actor, setActor] = useState<Actor|null>(null)
   const [ready, setReady] = useState(false)
   useEffect(()=>{(async()=>{

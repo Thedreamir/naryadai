@@ -14,7 +14,8 @@ export default function WorkerOrders({actor}:{actor:Actor}){
   if(err) return <div className="tk-card p-4 text-tk-red">{err}</div>
   if(stateError)return <div role="alert" className="p-4 border rounded-xl">Данные недоступны: {stateError}<button className="min-h-12 block mt-2 border rounded-xl px-4" onClick={refresh}>Повторить</button></div>
   if(!st) return <div className="py-10 text-center" style={{color:'var(--tk-muted)'}}>Загрузка…</div>
-  const mine=visible.filter((o:any)=>o.assignee_id===actor.id&&['issued','queued','accepted','in_progress','paused','rework'].includes(o.status))
+  const workerVisible=st.orders.filter((o:any)=>visible.includes(o)||['in_progress','paused','rework'].includes(o.status))
+  const mine=workerVisible.filter((o:any)=>o.assignee_id===actor.id&&['issued','queued','accepted','in_progress','paused','rework'].includes(o.status))
   const active=mine.filter((o:any)=>['in_progress','rework'].includes(o.status))
   const queue=mine.filter((o:any)=>!['in_progress','rework'].includes(o.status))
   const eqName=(o:any)=>o.equipment||st.equipment.find((e:any)=>e.id===o.equipment_id)?.name||'—'

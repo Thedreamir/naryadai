@@ -70,7 +70,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
         <span className="text-xs font-mono font-bold" style={{color:'var(--tk-muted)'}}>№ {o.id}</span>
       </div>
       <h1 className="text-base font-black leading-snug">{o.title}</h1>
-      <div className="text-xs" style={{color:'var(--tk-muted)'}}>{o.equipment} · {o.section} · срок {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+      <div className="text-xs" style={{color:'var(--tk-muted)'}}>{o.equipment} · {o.section} · срок {new Date(o.deadline).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
       {err&&!wiz&&<div role="alert" className="text-xs text-tk-red font-bold">{err}</div>}
     </div>
     <div className="tk-card p-3 space-y-2">
@@ -86,7 +86,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
           :'Работы уже начаты: снимок будет помечен «после начала работ» и НЕ считается фото до.'} Время съёмки сервером не подтверждается.</div>
       </div>}
       {intake.length>0&&<div className="text-[0.625rem] space-y-0.5" style={{color:'var(--tk-muted)'}}>{intake.map((p:any,i:number)=><div key={i}>
-        {p.phase==='before_intake'?'Фото до (приёмка)':'Снято после начала работ (статус: '+(p.status_at_upload||'?')+')'} · получено сервером {new Date(p.server_received_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
+        {p.phase==='before_intake'?'Фото до (приёмка)':'Снято после начала работ (статус: '+(p.status_at_upload||'?')+')'} · получено сервером {new Date(p.server_received_at).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
       </div>)}</div>}
       {intakeLate.length>0&&<div className="flex gap-2 overflow-x-auto no-scrollbar">{intakeLate.map((p:any,i:number)=>p.url&&<img key={i} src={p.url} className="h-24 rounded-lg opacity-80" alt="Снято после начала работ"/>)}</div>}
     </div>
@@ -157,7 +157,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
       {o.ai_result?.human_score&&<div className="text-sm font-bold">Оценка мастера: {o.ai_result.human_score} / 5</div>}
       {o.closure?.works&&<div className="text-xs" style={{color:'var(--tk-muted)'}}>{o.closure.works}</div>}</div>}
     <div className="tk-card p-3"><div className="text-[0.6875rem] font-black uppercase tracking-wider mb-1 inline-flex items-center gap-1.5" style={{color:'var(--tk-muted)'}}><History size={22}/>Журнал</div>
-      {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[0.6875rem] py-1 border-t first:border-0" style={{color:'var(--tk-muted)',borderColor:'var(--tk-border)'}}>{e.actor} · {eventLabel(e.new_status)} · {new Date(e.created_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</div>
+      {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[0.6875rem] py-1 border-t first:border-0" style={{color:'var(--tk-muted)',borderColor:'var(--tk-border)'}}>{e.actor} · {eventLabel(e.new_status)} · {new Date(e.created_at).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</div>
     {wiz&&<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{background:'rgba(0,0,0,0.8)'}}>
       <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl border flex flex-col max-h-[92dvh]" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
         <div className="p-3.5 border-b space-y-2.5" style={{borderColor:'var(--tk-border)'}}>
@@ -176,7 +176,7 @@ export default function OrderDetail({actor}:{actor:Actor}){
           {step===0&&recordedPre.length>=DECLS.length&&<div className="space-y-2.5">
             <div className="bg-tk-green/10 border border-tk-green/40 rounded-lg p-2.5 text-[0.6875rem] flex gap-2">
               <Check size={22} className="text-tk-green shrink-0 mt-0.5"/>
-              <span>Подтверждения безопасности {recordedPre[0].phase==='pre_work_late'?'зафиксированы после начала работ':'зафиксированы при начале работ'}: {new Date(recordedPre[0].declared_at).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} (время сервера).</span>
+              <span>Подтверждения безопасности {recordedPre[0].phase==='pre_work_late'?'зафиксированы после начала работ':'зафиксированы при начале работ'}: {new Date(recordedPre[0].declared_at).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} (время сервера).</span>
             </div>
             {recordedPre.map((d:any,i:number)=><div key={i} className="tk-card p-3 flex items-start gap-2.5 border-tk-green">
               <Check size={22} className="text-tk-green shrink-0 mt-0.5"/>
@@ -248,4 +248,4 @@ export default function OrderDetail({actor}:{actor:Actor}){
       </div>
     </div>}
   </div>
-        }
+}

@@ -55,7 +55,7 @@ export default function Board({actor}:{actor:Actor}){
     </div>
     <Card className="space-y-2">
       <div className="flex items-center justify-between"><div className="font-semibold text-[14px]">Исполнители смены</div>
-        <span className="text-[11px] text-muted">зелёный — свободен · жёлтый — в работе · синий — есть очередь · серый — не на смене</span></div>
+        <span className="text-[11px] text-muted">Загрузка по всем нарядам, включая скрытые тесты. зелёный — свободен · жёлтый — в работе · синий — есть очередь · серый — не на смене</span></div>
       <div className="grid grid-cols-3 gap-2">
         {crew.map((w:any)=><div key={w.id} className="flex items-center gap-2 border border-border rounded-[12px] px-3 py-2">
           <span className={cn('w-2.5 h-2.5 rounded-full shrink-0',w.stt.tone==='teal'?'bg-tk-green':w.stt.tone==='amber'?'bg-amber-500':w.stt.tone==='primary'?'bg-sky-500':'bg-gray-400')}/>

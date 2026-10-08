@@ -39,9 +39,9 @@ export default function Memory({actor}:{actor:Actor}){
     <div className="flex items-end justify-between mb-5">
       <div>
         <h1 className="text-[26px] font-bold tracking-[-0.5px]">Память ремонтов</h1>
-        <div className="text-[13px] text-muted mt-1">Заметки исполнителей становятся базой знаний Ptah AI только после утверждения мастером. Синтетические демо-данные.</div>
+        <div className="text-[13px] text-muted mt-1">В базу знаний попадает только утверждённое мастером. Демо.</div>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap">
         <div className="text-[13px] text-muted">{candidates>0?`Ожидают проверки: ${candidates}`:'Нет записей на проверке'}</div>
         <label className="flex items-center gap-2 text-[13px] text-muted cursor-pointer"><input type="checkbox" checked={pres} onChange={e=>togglePres(e.target.checked)}/>Скрыть технические{pres&&hidden>0?` (скрыто: ${hidden})`:''}</label>
       </div>
@@ -61,7 +61,7 @@ export default function Memory({actor}:{actor:Actor}){
               <div className="text-[12px] text-muted mt-1">Наряд: {e.order?.title||`#${e.id}`}{e.equipment?.name?` · ${e.equipment.name}`:''} · Автор: {e.author?.name||'—'}</div>
             </div>
           </div>
-          <div className="text-[14px] mt-3 leading-[1.55] whitespace-pre-wrap">{e.body}</div>
+          <details className="visual-explain" open={e.status==='candidate'}><summary>Открыть запись</summary><div className="whitespace-pre-wrap">{e.body}</div></details>
           {e.reviewer&&<div className="text-[12px] text-muted mt-3">Решение: {e.reviewer.name}{e.reviewed_at?` · ${new Date(e.reviewed_at).toLocaleString('ru-RU')}`:''}{e.review_note?` · ${e.review_note}`:''}</div>}
           {canReview&&(e.status==='candidate'||e.status==='approved')&&<div className="mt-4 pt-4 border-t border-border">
             <input className="w-full h-10 rounded-[13px] border border-border px-3 text-[13px] mb-3 bg-white" placeholder="Комментарий к решению (необязательно)"

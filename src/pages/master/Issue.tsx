@@ -1,3 +1,4 @@
+import {Explain,WorkSteps} from '../../components/VisualBlocks'
 import {sanitizePhoto} from '../../lib/photo-sanitize'
 import {useEffect, useState} from 'react'
 import {useNavigate} from 'react-router-dom'
@@ -56,7 +57,7 @@ export default function Issue({actor}:{actor:Actor}){
   const input='w-full h-14 px-4 rounded-[14px] border border-border bg-surface text-[16px]'
   return <div className="max-w-xl space-y-4">
     <div><h1 className="text-[26px] font-bold">Выдать наряд</h1>
-      <div className="text-[13px] text-muted">Исполнитель увидит наряд в своём списке. Push-уведомления в демо не проверены. Переходы фиксируются в журнале.</div></div>
+      <WorkSteps/><span className="visual-tag">Push в демо не проверен</span></div>
     <form onSubmit={submit} className="space-y-4">
       <Card className="space-y-4">
         <label className="block"><span className="text-[13px] font-medium text-muted">Проблема и работы</span>
@@ -84,7 +85,7 @@ export default function Issue({actor}:{actor:Actor}){
               {c.perms.map((p:any)=><span key={p.id} className={"inline-block mr-2 px-2 py-0.5 rounded-full "+(p.expired?'bg-danger/15 text-danger':'bg-surface text-muted')}>{p.permit} {p.expired?'· истёк':'до '+p.valid_until}</span>)}
             </div>}
           </div>))}
-          <div className="text-[11px] text-muted">Критерии: доступность, опыт на этом узле, доля закрытий в срок, переделки, действующие допуски. Финальный выбор за мастером.</div>
+          <Explain title="Почему эти исполнители">Доступность, опыт на узле, сроки, переделки и действующие допуски. Финальный выбор за мастером.</Explain>
         </Card>}
         {refused.length>0&&<Card className="!p-3 text-[12px] text-muted">Не в подборе (нет действующего допуска): {refused.map((c:any)=>c.w.name).join(', ')}. Назначение таких исполнителей возможно только вручную на ответственность мастера.</Card>}
         {memoryHint&&<Card className="!p-3 text-[13px]">На этом узле <b>{memoryHint} нарядов за 30 дней</b> — проверьте причину повторов перед постановкой следующего.</Card>}

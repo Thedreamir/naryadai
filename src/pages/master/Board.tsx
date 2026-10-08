@@ -1,3 +1,4 @@
+import {Explain} from '../../components/VisualBlocks'
 import {useOrderState} from '../../lib/use-order-state'
 import {useEffect, useState} from 'react'
 import {Link} from 'react-router-dom'
@@ -46,19 +47,19 @@ export default function Board({actor}:{actor:Actor}){
   ]
   return <div className="board space-y-5">
     <div className="flex items-end justify-between"><div><h1 className="text-[26px] font-bold">Наряды смены</h1>
-      <div className="text-[13px] text-muted">Каждый переход фиксируется в журнале.</div></div>
+      <div className="text-[13px] text-muted">Выдать → выполнить → проверить</div></div>
       <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-[13px] text-muted"><input type="checkbox" checked={pres} onChange={e=>{setPres(e.target.checked);setPresentation(e.target.checked)}}/>Скрыть технические{pres&&hiddenN>0?` (${hiddenN})`:''}</label><Link to="/issue" className="bg-primary text-primary-ink h-11 px-5 rounded-[13px] font-semibold inline-flex items-center">+ Выдать наряд</Link></div></div>
     {overdue.length>0&&<Card className="border-warn/40 bg-warn/5 space-y-1">
       <div className="font-semibold text-[14px]">Контроль сроков</div>
       {overdue.slice(0,5).map((o:any)=><div key={o.id} className="text-[13px] text-warn flex justify-between"><span>Просрочен наряд #{o.id}: {o.title}</span><span>{new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>)}
     </Card>}
     {rep&&rep.length>0&&<Card className="border-primary/40 bg-primary/5 space-y-1.5">
-      <div className="flex items-center justify-between"><div className="font-semibold text-[14px]">Контроль повторов: частые повторные закрытия</div>
-        <span className="text-[11px] text-muted">индикаторы для анализа причин, не доказанные закономерности</span></div>
+      <div className="flex items-center justify-between"><div className="font-semibold text-[14px]">Повторные ремонты</div>
+        <span className="text-[11px] text-muted">Сигнал, не диагноз</span></div>
       {rep.slice(0,3).map((r:any)=><div key={r.equipment+r.fault_code} className="text-[13px] flex justify-between gap-3">
         <span className="truncate">{r.equipment} · шифр {r.fault_code}</span>
         <span className="text-muted shrink-0">закрыто за 90 дн: {r.closed_count} · пар закрытий в окне повтора: {r.pairs_within_window}</span></div>)}
-      <div className="text-[11px] text-muted">Пара = два закрытых наряда на том же оборудовании с тем же шифром в пределах окна повтора (по шифру, по умолчанию 7 дн). Закономерности заложены в синтетические данные для демонстрации. Это сигнал для анализа причин, не оценка исполнителей.</div>
+      <Explain title="Что означают повторы">Пара = два закрытых наряда на том же оборудовании с тем же шифром в пределах окна повтора (по шифру, по умолчанию 7 дн). Закономерности заложены в синтетические данные для демонстрации. Это сигнал для анализа причин, не оценка исполнителей.</Explain>
     </Card>}
     <div className="grid grid-cols-4 gap-3">
       {[['Активные',counts.active],['В работе',counts.work],['На проверке',counts.review],['Закрыто',counts.closed]].map(([l,v])=>

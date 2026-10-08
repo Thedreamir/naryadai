@@ -1,3 +1,4 @@
+import {useDemoOrders} from '../../components/VisualBlocks'
 import {useOrderState} from '../../lib/use-order-state'
 import {useEffect, useState} from 'react'
 import * as H from '../../lib/data'
@@ -9,10 +10,11 @@ import {cn} from '../../lib/utils'
 const stLabel:Record<string,string>={issued:'Выдан',queued:'Очередь',accepted:'Принят',in_progress:'В работе',paused:'Пауза',rework:'Доработка'}
 export default function WorkerOrders({actor}:{actor:Actor}){
   const {st,error:stateError,refresh}=useOrderState(); const [err,setErr]=useState('')
+  const {visible,control}=useDemoOrders(st?.orders||[])
   if(err) return <div className="tk-card p-4 text-tk-red">{err}</div>
   if(stateError)return <div role="alert" className="p-4 border rounded-xl">Данные недоступны: {stateError}<button className="min-h-12 block mt-2 border rounded-xl px-4" onClick={refresh}>Повторить</button></div>
   if(!st) return <div className="py-10 text-center" style={{color:'var(--tk-muted)'}}>Загрузка…</div>
-  const mine=st.orders.filter((o:any)=>o.assignee_id===actor.id&&['issued','queued','accepted','in_progress','paused','rework'].includes(o.status))
+  const mine=visible.filter((o:any)=>o.assignee_id===actor.id&&['issued','queued','accepted','in_progress','paused','rework'].includes(o.status))
   const active=mine.filter((o:any)=>['in_progress','rework'].includes(o.status))
   const queue=mine.filter((o:any)=>!['in_progress','rework'].includes(o.status))
   const eqName=(o:any)=>o.equipment||st.equipment.find((e:any)=>e.id===o.equipment_id)?.name||'—'
@@ -30,8 +32,8 @@ export default function WorkerOrders({actor}:{actor:Actor}){
       <ChevronRight size={19} style={{color:'var(--tk-muted)'}}/>
     </div>
   </Link>
-  return <div className="space-y-3">{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.</div>}
-    {mine.length===0&&<div className="tk-card p-6 text-center" style={{color:'var(--tk-muted)'}}>Нет активных нарядов</div>}
+  return <div className="space-y-3">{control}{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.</div>}
+    {mine.length===0&&<div className="tk-card p-6 text-center" style={{color:'var(--tk-muted)'}}>Нет нарядов в этом списке</div>}
     {active.length>0&&<div className="space-y-2">
       <div className="text-[0.6875rem] font-black uppercase tracking-wider px-1" style={{color:'var(--tk-muted)'}}>В работе</div>
       {active.map((o:any)=>row(o,true))}

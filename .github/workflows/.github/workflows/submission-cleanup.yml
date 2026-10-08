@@ -1,0 +1,44 @@
+name: Prepare submission source
+on:
+  push:
+    branches: [release/submission-cleanup-20261008]
+    paths: [.github/workflows/submission-cleanup.yml]
+permissions:
+  contents: write
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Clean submission tree
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess,re
+          paths=subprocess.check_output(['git','ls-files'],text=True).splitlines()
+          prefixes=('.claude/','qa/','supabase/.temp/','docs/mini-test/','docs/design-refs/','scripts/dbg-','scripts/blink-')
+          names={'demo-key.md','current-release-status.md','build-log.txt','review.md','case-matrix.md','android-status.md','naryadai-tech-doc.docx','ai-eval.mjs'}
+          for name in paths:
+            p=Path(name)
+            if name.startswith(prefixes) or p.name in names or p.name.startswith(('dependency-audit','installed-packages')) or p.name.endswith('-results.json'):
+              subprocess.run(['git','rm','--',name],check=True)
+          p=Path('src-legacy/App.tsx')
+          if p.exists():
+            t=p.read_text().replace("useState('master@naryadai.test')","useState('')")
+            t=re.sub(r'<small[^>]*>Демо-учётки:.*?</small>','',t)
+            p.write_text(t)
+          Path('README.md').write_text('# Tekton OS\n\nRepair work-order platform.\n')
+          Path('.github/workflows/submission-cleanup.yml').unlink()
+          PY
+          npm ci
+          npm run build
+          git config user.name Thedreamir
+          git config user.email maintainer@localhost
+          git add -A
+          git commit -m 'Prepare submission source'
+          git push origin HEAD:release/submission-cleanup-20261008

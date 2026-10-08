@@ -1,3 +1,4 @@
+import DemoTour from '../components/DemoTour'
 import type {ReactNode} from 'react'
 import {NavLink, useLocation} from 'react-router-dom'
 import {motion} from 'framer-motion'
@@ -28,7 +29,7 @@ export default function WorkerShell({actor, children}:{actor:Actor, children:Rea
           <p className="text-[0.5625rem] font-bold mt-0.5 leading-tight" style={{color:'var(--tk-muted)'}}>Тестовый проект · синтетические данные</p>
         </div>
       </div>
-      <NavLink to="/settings" aria-label="Настройки" className="worker-top-settings"><PhIcon name="gearSix" size={24}/></NavLink>
+      <DemoTour/><NavLink to="/settings" aria-label="Настройки" className="worker-top-settings"><PhIcon name="gearSix" size={24}/></NavLink>
     </header>
     <main className={'flex-1 overflow-y-auto w-full max-w-md mx-auto p-3 pb-16 '+(loc.pathname==='/assistant'?' worker-chat-main':'')+''}><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
     <nav className="worker-floating-nav shrink-0" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)',paddingBottom:'env(safe-area-inset-bottom)'}}>

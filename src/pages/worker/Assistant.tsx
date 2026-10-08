@@ -27,14 +27,12 @@ export default function Assistant({actor}:{actor:Actor}){
     rec.onerror=()=>{setListening(false);setErr('Микрофон недоступен или распознавание прервано — введите текст.')}
     setListening(true);try{rec.start()}catch{setListening(false)}
   }
-  return <section className={"assistant-page "+(msgs.length===0?"assistant-empty":"")}>
+  return <section className={"assistant-page assistant-chat "+(msgs.length===0?"assistant-empty":"")}>
     <div className="assistant-intro tk-card">
-      <div className="assistant-title"><span><Headset size={26}/></span><div><h2>Помощник по наряду</h2><p>{orderId?'Наряд #'+orderId:'Вопрос по работе'}</p></div></div>
-      <div className="assistant-boundaries"><span><BookOpen size={17}/>По данным системы</span><span><ShieldCheck size={17}/>Не меняет наряд</span></div>
-      <p className="assistant-demo"><Info size={16}/>Только демо. Не применять на реальном оборудовании.</p>
-      <details className="visual-explain"><summary>Что умеет помощник</summary><div>Отвечает по вашему наряду и синтетической демо-документации. Если данных нет, предложит обратиться к мастеру. Полевые заметки не являются регламентом. Решения о работе и безопасности принимает человек.</div></details>
+      <div className="assistant-title"><span><Headset size={26}/></span><div><h2>Ptah AI</h2><p>{orderId?'Наряд #'+orderId:'Вопрос по работе'}</p></div></div>
+      <p className="assistant-demo"><Info size={16}/>Демо. Не применять на реальном оборудовании.</p>
     </div>
-    {msgs.length===0&&<div className="assistant-start"><p>Что хотите узнать?</p><button disabled={busy} onClick={()=>send('Какой срок у моего текущего наряда?')}><Clock3 size={23}/><span>Срок наряда</span><Send size={17}/></button><button disabled={busy} onClick={()=>send('Что известно об оборудовании моего текущего наряда?')}><Wrench size={23}/><span>Оборудование</span><Send size={17}/></button></div>}
+    {msgs.length===0&&<div className="assistant-start"><p>Начать разговор</p><button disabled={busy} onClick={()=>send('Какой срок у моего текущего наряда?')}><Clock3 size={23}/><span>Срок наряда</span><Send size={17}/></button><button disabled={busy} onClick={()=>send('Что известно об оборудовании моего текущего наряда?')}><Wrench size={23}/><span>Оборудование</span><Send size={17}/></button></div>}
     <div className="assistant-messages" aria-live="polite">
       {msgs.map((m,i)=><div key={i} className={cn('flex gap-2',m.from==='me'&&'flex-row-reverse')}>
         <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0",m.from==='me'?'bg-tk-slate text-white':'bg-tk-amber text-black')}>
@@ -51,12 +49,12 @@ export default function Assistant({actor}:{actor:Actor}){
     </div>
     {err&&<details className="assistant-error"><summary>Не получилось ответить</summary><p>{err}</p></details>}
     <div className="assistant-compose">
-      <label htmlFor="assistant-question">Ваш вопрос</label>
-      <textarea id="assistant-question" className="tk-input" placeholder="Напишите вопрос…" rows={2} value={input}
+      <label htmlFor="assistant-question">Сообщение</label>
+      <textarea id="assistant-question" className="tk-input" placeholder="Сообщение…" rows={1} value={input}
         onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(input)}}}/>
       <div className="assistant-compose-actions">
-        <button onClick={toggleMic} className={cn('assistant-mic tk-sub',listening&&'text-tk-red')} aria-label={listening?'Остановить запись':'Голосовой ввод'}><Mic size={21}/>{listening?'Стоп':'Голос'}</button>
-        <button onClick={()=>send(input)} disabled={!input.trim()||busy} className="assistant-send"><Send size={21}/>{busy?'Ждите…':'Отправить'}</button>
+        <button onClick={toggleMic} className={cn('assistant-mic tk-sub',listening&&'text-tk-red')} aria-label={listening?'Остановить запись':'Голосовой ввод'}><Mic size={21}/></button>
+        <button onClick={()=>send(input)} disabled={!input.trim()||busy} aria-label="Отправить" className="assistant-send"><Send size={21}/></button>
       </div>
     </div>
   </section>

@@ -1,8 +1,0 @@
-const role=()=>localStorage.getItem('qa-role')||'master';const actor=()=>({id:'qa-master',role:role(),name:'Синтетический тест',email:'qa@example.test'});
-export const enabled=true;export const supabase:any=null;export async function restoreSession(){return true}export async function logout(){};export async function login(){};
-const sections=[{id:1,name:'Дробление'},{id:2,name:'Обогащение'},{id:3,name:'Транспорт'},{id:4,name:'Энергетика'}];
-const orders=Array.from({length:18},(_,i)=>({id:100+i,title:['Замена подшипника привода конвейера','Проверка уплотнения насоса','Настройка датчика температуры'][i%3],section:sections[i%4].name,equipment:'Конвейер К-'+(i%4+1),equipment_id:i%4+1,assignee:'Тестовый исполнитель',assignee_id:'w'+(i%5),status:['issued','in_progress','completed','paused','accepted','closed'][i%6],priority:i%3===0?'emergency':'normal',deadline:new Date(Date.now()+(i-3)*3600000).toISOString(),closed_at:new Date().toISOString(),ai_result:{human_score:4}}));
-export async function state(){return {actor:actor(),orders,sections,employees:Array.from({length:5},(_,i)=>({id:'w'+i,name:'Исполнитель '+(i+1),role:'worker',on_shift:true,brigade:'Б1'})),events:[],equipment:[],materials:[],fault_codes:[]}}
-export async function repeatTop(){return [{equipment:'Конвейер К-3',equipment_id:3,fault_code:'К-01',closed_count:12,pairs_within_window:25}]}
-export async function anomalies(){return [{subject:'Конвейер К-3',facts:'Синтетический сигнал для проверки вёрстки',recommendation:'Проверить причину'}]}
-export async function repairMemory(){return []}export async function refusalReviews(){return []}export async function ratings(){return []}

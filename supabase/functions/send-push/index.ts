@@ -10,7 +10,9 @@ Deno.serve(async req=>{
   const{order_id}=await req.json();
   const pub=Deno.env.get('VAPID_PUBLIC'),priv=Deno.env.get('VAPID_PRIVATE');
   if(!pub||!priv)return reply({error:'vapid not configured'},500);
-  webpush.setVapidDetails('mailto:demo@naryadai.test',pub,priv);
+  const subject=Deno.env.get('VAPID_SUBJECT');
+  if(!subject)return reply({error:'vapid subject not configured'},500);
+  webpush.setVapidDetails(subject,pub,priv);
   const admin=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const{data:o}=await admin.from('orders').select('id,title,assignee_id,priority,deadline').eq('id',order_id).single();
   if(!o)return reply({error:'order unavailable'},404);

@@ -1,0 +1,23 @@
+SYNTHETIC BENCHMARK - PROVISIONAL LABEL AGREEMENT
+48 AI-generated, correlated synthetic pairs; 7 labels owner-arbitrated from previews; 41 rubric-applied by an assistant and unverified by a human. Measures agreement with provisional labels, NOT field accuracy or safety clearance.
+complete provisional-label agreement
+accept iff both defect_visible and tools_left are false and score is 4 or 5; reject if either flag true or score <=2; score 3 or any null -> abstain; invalid/missing separate.
+Cases: 48; binary labels: 48; needs_human excluded: 0; valid model responses: 48; attempted: 48
+Positive class: accept (repaired). FP is a critical false acceptance.
+Truth / prediction       accept reject abstain missing-or-invalid
+actual accept            23 2 0 0
+actual reject            0 23 0 0
+Standard accuracy (TP+TN)/(TP+TN+FP+FN): 95.8% (46/48), Wilson 95% 86.0% to 98.8%
+Defect-detection recall TN/(TN+FP), binary decisions only: 100.0% (23/23), Wilson 95% 85.7% to 100.0%
+Defect-detection recall over all 23 negative labels: 100.0% (23/23), Wilson 95% 85.7% to 100.0%
+Accuracy over all binary-label cases, abstentions/missing not correct: 95.8% (46/48), Wilson 95% 86.0% to 98.8%
+Precision (accept): 100.0% (23/23), Wilson 95% 85.7% to 100.0%
+Recall (accept; includes abstained/missing positives): 92.0% (23/25), Wilson 95% 75.0% to 97.8%
+Coverage: 100.0% (48/48), Wilson 95% 92.6% to 100.0%
+Selective accuracy on binary decisions only: 95.8% (46/48), Wilson 95% 86.0% to 98.8%
+CRITICAL FALSE ACCEPTS (missed tools / temporary fixes or tape / mismatch / other unsafe evidence)
+None observed among available responses.
+EXCLUDED NEEDS_HUMAN
+95% Wilson binomial intervals. Synthetic pairs are correlated and labels unverified, so intervals do not establish generalization or account for label error.
+Four mismatched-equipment pairs are intentionally counted as negative challenge cases, not matched repair pairs. The schema has no explicit mismatch field; report exposes missed mismatch as a critical false accept.
+No automatic acceptance, safety certification, or production changes.

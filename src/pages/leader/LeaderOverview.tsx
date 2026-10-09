@@ -1,37 +1,56 @@
+import HistorySignalsPanel from '../../components/HistorySignalsPanel'
+import OrderForecastPanel from '../../components/OrderForecastPanel'
+import {useLocale} from '../../lib/locale'
+import CheckPriorityPanel from '../../components/CheckPriorityPanel'
 import {Explain} from '../../components/VisualBlocks'
 import {Link} from 'react-router-dom'
-import {predictiveRisk} from '../../lib/predictive'
-import {useEffect, useState} from 'react'
+import {useEffect,useRef,useState} from 'react'
 import * as H from '../../lib/data'
+import {useOrderState} from '../../lib/use-order-state'
 import {Card} from '../../components/ui/card'
-import {savedPeriod, periodBounds, type PeriodDays} from '../../lib/period'
-import {ACTIVE_STATUSES} from '../../lib/status'
-import {isTechnicalTitle, savedPresentation, setPresentation} from '../../lib/presentation'
+import {savedPeriod,setPeriod,periodBounds,type PeriodDays} from '../../lib/period'
+import {currentSummary,workerLoad,repeatRows} from '../../lib/manager-summary.mjs'
+import {isTechnicalTitle,savedPresentation,setPresentation} from '../../lib/presentation'
 import type {Actor} from '../../App'
-export default function LeaderOverview({actor}:{actor:Actor}){
-  const [st,setSt]=useState<any>(null); const [an,setAn]=useState<any[]|null>(null); const [radar,setRadar]=useState<any[]|null>(null)
-  const [days]=useState<PeriodDays>(savedPeriod()); const [bounds]=useState(()=>periodBounds(days)); const [pres,setPres]=useState(savedPresentation())
-  useEffect(()=>{H.state().then(setSt).catch(()=>{});H.anomalies(bounds.since,bounds.until).then(setAn).catch(()=>setAn(null));H.repeatTop(bounds.since,bounds.until).then(setRadar).catch(()=>setRadar(null))},[bounds])
-  if(!st) return <div className="text-muted py-10">Загрузка…</div>
-  const visible=pres?st.orders.filter((o:any)=>!isTechnicalTitle(o.title)):st.orders; const hiddenN=st.orders.length-visible.length
-  const active=visible.filter((o:any)=>ACTIVE_STATUSES.includes(o.status))
-  const review=visible.filter((o:any)=>['completed','ai_review'].includes(o.status))
-  const inWork=visible.filter((o:any)=>o.status==='in_progress')
-  const overdue=active.filter((o:any)=>new Date(o.deadline).getTime()<Date.now())
-  const top=(an||[]).slice(0,4)
-  const byEquip:Record<string,{name:string,closed:number,pairs:number}>= {}
-  ;(radar||[]).forEach((r:any)=>{const k=String(r.equipment_id);if(!byEquip[k])byEquip[k]={name:r.equipment,closed:0,pairs:0};byEquip[k].closed+=r.closed_count||0;byEquip[k].pairs=Math.max(byEquip[k].pairs,r.pairs_within_window||0)})
-  const radarRows=Object.values(byEquip).sort((a,b)=>b.pairs-a.pairs||b.closed-a.closed).slice(0,5)
-  const level=(r:{closed:number,pairs:number})=>r.pairs>=20||r.closed>=8?{label:'Высокий сигнал',dot:'#c0392b',bg:'#fbeaea',text:'#8f2424'}:r.pairs>=10||r.closed>=5?{label:'Средний сигнал',dot:'#c08c41',bg:'#fdf3e3',text:'#8a5a12'}:{label:'В норме',dot:'#3d8a5a',bg:'#e6f2ea',text:'#1e6b41'}
-  const topRisk=radarRows[0]
-  const variantB=new URLSearchParams(location.search).get('summary')==='b'
-  return <div className="leader-overview space-y-4">
-    <section className="leader-glance"><h1>Завод: сейчас</h1><p>Источник: учебный набор данных</p><div className="glance-metrics"><div><b>{overdue.length}</b><span>Просрочено</span></div><div><b>{review.length}</b><span>Ждут проверки</span></div><div><b>{inWork.length}</b><span>В работе</span></div></div><div className="section-bars">{st.sections?.map((section:any)=>{const n=active.filter((o:any)=>o.section===section.name).length;return <div key={section.id}><div className="flex justify-between"><span>{section.name}</span><b>{n}</b></div><div className="section-bar"><span style={{width:Math.round(n/Math.max(1,active.length)*100)+'%'}}/></div></div>})}</div><p>Простой оборудования: нет проверенных данных</p></section>
-    <div className="visual-action-row"><Link className="visual-action" to="/report"><strong>Отчёт и рейтинг →</strong><span>Закрытия · качество · сроки</span></Link><Link className="visual-action" to="/memory"><strong>История ремонтов →</strong><span>Что делали на оборудовании</span></Link></div>
-    <Card><h2 className="text-lg font-bold">Нужна проверка мастера</h2><span className="visual-tag visual-tag-warn">{overdue.length} просрочено</span>{overdue.slice(0,4).map((o:any)=><div className="visual-alert-row" key={o.id}><span className="visual-alert-number">#{o.id}</span><div><b>{o.equipment}</b><small>{o.title}</small><small>Срок: {new Date(o.deadline).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small></div></div>)}{!overdue.length&&<p className="mt-3 text-sm">Просрочек нет</p>}</Card>
-    <Card><h2 className="text-lg font-bold">Повторные ремонты</h2><span className="visual-tag">Сигнал, не диагноз</span>{radarRows.map((r,i)=><div className="visual-alert-row" key={i}><span className="visual-alert-number">{r.pairs}</span><div><b>{r.name}</b><small>пар повторов · {r.closed} закрытий</small></div></div>)}<Explain title="Что считать повтором">Два закрытых наряда с одним кодом на одном оборудовании в окне повтора. Период: {days} дней. Причину устанавливает мастер; закономерности заложены в учебный набор данных.</Explain></Card>
-    <details className="visual-explain"><summary>Эксперимент · модель хуже простой базы</summary><div><p className="text-warn">Модель 82,13% · простая база 82,40%. Модель не лучше базы. Не использовать для автоматических решений.</p><p>Риск наряда в ближайшие 7 дней, не подтверждённого отказа. История учебного набора.</p>{st.equipment.map((eq:any)=>({...eq,risk:predictiveRisk(visible,eq.id)})).sort((a:any,b:any)=>b.risk.probability-a.risk.probability).slice(0,5).map((eq:any)=><div key={eq.id} className="mt-3"><div className="flex justify-between"><b>{eq.name}</b><span>{Math.round(eq.risk.probability*100)}%</span></div><div className="factor-track"><span style={{width:Math.round(eq.risk.probability*100)+'%'}}/></div></div>)}<p className="mt-3">Обучение до 15 сентября, тест после. Не промышленный мониторинг.</p></div></details>
-    <label className="flex gap-2 text-sm"><input type="checkbox" checked={pres} onChange={e=>{setPres(e.target.checked);setPresentation(e.target.checked)}}/>Скрыть технические {pres&&hiddenN>0?`(${hiddenN})`:''}</label>
-    <span className="visual-tag">Демо · не оперативные данные</span>
-  </div>
+import './manager.css'
+const states:Record<string,string>={free:'Свободен',busy:'В работе',queue:'Есть очередь',assigned:'Назначен наряд',off:'Не на смене',unknown:'Смена не указана'}
+export default function LeaderOverview({actor:_actor}:{actor:Actor}){
+  const {t,locale}=useLocale()
+ const stamp=(value:string)=>new Date(value).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+
+ const {st,error,refresh}=useOrderState()
+ const [days,setDays]=useState<PeriodDays>(savedPeriod)
+ const [bounds,setBounds]=useState(()=>periodBounds(savedPeriod()))
+ const [section,setSection]=useState('')
+ const [pres,setPres]=useState(savedPresentation)
+ const [radar,setRadar]=useState<any[]|null>(null)
+ const [repeatError,setRepeatError]=useState('')
+ const [loading,setLoading]=useState(false)
+ const generation=useRef(0)
+ useEffect(()=>{let alive=true;const n=++generation.current;setLoading(true);setRadar(null);setRepeatError('');H.repeatTop(bounds.since,bounds.until).then(rows=>{if(alive&&n===generation.current){if(!Array.isArray(rows))throw Error(t('Сервис вернул неполный ответ'));setRadar(rows)}}).catch(e=>{if(alive&&n===generation.current)setRepeatError((e as Error).message)}).finally(()=>{if(alive&&n===generation.current)setLoading(false)});return()=>{alive=false}},[bounds])
+ const update=()=>{refresh();setBounds(periodBounds(days))}
+ if(!st)return <div role={error?'alert':'status'} className="space-y-3 py-8"><p>{error?t("Данные недоступны: {v0}").replace("{v0}",()=>String(error)):t("Загрузка сводки…")}</p>{error&&<button className="manager-control" onClick={update}>{t("Повторить")}</button>}</div>
+ const visible=st.orders.filter((o:any)=>(!pres||!isTechnicalTitle(o.title))&&(!section||o.section===section))
+ const summary=currentSummary(visible)
+ const allVisible=st.orders.filter((o:any)=>!pres||!isTechnicalTitle(o.title))
+ const globalLoad=workerLoad(st.employees,allVisible)
+ const load=workerLoad(st.employees,visible).map(r=>({...r,availability:globalLoad.find(g=>String(g.worker.id)===String(r.worker.id))?.availability||r.availability}))
+ const repeats=repeatRows(radar||[],st.equipment,section)
+ const unassigned=summary.active.filter(o=>!o.assignee_id||!st.employees.some((e:any)=>String(e.id)===String(o.assignee_id)))
+ return <div className="leader-overview space-y-4">
+  <div className="manager-header"><div><h1>{t("Завод: сейчас")}</h1><p className="manager-note">{t("Время Алматы")}</p></div><button className="manager-refresh" aria-label={t("Обновить сводку")} onClick={update}>↻</button></div>
+  {error&&<p role="alert" className="manager-error">{t("Обновление не удалось:")} {error}{t(". Показан последний загруженный срез.")}</p>}
+  <div className="manager-filter-chips"><div aria-label={t("Участок")}><button aria-pressed={!section} onClick={()=>setSection('')}>{t("Все доступные")}</button>{st.sections?.map((s:any)=><button key={s.id} aria-pressed={section===s.name} onClick={()=>setSection(s.name)}>{s.name}</button>)}</div><div aria-label={t("Период повторов")}>{[7,30,90].map(n=><button key={n} aria-pressed={days===n} onClick={()=>{const d=n as PeriodDays;setDays(d);setPeriod(d);setBounds(periodBounds(d))}}>{n} {t("дней")}</button>)}</div></div>
+  {summary.review.length>0&&<section className="leader-review-primary"><h2>{summary.review.length} {t("ждут мастера")}</h2><p>{t("Откройте отчёт. Решение принимает мастер.")}</p><Link to="/handover">{t("Проверить")}</Link></section>}
+  <section className="leader-glance"><h2 className="text-xl font-bold">{t("Текущий срез")}</h2><div className="manager-metrics"><div><b>{summary.overdue.length}</b><span>{t("Просрочено")}</span></div><div><b>{summary.review.length}</b><span>{t("Ждут мастера")}</span></div><div><b>{summary.inWork.length}</b><span>{t("В работе")}</span></div></div><p>{summary.active.length} {t("активных наряда. Простой не подтверждён.")}</p></section>
+  <HistorySignalsPanel orders={st.orders.filter((o:any)=>!section||o.section===section)} since={Date.parse(bounds.since)} until={Date.parse(bounds.until)}/>
+  <OrderForecastPanel orders={st.orders} equipment={st.equipment} section={section} offline={st.offline}/>
+  <div className="manager-grid"><Link className="visual-action" to="/handover"><strong>{t("Отчёт за смену →")}</strong><span>{t("Закрытия · незавершённые · проверка")}</span></Link><Link className="visual-action" to="/report"><strong>{t("Отчёт и рейтинг →")}</strong><span>{t("Оценки мастера · пять факторов")}</span></Link><Link className="visual-action" to="/memory"><strong>{t("История ремонтов →")}</strong><span>{t("Работы по оборудованию")}</span></Link></div>
+  <Card><h2 className="text-lg font-bold">{t("Просрочки: требуется внимание")}</h2>{summary.overdue.slice(0,6).map(o=><div className="manager-row" key={o.id}><div><strong>#{o.id} · {o.equipment}</strong><small>{o.title} · {o.assignee||t("Исполнитель не указан")}</small><small>{t("Срок:")} {stamp(o.deadline)}</small></div><Link className="manager-control shrink-0" to={`/equipment/${o.equipment_id}`}>{t("История")}</Link></div>)}{!summary.overdue.length&&<p className="manager-empty">{t("В загруженном срезе просрочек нет.")}</p>}{summary.overdue.length>6&&<p className="manager-note">{t("Показано 6 из")} {summary.overdue.length}{t(". Полный список в отчёте за смену.")}</p>}</Card>
+  <Card><h2 className="text-lg font-bold">{t("Загрузка исполнителей")}</h2><p className="manager-note">{t("Число активных нарядов, не часы работы и не оценка производительности. При фильтре участка счётчики показывают только его наряды; статус занятости учитывает все доступные участки.")}</p>{load.map(r=><div className="manager-row" key={r.worker.id}><div><strong>{r.worker.name}</strong><small>{r.worker.brigade||t("Бригада не указана")}</small><span className={`manager-status ${r.availability}`}>{t(states[r.availability])}</span>{r.availability==='off'&&r.assigned.length>0&&<small className="text-danger">{t("Есть активный наряд вне смены: проверить назначение")}</small>}</div><div className="text-right shrink-0"><strong>{r.assigned.length} {t("активных")}</strong><small>{t("Очередь:")} {r.queued} {t("· проверка:")} {r.reviewing}</small>{r.overdue>0&&<small className="text-danger">{t("Просрочено:")} {r.overdue}</small>}</div></div>)}{load.length===0&&<p className="manager-empty">{t("Доступных исполнителей нет.")}</p>}{unassigned.length>0&&<p className="manager-error">{unassigned.length} {t("активных нарядов без доступной карточки исполнителя. Требуется проверка мастера.")}</p>}</Card>
+  <Card><h2 className="text-lg font-bold">{t("Повторные наряды")}</h2><p className="manager-note">{t("Сигнал для проверки, не диагноз и не прогноз отказа.")}</p>{loading&&<p role="status" className="manager-empty">{t("Загрузка повторов…")}</p>}{repeatError&&<p role="alert" className="manager-error">{t("Повторы недоступны:")} {repeatError}{t(". Это не означает отсутствие повторов.")}</p>}{!loading&&!repeatError&&radar&&repeats.map((r:any)=><div className="manager-row" key={`${r.equipment_id}:${r.fault_code}`}><div><strong>{r.equipment}</strong><small>{t("Шифр:")} {r.fault_code} {t("· закрытых нарядов:")} {r.closed_count}</small><small>{t("Пар в окне повтора:")} {r.pairs_within_window}</small></div><Link className="manager-control shrink-0" to={`/equipment/${r.equipment_id}`}>{t("История")}</Link></div>)}{!loading&&!repeatError&&radar&&repeats.length===0&&<p className="manager-empty">{t("В возвращённой выборке повторов для этого участка нет.")}</p>}<Explain title={t("Как считается сигнал")}><p>{t("Источник: repeat_top. Закрытые наряды отбираются по дате закрытия:")} {stamp(bounds.since)} - {stamp(bounds.until)}{t(". Окно пары задаёт справочник шифров; по умолчанию 7 дней. Пары могут пересекаться и не равны числу отказов.")}</p><p>{t("Фильтр участка применяется к возвращённым строкам; полнота зависит от видимости и загрузки истории. Презентационный фильтр технических нарядов не применяется к серверным повторам.")}</p></Explain></Card>
+    <CheckPriorityPanel orders={st.orders} equipment={st.equipment} canOpenOrders={false}/>
+  <label className="flex gap-2 items-center text-sm"><input type="checkbox" checked={pres} onChange={e=>{setPres(e.target.checked);setPresentation(e.target.checked)}}/>{t("Скрыть технические наряды в текущем срезе")}</label>
+  <p className="manager-note">{t("Источник: учебный набор данных. Не оперативная диспетчеризация.")}{st.orders.length>=600?t(" Достигнут лимит 600 нарядов: срез может быть неполным."):''} {t("Среднее время реакции, выполнения и простой не показаны без проверенных временных событий.")}</p>
+ </div>
 }

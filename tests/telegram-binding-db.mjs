@@ -45,7 +45,16 @@ assert.deepEqual((await c.query('select telegram_pair_status() v')).rows[0].v,{}
 await c.query("select set_config('test.role','master',false),set_config('test.actor','00000000-0000-4000-8000-000000000001',false)");
 assert.equal((await c.query('select telegram_pair_confirm($1,$2) v',[pair.id,'123'])).rows[0].v,true);
 assert.equal((await c.query('select telegram_pair_confirm($1,$2) v',[pair.id,'123'])).rows[0].v,false);
+await c.query(readFileSync('supabase/migrations/078_telegram_current_status.sql','utf8'));
+await c.query("update telegram_pair_requests set created_at=now()-interval '20 minutes',expires_at=now()-interval '10 minutes' where id=$1",[pair.id]);
+assert.deepEqual((await c.query('select telegram_pair_status() v')).rows[0].v,{connected:true});
+await c.query("select set_config('test.role','worker',false),set_config('test.actor','00000000-0000-4000-8000-000000000002',false)");
+assert.deepEqual((await c.query('select telegram_pair_status() v')).rows[0].v,{connected:false});
+await c.query("select set_config('test.role','master',false),set_config('test.actor','00000000-0000-4000-8000-000000000001',false)");
+await c.query("update employees set is_active=false where id='00000000-0000-4000-8000-000000000001'");await assert.rejects(c.query('select telegram_pair_status()'));await c.query("update employees set is_active=true where id='00000000-0000-4000-8000-000000000001'");
+assert.equal((await c.query("select has_function_privilege('anon','telegram_pair_status()','EXECUTE') v")).rows[0].v,false);
 await c.query('select telegram_disconnect()');assert.ok((await c.query('select revoked_at from telegram_connections')).rows[0].revoked_at);
+assert.deepEqual((await c.query('select telegram_pair_status() v')).rows[0].v,{connected:false});
 pair=(await c.query('select telegram_pair_create($1) v',['b'.repeat(64)])).rows[0].v;
 await c.query("update telegram_pair_requests set created_at=now()-interval '20 minutes',expires_at=now()-interval '10 minutes' where id=$1",[pair.id]);assert.equal((await c.query('select telegram_pending_bind($1,$2,$3,$4) v',['b'.repeat(64),'124','124',11])).rows[0].v,false);
 assert.equal((await c.query("select has_function_privilege('anon','telegram_pair_confirm(uuid,text)','EXECUTE') v")).rows[0].v,false);

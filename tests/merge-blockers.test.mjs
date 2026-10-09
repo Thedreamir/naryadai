@@ -1,0 +1,17 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+import {loadReportFonts} from '../src/lib/report-font.ts';
+import {retryDelay} from '../supabase/functions/_shared/notification-retry.mjs';
+const read=p=>fs.readFileSync(p,'utf8');
+test('font failure does not poison retry',async()=>{let n=0;globalThis.fetch=async()=>({ok:++n>2,status:503,arrayBuffer:async()=>new Uint8Array([0]).buffer});await assert.rejects(loadReportFonts());await loadReportFonts();assert.equal(n,4)});
+test('Handover hooks before loading returns and export catch',()=>{const s=read('src/pages/master/Handover.tsx');assert.ok(s.indexOf('const [exportBusy')<s.indexOf('if(!st)'));assert.match(s,/catch\s*\(/)});
+test('retry over one day needs manual deferral',()=>assert.equal(retryDelay(1,90000),null));
+test('reason trims all whitespace, not only spaces',()=>assert.match(read('supabase/migrations/066_l5_transition_evidence.sql'),/\[\[:space:\]\]/));
+test('outbox write ACL revoked explicitly',()=>assert.match(read('lane10/notification-queue.staged.sql'),/revoke insert,update,delete[^;]+service_role/i));
+test('VoiceAsk locks before state render and retains busy draft',()=>{const s=read('src/components/VoiceAskPanel.tsx');assert.match(s,/busyRef.current=true/);assert.match(s,/setHeard\(q\)/);assert.match(s,/if\(busyRef.current\)return/)});
+import {groundedAnswer} from '../supabase/functions/_shared/assistant-grounding.mjs';
+import {checkPhoto,checkPair} from '../supabase/functions/review-order/photo-checks.mjs';
+import {parseCompareResponse} from '../supabase/functions/review-order/llm-compare.mjs';
+test('no energizing source in RU or KZ answers',()=>{for(const message of ['подключить электричество','электр тогын қосу']){const x=groundedAnswer({message,docs:[{id:1,status:'approved',reviewed_by:'m',reviewed_at:'2026-10-08',equipment_id:null,title:message,body:'Подключите электричество после осмотра',version:1}]});assert.equal(x.knowledge_used,false);assert.doesNotMatch(x.answer,/Подключите электричество/)} });
+test('untrusted numeric coercion is rejected',()=>assert.equal(parseCompareResponse('{"match":null,"confidence":true}'),null));
+test('missing hashes do not prove same file',()=>assert.ok(!checkPair({before:{},after:{},closedAt:'2026-10-08T10:00:00Z'}).flags.includes('same_as_before')));
+test('future upload cannot pass',()=>assert.equal(checkPhoto({id:'p',sha256:'a'.repeat(64),dhash:'0'.repeat(16),uploadedAt:'2026-10-08T11:00:00Z',takenAt:'2026-10-08T10:55:00Z'},{closedAt:'2026-10-08T10:00:00Z'}).status,'review'));

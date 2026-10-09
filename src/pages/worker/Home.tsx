@@ -3,19 +3,30 @@ import {useOrderState} from '../../lib/use-order-state'
 import {useEffect,useState} from 'react'
 import * as H from '../../lib/data'
 import {Link} from 'react-router-dom'
-import {MapPin,TriangleAlert,Clock,ClipboardCheck} from 'lucide-react'
+import {TriangleAlert} from 'lucide-react'
 import type {Actor} from '../../App'
-const statuses:Record<string,string>={issued:'Выдан',queued:'В очереди',accepted:'Принят',in_progress:'В работе',paused:'Приостановлен',rework:'Доработка'}
-function Deadline({deadline}:{deadline:string}){const[,tick]=useState(0);useEffect(()=>{const t=setInterval(()=>tick(n=>n+1),60000);return()=>clearInterval(t)},[]);const delta=new Date(deadline).getTime()-Date.now();const minutes=Math.max(1,Math.ceil(Math.abs(delta)/60000));const duration=minutes>=60?Math.floor(minutes/60)+' ч'+(minutes%60?' '+minutes%60+' мин':''):minutes+' мин';return <div className="worker-home-deadline"><strong style={{color:delta<0?'var(--color-tk-red)':'var(--tk-ink)'}}><Clock size={20}/>{delta<0?'Просрочено на ':'До срока '}{duration}</strong><span>Срок: {new Date(deadline).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>}
-export default function WorkerHome({actor}:{actor:Actor}){const{st,error,refresh}=useOrderState();const[live,setLive]=useState<any[]>([]);const pres=savedPresentation();useEffect(()=>H.watchNotifications((n:any)=>setLive(a=>[n,...a].slice(0,20))),[]);if(error)return <div role="alert" className="tk-card p-4">Данные недоступны: {error}<button className="tk-touch tk-sub w-full mt-2" onClick={refresh}>Повторить</button></div>;if(!st)return <div>Загрузка нарядов…</div>;
-const mine=st.orders.filter((o:any)=>o.assignee_id===actor.id&&!o.cancelled&&['issued','queued','accepted','in_progress','paused','rework'].includes(o.status));
-// Presentation filtering never hides active or already accepted work.
-const active=mine.filter((o:any)=>['in_progress','rework','paused'].includes(o.status));const accepted=mine.filter((o:any)=>o.status==='accepted');const pending=mine.filter((o:any)=>['issued','queued'].includes(o.status)&&(!pres||!isTechnicalTitle(o.title)));const running=active.filter((o:any)=>['in_progress','rework'].includes(o.status));const focus=running.length===1?running[0]:active.length===1?active[0]:active.length===0&&accepted.length===1?accepted[0]:active.length===0&&accepted.length===0&&pending.length===1?pending[0]:null;
-const queue=mine.filter((o:any)=>o.id!==focus?.id&&(!pres||!isTechnicalTitle(o.title)||['accepted','in_progress','paused','rework'].includes(o.status)));
-const eq=(o:any)=>o.equipment||st.equipment.find((e:any)=>e.id===o.equipment_id)?.name||'Оборудование не указано';const alerts=[...live,...(st.notifications||[])].filter((n:any,i:number,a:any[])=>a.findIndex((x:any)=>x.id===n.id)===i);const emergency=mine.filter((o:any)=>o.priority==='emergency');
-return <div className="worker-home-plan space-y-3">{st.offline&&<div role="status" className="tk-card p-3">Офлайн · снимок может быть устаревшим. Действия и допуски только онлайн.</div>}
-{focus?<section className="tk-card worker-home-focus"><div className="worker-home-kicker">Ваш наряд <span>№{focus.id} · {statuses[focus.status]}</span></div><h2>{focus.title}</h2><div className="worker-home-equipment"><MapPin size={20}/><strong>{eq(focus)}{focus.section?' · '+focus.section:''}</strong></div>{focus.priority==='emergency'&&<div className="worker-home-emergency"><TriangleAlert size={21}/>Аварийный наряд</div>}<Deadline deadline={focus.deadline}/><div className="worker-home-permit"><span>Допуск</span><strong>{focus.permit_kind==='not_required'?'Не требуется':focus.permit_kind?'Отмечен в карточке · проверьте условия':'Не отмечен · уточните у мастера'}</strong></div><Link className="worker-home-cta" to={'/orders/'+focus.id}>{focus.status==='in_progress'?'Открыть работу и отчёт':focus.status==='rework'?'Открыть доработку':focus.status==='paused'?'Открыть приостановленный наряд':focus.status==='accepted'?'Открыть принятый наряд':'Открыть наряд'}<ClipboardCheck size={22}/></Link></section>:<section className="tk-card worker-home-focus"><h2>{mine.length?'Выберите наряд':'Нарядов пока нет'}</h2>{mine.length>0&&<><p>Порядок работы и допуск подтверждает мастер.</p><Link to="/orders" className="worker-home-cta">Выбрать наряд</Link></>}</section>}
-{queue.length>0&&<section className="space-y-2"><h3 className="worker-home-kicker">Другие наряды · {queue.length}</h3>{queue.map((o:any)=><Link key={o.id} to={'/orders/'+o.id} className="tk-card worker-home-queue"><div className="worker-home-kicker">№{o.id} · {statuses[o.status]}{o.priority==='emergency'?' · Аварийный':''}</div><strong>{o.title}</strong><span>{eq(o)}</span><span>Срок: {new Date(o.deadline).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></Link>)}</section>}
-{emergency.some((o:any)=>o.id!==focus?.id)&&<div className="worker-home-emergency"><TriangleAlert size={22}/>Есть аварийный наряд. Откройте его карточку в списке выше.</div>}
-<details className="worker-alerts tk-card"><summary><TriangleAlert size={20}/><strong>Уведомления</strong><span>{alerts.length}</span></summary><div className="p-3 space-y-3">{alerts.length?alerts.slice(0,5).map((n:any)=><div key={n.id}><p>{n.message}</p><small>{new Date(n.created_at).toLocaleTimeString('ru',{timeZone:'Asia/Almaty',hour:'2-digit',minute:'2-digit'})}</small></div>):<p>Новых уведомлений нет</p>}</div></details>
-</div>}
+import {useLocale} from '../../lib/locale'
+import {workerOverview} from '../../lib/worker-overview.mjs'
+import WorkerTaskCard from './WorkerTaskCard'
+export default function WorkerHome({actor}:{actor:Actor}){
+  const {st,error,refresh}=useOrderState();const {t}=useLocale();const[live,setLive]=useState<any[]>([])
+  const[presentation,setPresentation]=useState(savedPresentation)
+  useEffect(()=>{const update=()=>setPresentation(savedPresentation());window.addEventListener('naryadai:presentation',update);return()=>window.removeEventListener('naryadai:presentation',update)},[])
+  useEffect(()=>H.watchNotifications((n:any)=>setLive(a=>[n,...a].slice(0,20))),[])
+  if(error)return <div role="alert" className="wo-overview"><div className="tk-card wo-notice">{t('Данные недоступны')}: {error}<button className="tk-touch tk-sub w-full mt-2" onClick={refresh}>{t('Повторить')}</button></div></div>
+  if(!st)return <div role="status">{t('Загрузка нарядов…')}</div>
+  const {mine,focus,queue}=workerOverview(st.orders,actor.id,presentation,isTechnicalTitle)
+  const alerts=[...live,...(st.notifications||[])].filter((n:any,i:number,a:any[])=>a.findIndex((x:any)=>x.id===n.id)===i)
+  const equipment=st.equipment||[]; const emergency=st.orders.find((o:any)=>o.assignee_id===actor.id&&!o.cancelled&&o.priority==='emergency'&&['issued','queued'].includes(o.status))
+  return <div className="wo-overview">
+    {st.offline&&<div role="status" className="tk-card wo-notice">{t('Офлайн. Данные могут быть устаревшими. Действия и допуски только онлайн.')}</div>}
+    {emergency&&<Link to={'/orders/'+emergency.id} className="wo-emergency wo-priority wo-emergency-pinned"><TriangleAlert size={22} aria-hidden="true"/>{t('Аварийный наряд №{id}').replace('{id}',String(emergency.id))}</Link>}
+    {focus?<WorkerTaskCard order={focus} equipment={equipment} focus/>:<section className="tk-card wo-card">
+      <h2 className="wo-task-title">{t(mine.length?'Выберите наряд':'Нарядов пока нет')}</h2>
+      <p className="wo-next-note">{t(mine.length?'Порядок работы и допуск подтверждает мастер.':'Новые назначения появятся здесь.')}</p>
+      {mine.length>0&&<Link to="/orders" className="wo-primary tk-touch">{t('Выбрать наряд')}</Link>}
+    </section>}
+    {queue.length>0&&<section className="wo-section" aria-label={t('Другие наряды')}><h2>{t(focus?'Другие наряды':'Ваши наряды')} · {queue.length}</h2>{queue.map((o:any)=><WorkerTaskCard key={o.id} order={o} equipment={equipment}/>)}</section>}
+    <details className="worker-alerts tk-card"><summary><TriangleAlert size={20} aria-hidden="true"/><strong>{t('Уведомления')}</strong><span>{alerts.length}</span></summary><div>{alerts.length?alerts.slice(0,5).map((n:any)=><div key={n.id}><p>{n.message}</p><small>{new Date(n.created_at).toLocaleTimeString('ru',{timeZone:'Asia/Almaty',hour:'2-digit',minute:'2-digit'})}</small></div>):<p>{t('Новых уведомлений нет')}</p>}</div></details>
+  </div>
+}

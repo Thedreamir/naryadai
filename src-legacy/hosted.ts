@@ -1,3 +1,4 @@
+import {readOrdersAndEvents} from '../src/lib/order-read.mjs'
 import {sanitizeDataUrl} from '../src/lib/photo-sanitize'
 import {clearAllDrafts} from '../src/lib/report-draft'
 // Hosted Supabase data layer. Same shapes the local /api server returns.
@@ -36,7 +37,7 @@ export async function login(email: string, password: string) {
   if (error) throw new Error('Вход не удался: проверьте логин и пароль')
 }
 
-export async function logout() { clearAllDrafts();for(const k of Object.keys(localStorage))if(k.startsWith('tekton-worker-snapshot:'))localStorage.removeItem(k);if (supabase) await supabase.auth.signOut() }
+export async function logout() { clearAllDrafts();for(const k of Object.keys(localStorage))if(k.startsWith('tekton-worker-snapshot:'))localStorage.removeItem(k);if ('serviceWorker' in navigator){try{const reg=await navigator.serviceWorker.getRegistration();const sub=await reg?.pushManager.getSubscription();if(sub){const endpoint=sub.endpoint;await sub.unsubscribe();if(supabase){const {error}=await supabase.from('push_subscriptions').delete().eq('endpoint',endpoint);if(error)console.warn('Push server cleanup unavailable')}}}catch{console.warn('Push device cleanup unavailable')}}if (supabase) await supabase.auth.signOut() }
 
 async function uid(): Promise<string> {
   const {data} = await supabase!.auth.getUser()
@@ -47,10 +48,9 @@ async function uid(): Promise<string> {
 async function stateOnline() {
   const s = supabase!
   const myId = await uid()
-  const [emp, orders, events, equipment, sections, faults, materials, notifications, norms] = await Promise.all([
+  const [emp, orderData, equipment, sections, faults, materials, notifications, norms] = await Promise.all([
     s.from('employees').select('id,name,role,specialty,on_shift,email,is_active,brigade'),
-    s.from('orders').select('*').eq('cancelled',false).order('id', {ascending:false}).limit(600),
-    s.from('order_events').select('*').order('id', {ascending:false}).limit(2000),
+    readOrdersAndEvents(s),
     s.from('equipment').select('*'),
     s.from('sections').select('*'),
     s.from('fault_codes').select('*'),
@@ -58,6 +58,7 @@ async function stateOnline() {
     s.from('notifications').select('*').order('id', {ascending:false}).limit(20),
     s.from('work_norms').select('*'),
   ])
+  const orders={data:orderData.orders,error:null},events={data:orderData.events,error:null}
   for (const r of [emp,orders,events,equipment,sections,faults,materials,notifications,norms]) if (r.error) throw new Error(r.error.message)
   const employees = emp.data||[]
   const byId: Record<string,any> = {}; employees.forEach(e=>byId[e.id]=e)
@@ -70,25 +71,27 @@ async function stateOnline() {
     assignee: byId[o.assignee_id]?.name||'—'}))
   // Worker declarations (pre_work recorded at start, etc.)
   try {
-    const {data: declRows} = await s.from('order_declarations').select('*').order('id')
+    const {data: declRows,error:de} = await s.from('order_declarations').select('*').order('id');if(de)throw Error(de.message)
     for (const o of ordersJoined) (o as any).declarations = (declRows||[]).filter((r:any)=>r.order_id===o.id)
-  } catch { for (const o of ordersJoined) (o as any).declarations = [] }
+  } catch { for (const o of ordersJoined) {(o as any).declarations = [];(o as any).evidence_unavailable=true} }
   // Intake (before) photos: own table, mint signed URLs best-effort.
   try {
-    const {data: intakeRows} = await s.from('order_intake_photos').select('*').order('id')
+    const {data: intakeRows,error:ie} = await s.from('order_intake_photos').select('*').order('id');if(ie)throw Error(ie.message)
     for (const o of ordersJoined) {
       const ips = (intakeRows||[]).filter((r:any)=>r.order_id===o.id)
       for (const p of ips) {
-        try { const {data:sd} = await s.storage.from('repair-photos').createSignedUrl(String(p.storage_path||''), 3600); (p as any).url = sd?.signedUrl||null } catch { (p as any).url = null }
+        try { const {data:sd,error:se} = await s.storage.from('repair-photos').createSignedUrl(String(p.storage_path||''), 3600); if(se)throw Error(se.message);(p as any).url = sd?.signedUrl||null } catch { (p as any).url = null }
       }
       ;(o as any).intake_photos = ips
     }
-  } catch { for (const o of ordersJoined) (o as any).intake_photos = [] }
+  } catch { for (const o of ordersJoined) {(o as any).intake_photos = [];(o as any).evidence_unavailable=true} }
+  let equipment_state_events:any[]|null=null
+  if(['master','leader','admin'].includes(actor.role)){const {data:states,error:stateError}=await s.from('equipment_state_events').select('*').order('observed_at').limit(5000);if(!stateError)equipment_state_events=states}
   const eventsJoined = (events.data||[]).map((e:AnyOrder)=>({...e, actor: byId[e.actor_id]?.name||'—'}))
   let permits: any[] = []
   try { const {data: pr} = await s.from('employee_permits').select('*'); permits = pr||[] } catch { permits = [] }
-  return {actor, orders: ordersJoined, employees, events: eventsJoined, permits,
-    equipment: Object.values(eqById), fault_codes: faults.data||[], materials: materials.data||[],
+  return {actor, orders: ordersJoined, employees, events: eventsJoined, permits,equipment_state_events,
+    sections: sections.data||[], equipment: Object.values(eqById), fault_codes: faults.data||[], materials: materials.data||[],
     notifications: notifications.data||[], work_norms: norms.data||[], backend: 'Supabase · тестовый проект (синтетические данные)'}
 }
 
@@ -120,9 +123,23 @@ export async function transition(id: number, x: {status:string,version:number,re
     const myId = await uid()
     const evidence = []
     const uploadOne = async (dataUrl: string, i: number, phase: string) => {
+      const ingestEndpoint=import.meta.env.VITE_CANONICAL_INGEST_URL as string|undefined
+      if(phase==='after'&&ingestEndpoint){
+        const endpoint=new URL(ingestEndpoint)
+        if(!['localhost','127.0.0.1','[::1]'].includes(endpoint.hostname)||endpoint.protocol!=='http:')throw Error('Только локальный канонический сервис разрешён')
+        const {data:session}=await s.auth.getSession();const token=session.session?.access_token
+        if(!token)throw Error('Сессия истекла')
+        const {bytes}=dataUrlToBytes(await sanitizeDataUrl(dataUrl))
+        const response=await fetch(endpoint.href.replace(/\/$/,'')+'/api/canonical-photo/'+id,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/octet-stream','X-Order-Version':String(x.version)},body:bytes as BodyInit})
+        const result=await response.json();if(!response.ok)throw Error(result.error||'Серверная проверка фото недоступна')
+        if(result.uncertain_commit||!result.storage_path||!/^data:image\/jpeg;base64,/.test(result.canonical)||!Number.isInteger(result.byte_size)||result.byte_size>290000)throw Error('Подтверждение фото неполное; обновите наряд')
+        const verified=dataUrlToBytes(result.canonical);if(verified.bytes.length!==result.byte_size||await sha256Hex(verified.bytes)!==result.sha256)throw Error('Фото не совпадает с серверным подтверждением')
+        uploadedPaths.push(result.storage_path)
+        return result
+      }
       const canonical = await sanitizeDataUrl(dataUrl)
       const {bytes, mime} = dataUrlToBytes(canonical)
-      if (bytes.length > 400000) throw new Error('Фото слишком большое')
+      if (bytes.length > 290000) throw new Error('Фото слишком большое')
       const hash = await sha256Hex(bytes)
       const ext = mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg'
       const path = `${myId}/${id}-${Date.now()}-${phase}-${i}.${ext}`
@@ -175,6 +192,7 @@ export async function savePushSubscription(sub: {endpoint:string, keys:{p256dh:s
     {user_id: myId, endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth},
     {onConflict: 'endpoint'})
   if (error) throw new Error('Подписка на push не сохранена: '+error.message)
+  const {data:bound,error:be}=await s.from('push_subscriptions').select('user_id').eq('endpoint',sub.endpoint).eq('user_id',myId).single();if(be||bound?.user_id!==myId)throw Error('Привязка push к учётной записи не подтверждена')
 }
 
 export async function pinUnlock(email: string) {
@@ -286,14 +304,15 @@ export async function report(since?: string, until?: string) {
   }
   const nowIso = new Date().toISOString()
   for (const [oid,ts] of Object.entries(pauseStart)) downByOrder[Number(oid)]=(downByOrder[Number(oid)]||0)+Math.max(0,(Date.now()-new Date(ts).getTime())/60000)
-  const downtime_minutes = Math.round(Object.values(downByOrder).reduce((a,b)=>a+b,0))
+  const worker_pause_minutes = Math.round(Object.values(downByOrder).reduce((a,b)=>a+b,0))
+  const downtime_minutes = null
   const downtime_top = Object.entries(downByOrder).map(([order_id,mins])=>({order_id:Number(order_id),minutes:Math.round(mins)})).sort((a,b)=>b.minutes-a.minutes).slice(0,5)
   const anomalies = {
     rework: (ev||[]).filter(e=>e.new_status==='rework').length,
     rejected: (ev||[]).filter(e=>e.new_status==='rejected').length,
     pauses,
   }
-  return {rows: rows||[], ratings, materials, downtime_minutes, downtime_top, anomalies, full_rating_formula: 'Полный балл: 30% качество мастера + 25% в срок + 20% без повторов/доработок + 15% объём + 10% без отказов.'}
+  return {rows: rows||[], ratings, materials, downtime_minutes, worker_pause_minutes, worker_pause_top:downtime_top, downtime_top:[], anomalies, full_rating_formula: 'Полный балл: 30% качество мастера + 25% в срок + 20% без повторов/доработок + 15% объём + 10% без отказов.'}
 }
 
 export async function pinLogin(email: string, pin: string) {
@@ -322,9 +341,11 @@ export async function equipmentHistory(equipmentId: number) {
   return {orders: (data||[]).map((o:AnyOrder)=>({id:o.id, created_at:o.created_at, status:o.status, fault_code:o.closure?.fault_code||null}))}
 }
 
-export function watch(onChange: ()=>void) {
+// onStatus gets true when the realtime channel is SUBSCRIBED and false on error, timeout or close,
+// so the caller can fall back to polling while the socket is down.
+export function watch(onChange: ()=>void, onStatus?: (live:boolean)=>void) {
   if (!supabase) return ()=>{}
-  const ch = supabase.channel('orders-live-'+crypto.randomUUID()).on('postgres_changes', {event:'*', schema:'public', table:'orders'}, ()=>onChange()).subscribe()
+  const ch = supabase.channel('orders-live-'+crypto.randomUUID()).on('postgres_changes', {event:'*', schema:'public', table:'orders'}, ()=>onChange()).subscribe((status)=>{ onStatus?.(status==='SUBSCRIBED') })
   return ()=>{ supabase!.removeChannel(ch) }
 }
 
@@ -367,7 +388,7 @@ export async function recordIntakePhoto(id: number, dataUrl: string): Promise<an
   const s = supabase!
   const myId = await uid()
   const {bytes, mime} = dataUrlToBytes(await sanitizeDataUrl(dataUrl))
-  if (bytes.length > 400000) throw new Error('Фото слишком большое')
+  if (bytes.length > 290000) throw new Error('Фото слишком большое')
   const hash = await sha256Hex(bytes)
   const ext = mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg'
   const path = `${myId}/${id}-intake-${Date.now()}.${ext}`
@@ -387,8 +408,9 @@ export async function startWork(id: number, version: number, texts: string[]) {
 export async function recordDeclarations(orderId: number, phase: string, texts: string[]): Promise<void> {
   const s = supabase!
   const myId = await uid()
-  const rows = texts.map(t => ({order_id: orderId, declared_by: myId, phase, text: t, confirmed: true}))
-  const {error} = await s.from('order_declarations').insert(rows)
+  const {data:order,error:orderError}=await s.from('orders').select('version').eq('id',orderId).single()
+  if(orderError||!order)throw new Error('Версия наряда недоступна; подтверждения не отправлены')
+  const {error} = await s.rpc('record_late_declarations',{p_order_id:orderId,p_phase:phase,p_texts:texts,p_version:order.version})
   if (error) throw new Error(translateError(error.message))
 }
 
@@ -454,3 +476,6 @@ export async function closedReportOrders(since:string,until:string){
  }
  throw Error('Отчёт слишком большой: экспорт остановлен, чтобы не выдавать неполные данные');
 }
+export async function manualMasterDecision(id:number,version:number,decision:'close'|'rework',score:number|null,reason:string,failure:string){const {data,error}=await supabase!.rpc('manual_master_decision',{p_id:id,p_version:version,p_decision:decision,p_score:score,p_reason:reason,p_failure:failure});if(error)throw Error(translateError(error.message));return data}
+
+export async function recordEquipmentState(equipmentId:number,state:string,reason:string){const{data,error}=await supabase!.rpc('record_equipment_state',{p_equipment:equipmentId,p_state:state,p_reason:reason});if(error)throw Error(error.message);return data}

@@ -40,7 +40,7 @@ test('good order: accepted with a high score and a full worker report', () => {
   assert.equal(r.verdict, 'accepted');
   assert.ok(r.score >= 4, `score ${r.score}`);
   assert.equal(r.needs_master_review, false);
-  assert.match(r.report_worker, /Оценка ИИ: [45]\/5/);
+  assert.match(r.report_worker, /Оценка по правилам проверки: [45]\/5/);
   assert.match(r.report_worker, /Время: 1 ч 25 мин при нормативе 2 ч/);
   assert.match(r.report_master, /Хронология:/);
   assert.match(r.report_master, /Простой оборудования/);
@@ -398,7 +398,7 @@ test('lexicalMatch: overlapping texts score higher than disjoint', () => {
 });
 
 test('scrubText removes emails, phones and staff names', () => {
-  const s = scrubText('Звонил Ахметов Ерлан с +7 701 123-45-67, почта ahmetov@example.kz', ['Ахметов Ерлан']);
+  const s = scrubText('Звонил Ахметов Ерлан с +1 202 555-0123, почта person@example.invalid', ['Ахметов Ерлан']);
   assert.ok(!/Ахметов|Ерлан/.test(s));
   assert.ok(!/701/.test(s));
   assert.ok(!/@example/.test(s));

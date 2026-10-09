@@ -16,13 +16,13 @@ insert into employees values('00000000-0000-4000-8000-000000000001','Масте�
 insert into sections values(1,'Тестовый участок');insert into equipment values(1,'Насос (Т)',1);
 insert into orders(id,title,kind,status,priority,deadline,created_at,closed_at,equipment_id,assignee_id,master_id,closure,ai_result) values(1,'Проверка (Т)','planned','closed','normal','2026-10-08T12:00Z','2026-10-08T10:00Z','2026-10-08T14:00Z',1,'00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000001','{}','{"human_score":5}');
 insert into order_events(order_id,new_status,created_at) values(1,'completed','2026-10-08T11:50Z');`);
-await c.query(readFileSync('/tmp/reliability-release-snapshot/check_deadlines-exact.sql','utf8'));
+await c.query(readFileSync('tests/fixtures/v2/check_deadlines-exact.sql','utf8'));
 await c.query('alter table notifications add column id bigint generated always as identity primary key');
 const before=(await c.query("select pg_get_functiondef('check_deadlines(timestamptz)'::regprocedure) d")).rows[0].d;
-for(const f of ['01-structure.sql','02-indexes-rls.sql','03-functions-trigger.sql']) await c.query(readFileSync('/downloads/tekton-three-chunks/'+f,'utf8'));
+for(const f of ['01-structure.sql','02-indexes-rls.sql','03-functions-trigger.sql']) await c.query(readFileSync('tests/fixtures/v2/'+f,'utf8'));
 await c.query("insert into orders(id,title,status,assignee_id,cancelled) values(9001,'(Т) Test','issued','00000000-0000-4000-8000-000000000002',false)");
 assert.equal((await c.query("select count(*) from notifications where kind='new_order'")).rows[0].count,'1');
-await c.query(readFileSync('/downloads/tekton-dispatch-v2/dispatch-v2-schema.sql','utf8'));
+await c.query(readFileSync('tests/fixtures/v2/dispatch-v2-schema.sql','utf8'));
 const args=[1,'00000000-0000-4000-8000-000000000002'];
 let t=(await c.query('select telegram_claim_v2($1,$2) t',args)).rows[0].t;assert.ok(t);
 assert.equal((await c.query('select telegram_claim_v2($1,$2) t',args)).rows[0].t,null);

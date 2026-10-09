@@ -1,0 +1,3 @@
+import{test}from'node:test';import assert from'node:assert/strict';import fs from'node:fs';
+test('system theme follows preference and preserves explicit choice',()=>{const s=fs.readFileSync('src/ui/prefs.tsx','utf8');assert.match(s,/prefers-color-scheme/);assert.match(s,/saved.theme:'light'/);assert.match(s,/addEventListener\('change'/);assert.match(s,/theme==='system'/)});
+test('theme selector offers system and worker dark tokens',()=>{assert.match(fs.readFileSync('src/pages/worker/Settings.tsx','utf8'),/setTheme\('system'\)/);assert.match(fs.readFileSync('src/styles/ptah-experience.css','utf8'),/theme-dark .worker-workspace/)});

@@ -17,3 +17,5 @@ test('missing archive unknown',()=>assert.equal(reviewArchiveDisplay({result:{}}
 
 import {reviewPresentation} from '../src/lib/ai-review-display.mjs';
 test('archive false positive verdict is provisional and score withheld',()=>{const x=reviewPresentation({verdict:'accepted',score:5},{archived:false});assert.equal(x.provisional,true);assert.match(x.verdictLabel,/Предварительный/);assert.doesNotMatch(x.scoreLabel,/5/)});
+
+test('null unreviewed result is safe and does not claim a model or score',()=>{const x=reviewDisplay(null);assert.equal(x.modelParticipated,false);assert.equal(x.label,'Источник проверки не указан');const p=reviewPresentation(null,null);assert.equal(p.provisional,true);assert.equal(p.scoreLabel,'Ожидает подтверждения архива');assert.doesNotThrow(()=>reviewPresentation(null,{archived:true}));});

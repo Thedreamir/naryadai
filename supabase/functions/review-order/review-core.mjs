@@ -10,6 +10,7 @@
 // score  ∈ 1..5, or null when confidence is low (master must decide, §6.3 п.4).
 
 import { REVIEW_CONFIG } from './review-config.mjs';
+import {checkConsistency} from './evidence-lane/text-consistency.mjs';
 
 export const VERDICTS = ['accepted', 'accepted_with_remarks', 'rework', 'needs_master_review'];
 
@@ -249,16 +250,16 @@ export function reviewOrder(input, config = REVIEW_CONFIG) {
     } else if (s < cfg.semantic.remarkBelow) {
       semantic.status = 'warn';
       remarks.push('work_match_weak');
-      reasons.push('Работы лишь частично соответствуют описанию проблемы');
+      reasons.push(c<cfg.semantic.minConfidence?'Предварительная подсказка модели: соответствие неясно, проверьте лично; это не подтверждённый дефект':'Работы лишь частично соответствуют описанию проблемы');
     } else {
-      good.push('работы соответствуют проблеме');
+      if(c>=cfg.semantic.minConfidence)good.push('работы соответствуют проблеме');
     }
     if (c < cfg.semantic.lowConfidence) {
       masterFlags.push('model_low_confidence');
       reasons.push('Модель не уверена в оценке соответствия: нужна проверка мастером');
     }
-    if (workMatch.rationale) reasons.push(`Модель: ${String(workMatch.rationale).slice(0, 200)}`);
-    for (const i of Array.isArray(workMatch.issues) ? workMatch.issues : []) reasons.push(String(i).slice(0, 200));
+    if (workMatch.rationale) reasons.push(`${c<cfg.semantic.minConfidence?'Непроверенная подсказка модели':'Модель'}: ${String(workMatch.rationale).slice(0, 200)}`);
+    for (const i of Array.isArray(workMatch.issues) ? workMatch.issues : []) reasons.push((c<cfg.semantic.minConfidence?'Вопрос для проверки, не факт: ':'')+String(i).slice(0, 200));
   } else {
     if (workMatch) reasons.push('Языковая модель вернула некорректный ответ: использованы только правила');
     const fb = lexicalMatch(title, works);
@@ -596,6 +597,9 @@ export function reviewOrder(input, config = REVIEW_CONFIG) {
   if (verdict === 'accepted' && !good.length) good.push('все обязательные проверки пройдены');
 
   // --- reports (§6.4) -----------------------------------------------------------
+  const consistency=checkConsistency({problem:order.title,work:closure.works,materials:materialList.map(m=>m.name)});
+  const guardFlags=consistency.flags;
+  if(guardFlags.includes('prompt_injection_attempt')){verdict='needs_master_review';score=null;reasons.push('Текст содержит попытку изменить правила проверки. Нужна проверка мастера.')}
   const verdictText = {
     accepted: 'принято',
     accepted_with_remarks: 'принято с замечаниями',
@@ -605,16 +609,16 @@ export function reviewOrder(input, config = REVIEW_CONFIG) {
   const improve = reasons.filter(r => !r.startsWith('Модель:'));
   const timeLine = normMin && activeMin != null
     ? `Время: ${fmtMin(activeMin)} при нормативе ${fmtMin(normMin)}`
-    : 'Время: норматив для этого типа работ не задан';
+    : normMin ? 'Время: подтверждённое время работы не задано' : 'Время: норматив для этого типа работ не задан';
   const report_worker = [
-    score != null ? `Оценка ИИ: ${score}/5` : 'Оценка ИИ: будет выставлена после проверки мастером',
+    score != null ? `Оценка по правилам проверки: ${score}/5` : 'Оценка по правилам проверки: будет выставлена после проверки мастером',
     `Вердикт: ${verdictText}`,
     good.length ? `Что хорошо: ${good.join('; ')}` : null,
     improve.length ? `Что улучшить: ${improve.join('; ')}` : null,
     timeLine,
   ].filter(Boolean).join('\n');
   const report_master = [
-    `Вердикт ИИ: ${verdictText}${score != null ? `, оценка ${score}/5` : ''} (уверенность ${Math.round(confidence * 100)}%)`,
+    `Вердикт проверки: ${verdictText}${score != null ? `, оценка ${score}/5` : ''} (основание: ${workMatch ? 'оценка модели не калибрована' : 'правила; соответствие проверяет мастер'}; фото: ${photoLayer ? 'есть отдельный слой проверки' : 'визуально не проверено'})`,
     `Основания: ${reasons.length ? reasons.join('; ') : 'все проверки пройдены'}`,
     materialList.length
       ? `Материалы: ${materialFindings.map(f => `${f.name} ${f.qty}${f.status === 'ok' ? '' : f.status === 'unknown' ? ' (нет нормы)' : f.status === 'warn' ? ' (выше нормы)' : ' (завышение)'}`).join(', ')}`
@@ -633,14 +637,14 @@ export function reviewOrder(input, config = REVIEW_CONFIG) {
   if (semantic.source === 'rules_fallback') limitations.push('Языковая модель не участвовала: только правила');
 
   return {
-    layer1: { completeness, materials, time, photo },
+    layer1: { completeness, materials, time, photo, consistency },
     layer2: { work_match: workMatch ?? null, photo: photoLayer2 },
     verdict,
     score,
     reasons,
     confidence,
     needs_master_review: verdict === 'needs_master_review',
-    rule_flags: [...fails, ...masterFlags, ...remarks],
+    rule_flags: [...fails, ...masterFlags, ...remarks, ...guardFlags],
     report_worker,
     report_master,
     limitations,

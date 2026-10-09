@@ -333,25 +333,7 @@ begin
 end $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.set_employee_pin(p_employee uuid, p_pin text)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'extensions'
-AS $function$
-declare caller_role text;
-begin
-  caller_role:=current_actor_role();
-  if coalesce(caller_role,'') not in ('master','leader','admin') then
-    raise exception 'pin management requires master, leader or admin role';
-  end if;
-  if p_pin !~ '^\d{4,6}$' then
-    raise exception 'pin must be 4-6 digits';
-  end if;
-  update public.employees set pin_hash = crypt(p_pin, gen_salt('bf')) where id = p_employee;
-end $function$
-;
-
+-- PIN scope/audit definition finalized in mandatory migration 071.
 CREATE OR REPLACE FUNCTION public.pin_unlock(employee_email text)
  RETURNS jsonb
  LANGUAGE plpgsql

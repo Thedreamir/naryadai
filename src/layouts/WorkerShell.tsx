@@ -1,7 +1,11 @@
+import {useEffect} from "react"
+import * as H from "../lib/data"
+import {soundEnabled,playForegroundTone} from '../lib/foreground-sound.mjs'
+import '../styles/ptah-experience.css'
 import DemoTour from '../components/DemoTour'
 import {useLocale} from '../lib/locale'
 import type {ReactNode} from 'react'
-import {NavLink, useLocation} from 'react-router-dom'
+import {NavLink, Link, useLocation} from 'react-router-dom'
 import {motion} from 'framer-motion'
 import PhIcon from '../components/PhIcon'
 import RepairTabIcon from '../components/RepairTabIcon'
@@ -17,9 +21,10 @@ const tabs:{to:string;icon:PhName;label:string}[] = [
   {to:'/profile', icon:'userCircle', label:'Профиль'},
 ]
 export default function WorkerShell({actor, children}:{actor:Actor, children:ReactNode}){
+  useEffect(()=>{const seen=new Set();return H.watchNotifications((n:any)=>{if(seen.has(n.id))return;seen.add(n.id);if(seen.size>100)seen.delete(seen.values().next().value);if(soundEnabled()&&document.visibilityState==='visible')void H.state().then(st=>{const order=(st.orders||[]).find((o:any)=>String(o.id)===String(n.order_id));if(document.visibilityState==='visible'&&soundEnabled()&&(!n.recipient_id||n.recipient_id===actor.id))return playForegroundTone({emergency:order?.priority==='emergency'})}).catch(()=>{})})},[actor.id]);
   const {t}=useLocale();const loc=useLocation(); const {glove}=usePrefs()
-  return <div className="worker-workspace h-dvh flex flex-col" style={{background:'var(--tk-bg)',color:'var(--tk-ink)'}}>
-    <header className="worker-topbar shrink-0 z-20 px-3.5 py-2.5 flex items-center justify-between" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
+  return <div className={"worker-workspace h-dvh flex flex-col"+(new URLSearchParams(location.search).get('layout')==='air'?' variant-air':'')} style={{background:'var(--tk-bg)',color:'var(--tk-ink)'}}>
+    {loc.pathname!=='/assistant'&&<header className="worker-topbar shrink-0 z-20 px-3.5 py-2.5 flex items-center justify-between" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
       <div className="flex items-center gap-2.5 min-w-0">
         <img src="/tekton-symbol.svg" alt="" className="w-10 h-10 shrink-0"/>
         <div>
@@ -30,8 +35,8 @@ export default function WorkerShell({actor, children}:{actor:Actor, children:Rea
           
         </div>
       </div>
-      <DemoTour audience="worker"/>
-    </header>
+      <details className="worker-menu"><summary aria-label="Меню">⋯</summary><div><DemoTour audience="worker"/><Link to="/settings">Настройки</Link><Link to="/profile">Профиль</Link></div></details>
+    </header>}
     <main className={'flex-1 overflow-y-auto w-full max-w-md mx-auto p-3 pb-16 '+(loc.pathname==='/assistant'?' worker-chat-main':'')+''}><motion.div key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.18}}>{children}</motion.div></main>
     <nav className="worker-floating-nav shrink-0" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)',paddingBottom:'env(safe-area-inset-bottom)'}}>
       <div className="max-w-md mx-auto grid grid-cols-5 h-20">

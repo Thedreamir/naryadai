@@ -12,7 +12,7 @@ export default function PushButton(){
     if(typeof Notification==='undefined'||!('serviceWorker' in navigator)||!('PushManager' in window)){setSt('unsupported');return}
     if(Notification.permission==='denied'){setSt('denied');return}
     // granted or default: check for a live subscription so a failed past attempt is retryable
-    navigator.serviceWorker.ready.then(r=>r.pushManager.getSubscription()).then(s=>setSt(s?'subscribed':'ready')).catch(()=>setSt('ready'))
+    Promise.race([navigator.serviceWorker.ready,new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('Service worker недоступен')),5000))]).then(r=>r.pushManager.getSubscription()).then(async s=>{if(!s){setSt('ready');return}try{await H.savePushSubscription(s.toJSON() as {endpoint:string,keys:{p256dh:string,auth:string}});setSt('subscribed')}catch{await s.unsubscribe();setSt('ready')}}).catch(()=>setSt('ready'))
   },[])
   const enable=async()=>{setBusy(true);setErrMsg('')
     try{
@@ -21,7 +21,7 @@ export default function PushButton(){
       if(p!=='granted'){setSt('ready');return}
       const vapid=import.meta.env.VITE_VAPID_PUBLIC as string|undefined
       if(!vapid)throw new Error('нет VAPID-ключа в сборке')
-      const reg=await navigator.serviceWorker.ready
+      const reg=await Promise.race([navigator.serviceWorker.ready,new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('Service worker не готов; обновите приложение')),5000))])
       let sub
       try{sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(vapid)})}
       catch(e){throw new Error('браузер не выдал push-подписку: '+(e as Error).name)}

@@ -23,7 +23,7 @@ declare secret text:=current_setting('app.push_secret',true);
 begin
   if secret is null or secret='' then return NEW; end if;
   perform net.http_post(
-    url:='https://pyqkstbcdxvpmtksziod.supabase.co/functions/v1/send-push',
+    url:=current_setting('app.push_url',true),
     headers:=jsonb_build_object('Content-Type','application/json','X-Push-Secret',secret),
     body:=jsonb_build_object('order_id',NEW.id,'kind',TG_ARGV[0]));
   return NEW;

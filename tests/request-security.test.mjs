@@ -1,0 +1,3 @@
+import{test}from'node:test';import assert from'node:assert/strict';import{constantTimeEqual,readBoundedBody}from'../supabase/functions/_shared/request-security.mjs';
+test('secret digest comparison',async()=>{assert.equal(await constantTimeEqual('abc','abc'),true);assert.equal(await constantTimeEqual('abc','abcd'),false);assert.equal(await constantTimeEqual('','secret'),false)});
+test('bounded byte stream rejects oversize',async()=>{assert.equal(await readBoundedBody(new Request('https://test.invalid',{method:'POST',body:'1234'}),4),'1234');await assert.rejects(readBoundedBody(new Request('https://test.invalid',{method:'POST',body:'12345'}),4),/too large/)});

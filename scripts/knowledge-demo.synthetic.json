@@ -1,5 +1,0 @@
-[
- {"id":1,"version":2,"status":"approved","synthetic":true,"title":"Синтетика: подшипник конвейера","body":"Подшипник конвейера: осмотреть люфт и следы износа по утверждённой процедуре.","reviewed_by":"synthetic-master"},
- {"id":2,"version":2,"status":"approved","synthetic":true,"title":"Синтетика: электрический кабель","body":"Электрический кабель: проверить изоляцию по утверждённой инструкции.","reviewed_by":"synthetic-master"},
- {"id":3,"version":1,"status":"draft","synthetic":true,"title":"Подшипник секретный черновик","body":"Подшипник конвейера люфт износ","reviewed_by":null}
-]

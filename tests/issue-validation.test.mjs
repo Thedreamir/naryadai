@@ -1,0 +1,5 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {issueValidation} from '../src/lib/issue-validation.mjs';import {workerLoad} from '../src/lib/dispatch-hints.mjs';
+const input={title:'Течь насоса',equipmentId:1,assigneeId:'w',hours:2,kind:'unplanned',priority:'emergency'},equipment=[{id:1}],workers=[{id:'w',role:'worker',is_active:true}];
+test('valid issue and edited voice draft allowed, no implicit assignment',()=>assert.equal(issueValidation(input,equipment,workers),''));
+test('reject blank/title, stale targets, disabled actor and impossible deadlines',()=>{for(const change of [{title:' '},{equipmentId:2},{assigneeId:'bad'},{hours:NaN},{hours:0},{hours:Infinity},{hours:721},{kind:'oops'},{priority:'oops'}])assert.ok(issueValidation({...input,...change},equipment,workers));assert.ok(issueValidation(input,equipment,[{...workers[0],is_active:false}]))});
+test('dispatch hint shows actual running order before paused/rework',()=>assert.equal(workerLoad([{id:1,assignee_id:'w',status:'paused'},{id:2,assignee_id:'w',status:'in_progress'}],'w').active.id,2));

@@ -1,0 +1,28 @@
+import assert from "node:assert/strict";
+import { checkPhoto, checkPair, hamming64, dhashFromGray9x8 } from "../supabase/functions/review-order/photo-checks.mjs";
+const H = (c) => c.repeat(64), D = (c) => c.repeat(16);
+const closed = "2026-10-08T10:00:00Z";
+const p = (o = {}) => ({ id: "p1", sha256: H("a"), dhash: D("0"), takenAt: "2026-10-08T09:55:00Z", uploadedAt: "2026-10-08T09:56:00Z", ...o });
+const t = [];
+const T = (n, f) => t.push([n, f]);
+T("missing", () => assert.equal(checkPhoto(null, { closedAt: closed }).status, "missing"));
+T("ok", () => assert.equal(checkPhoto(p(), { closedAt: closed }).status, "ok"));
+T("stale", () => assert.ok(checkPhoto(p({ takenAt: "2026-10-04T09:55:00Z" }), { closedAt: closed }).flags.includes("stale")));
+T("future clock", () => assert.ok(checkPhoto(p({ takenAt: "2026-10-08T15:00:00Z" }), { closedAt: closed }).flags.includes("future_time")));
+T("no exif -> warn, uses upload", () => { const r = checkPhoto(p({ takenAt: undefined }), { closedAt: closed }); assert.equal(r.status, "warn"); assert.ok(r.flags.includes("no_exif")); });
+T("no exif and old upload -> review", () => assert.equal(checkPhoto(p({ takenAt: undefined, uploadedAt: "2026-10-07T09:00:00Z" }), { closedAt: closed }).status, "review"));
+T("exact dup other order", () => assert.ok(checkPhoto(p(), { closedAt: closed, history: [{ id: "x9", sha256: H("a"), dhash: D("f") }] }).flags.includes("exact_duplicate")));
+T("near dup", () => assert.ok(checkPhoto(p(), { closedAt: closed, history: [{ id: "x9", sha256: H("b"), dhash: "0000000000000003" }] }).flags.includes("near_duplicate")));
+T("different photo not dup", () => assert.equal(checkPhoto(p(), { closedAt: closed, history: [{ id: "x9", sha256: H("b"), dhash: D("f") }] }).status, "ok"));
+T("self in history ignored", () => assert.equal(checkPhoto(p(), { closedAt: closed, history: [p()] }).status, "ok"));
+T("bad hash never throws", () => assert.equal(checkPhoto(p({ sha256: "zz" }), { closedAt: closed }).status, "review"));
+T("bad time", () => assert.equal(checkPhoto(p({ uploadedAt: "nope" }), { closedAt: closed }).status, "review"));
+T("hamming", () => assert.equal(hamming64(D("0"), D("f")), 64));
+T("dhash gradient", () => { const g = []; for (let y = 0; y < 8; y++) for (let x = 0; x < 9; x++) g.push(x * 10); assert.equal(dhashFromGray9x8(g), D("f")); });
+T("pair: before required and missing", () => { const r = checkPair({ before: null, after: p(), beforeRequired: true, closedAt: closed }); assert.equal(r.before, "missing"); assert.equal(r.status, "review"); });
+T("pair: no before needed", () => { const r = checkPair({ before: null, after: p(), closedAt: closed }); assert.equal(r.before, "none"); assert.equal(r.status, "ok"); });
+T("pair: after == before", () => assert.ok(checkPair({ before: p({ id: "b" }), after: p(), closedAt: closed }).flags.includes("same_as_before")));
+T("pair: after missing", () => assert.equal(checkPair({ before: p({ id: "b" }), after: null, closedAt: closed }).status, "missing"));
+T("pair: good", () => assert.equal(checkPair({ before: p({ id: "b", sha256: H("c"), dhash: D("f"), takenAt: "2026-10-08T07:00:00Z", uploadedAt: "2026-10-08T07:01:00Z" }), after: p(), closedAt: closed }).status, "ok"));
+let fail = 0; for (const [n, f] of t) { try { f(); } catch (e) { fail++; console.log("FAIL", n, e.message); } }
+console.log(`${t.length - fail}/${t.length} passed`); process.exit(fail ? 1 : 0);

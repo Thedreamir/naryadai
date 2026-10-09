@@ -1,0 +1,3 @@
+import{test}from'node:test';import assert from'node:assert/strict';import{compareSyntheticGemini}from'../supabase/functions/review-order/gemini-synthetic.mjs';
+test('Gemini requires explicit synthetic marker and key, no accidental real-data call',async()=>{let n=0;const f=async()=>{n++};assert.equal(await compareSyntheticGemini({},{apiKey:'test',fetchImpl:f}),null);assert.equal(await compareSyntheticGemini({},{synthetic:true,fetchImpl:f}),null);assert.equal(n,0)});
+test('quota stops without retry or paid model fallback',async()=>{let n=0;await assert.rejects(compareSyntheticGemini({problem:'Synthetic',works:'Synthetic'},{synthetic:true,apiKey:'test',fetchImpl:async()=>{n++;return{ok:false,status:429}}}),/HTTP 429/);assert.equal(n,1)});

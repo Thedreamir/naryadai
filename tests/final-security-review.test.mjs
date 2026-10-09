@@ -1,0 +1,7 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';const read=p=>fs.readFileSync(p,'utf8');
+test('hosted final safe ACL and active storage sequence',()=>{const s=read('supabase/hosted.sql');assert.match(s,/064_employee_safe_columns/);assert.match(s,/068_active_metadata_storage/);assert.match(s,/revoke select\(pin_hash\)/);assert.doesNotMatch(s,/grant select on[^;]*employees[,;]/)});
+test('scoped PIN setter and append-only audit',()=>{const s=read('supabase/migrations/071_pin_security.sql');assert.match(s,/target_role <> 'worker'/);assert.match(s,/pin_management_audit/);assert.match(s,/caller_role not in \('master','admin'\)/)});
+test('PIN gate worker only, per-account bucket, exponential backoff',()=>{const s=read('supabase/migrations/071_pin_security.sql');assert.match(s,/role='worker'/);assert.ok(s.indexOf('select * into e from employees')<s.indexOf('insert into pin_rate_buckets'));assert.match(s,/power\(2/);assert.match(s,/p_bucket\|\|'\|'\|\|e.id/)});
+test('edge 6 digit, trust gate and final XFF hop',()=>{const s=read('supabase/functions/pin-login/index.ts');assert.match(s,/\\d\{6\}/);assert.match(s,/PIN_TRUSTED_INGRESS/);assert.match(s,/\.at\(-1\)/)});
+test('push safe compare and bounded payload',()=>{const s=read('supabase/functions/send-push/index.ts');assert.match(s,/constantTimeEqual/);assert.match(s,/readBoundedBody/);assert.match(s,/slice\(0,160\)/)});
+test('no linked project file',()=>assert.equal(fs.existsSync('supabase/.temp/linked-project.json'),false));

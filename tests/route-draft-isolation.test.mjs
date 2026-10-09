@@ -1,0 +1,1 @@
+import{test}from'node:test';import assert from'node:assert/strict';import fs from'node:fs';test('worker detail remount boundary includes actor and order',()=>{const s=fs.readFileSync('src/pages/worker/OrderDetail.tsx','utf8');assert.ok(s.includes("key={actor.id+':'+id}"));assert.match(s,/loadGeneration/)});

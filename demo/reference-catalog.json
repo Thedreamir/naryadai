@@ -1,0 +1,1154 @@
+{
+  "metadata": {
+    "synthetic": true,
+    "dataset_version": "case-derived-synthetic-v1",
+    "source": {
+      "source": "user-supplied case PDF, paraphrased requirements only",
+      "source_sha256": "43c660afb3ec272a417cc369735a4797b27676c554a2a630e1f38aa6060af751",
+      "section": "5.4, 8",
+      "dataset_version": "case-derived-synthetic-v1",
+      "scope": "local_fixture_only",
+      "approval": "synthetic fixture review, not a plant approval"
+    },
+    "warning": "Учебный набор. Не реальные сотрудники, оборудование, склад или нормы предприятия."
+  },
+  "sections": [
+    {
+      "id": 1,
+      "name": "Дробление",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 2,
+      "name": "Обогащение",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 3,
+      "name": "Транспорт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 4,
+      "name": "Энергетика",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    }
+  ],
+  "equipment": [
+    {
+      "id": 1,
+      "name": "Дробилка КМД-1750",
+      "section_id": 1,
+      "section": "Дробление",
+      "inventory_number": "TRAIN-001",
+      "type": "Дробилка",
+      "criticality": "high",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 2,
+      "name": "Дробилка Д-1",
+      "section_id": 1,
+      "section": "Дробление",
+      "inventory_number": "TRAIN-002",
+      "type": "Дробилка",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 3,
+      "name": "Грохот Г-1",
+      "section_id": 1,
+      "section": "Дробление",
+      "inventory_number": "TRAIN-003",
+      "type": "Грохот",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 4,
+      "name": "Грохот Г-4",
+      "section_id": 1,
+      "section": "Дробление",
+      "inventory_number": "TRAIN-004",
+      "type": "Грохот",
+      "criticality": "high",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 5,
+      "name": "Питатель П-5",
+      "section_id": 1,
+      "section": "Дробление",
+      "inventory_number": "TRAIN-005",
+      "type": "Питатель",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 6,
+      "name": "Питатель П-2",
+      "section_id": 1,
+      "section": "Дробление",
+      "inventory_number": "TRAIN-006",
+      "type": "Питатель",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 7,
+      "name": "Мельница М-2",
+      "section_id": 2,
+      "section": "Обогащение",
+      "inventory_number": "TRAIN-007",
+      "type": "Мельница",
+      "criticality": "high",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 8,
+      "name": "Насос Н-12",
+      "section_id": 2,
+      "section": "Обогащение",
+      "inventory_number": "TRAIN-008",
+      "type": "Насос",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 9,
+      "name": "Насос Н-2",
+      "section_id": 2,
+      "section": "Обогащение",
+      "inventory_number": "TRAIN-009",
+      "type": "Насос",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 10,
+      "name": "Насос Н-6",
+      "section_id": 2,
+      "section": "Обогащение",
+      "inventory_number": "TRAIN-010",
+      "type": "Насос",
+      "criticality": "high",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 11,
+      "name": "Сепаратор С-3",
+      "section_id": 2,
+      "section": "Обогащение",
+      "inventory_number": "TRAIN-011",
+      "type": "Сепаратор",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 12,
+      "name": "Смеситель СМ-1",
+      "section_id": 2,
+      "section": "Обогащение",
+      "inventory_number": "TRAIN-012",
+      "type": "Смеситель",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 13,
+      "name": "Конвейер К-3",
+      "section_id": 3,
+      "section": "Транспорт",
+      "inventory_number": "TRAIN-013",
+      "type": "Конвейер",
+      "criticality": "high",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 14,
+      "name": "Конвейер К-4",
+      "section_id": 3,
+      "section": "Транспорт",
+      "inventory_number": "TRAIN-014",
+      "type": "Конвейер",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 15,
+      "name": "Конвейер К-5",
+      "section_id": 3,
+      "section": "Транспорт",
+      "inventory_number": "TRAIN-015",
+      "type": "Конвейер",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 16,
+      "name": "Конвейер К-7",
+      "section_id": 3,
+      "section": "Транспорт",
+      "inventory_number": "TRAIN-016",
+      "type": "Конвейер",
+      "criticality": "high",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 17,
+      "name": "Элеватор Э-2",
+      "section_id": 3,
+      "section": "Транспорт",
+      "inventory_number": "TRAIN-017",
+      "type": "Элеватор",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 18,
+      "name": "Транспортер Т-1",
+      "section_id": 3,
+      "section": "Транспорт",
+      "inventory_number": "TRAIN-018",
+      "type": "Транспортер",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 19,
+      "name": "Транспортер Т-6",
+      "section_id": 3,
+      "section": "Транспорт",
+      "inventory_number": "TRAIN-019",
+      "type": "Транспортер",
+      "criticality": "high",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 20,
+      "name": "Вентилятор В-3",
+      "section_id": 4,
+      "section": "Энергетика",
+      "inventory_number": "TRAIN-020",
+      "type": "Вентилятор",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 21,
+      "name": "Компрессор КП-1",
+      "section_id": 4,
+      "section": "Энергетика",
+      "inventory_number": "TRAIN-021",
+      "type": "Компрессор",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 22,
+      "name": "Компрессор КП-2",
+      "section_id": 4,
+      "section": "Энергетика",
+      "inventory_number": "TRAIN-022",
+      "type": "Компрессор",
+      "criticality": "high",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 23,
+      "name": "Шкаф Ш-7",
+      "section_id": 4,
+      "section": "Энергетика",
+      "inventory_number": "TRAIN-023",
+      "type": "Шкаф",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 24,
+      "name": "Двигатель Д-8",
+      "section_id": 4,
+      "section": "Энергетика",
+      "inventory_number": "TRAIN-024",
+      "type": "Двигатель",
+      "criticality": "normal",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 25,
+      "name": "Редуктор Р-4",
+      "section_id": 4,
+      "section": "Энергетика",
+      "inventory_number": "TRAIN-025",
+      "type": "Редуктор",
+      "criticality": "high",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    }
+  ],
+  "brigades": [
+    {
+      "id": 1,
+      "name": "Бригада 1",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 2,
+      "name": "Бригада 2",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 3,
+      "name": "Бригада 3",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    }
+  ],
+  "employees": [
+    {
+      "id": "synthetic-master-1",
+      "name": "Омаров Данияр",
+      "role": "master",
+      "specialty": "Мастер смены",
+      "grade": 6,
+      "brigade_id": null,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-master-2",
+      "name": "Касенов Талгат",
+      "role": "master",
+      "specialty": "Мастер смены",
+      "grade": 6,
+      "brigade_id": null,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-1",
+      "name": "Ахметов Ержан",
+      "role": "worker",
+      "specialty": "Слесарь",
+      "grade": 5,
+      "brigade_id": 1,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-2",
+      "name": "Бериков Сейтек",
+      "role": "worker",
+      "specialty": "Электрик",
+      "grade": 6,
+      "brigade_id": 1,
+      "shift": "Учебная смена Б",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-3",
+      "name": "Смаилов Даурен",
+      "role": "worker",
+      "specialty": "Сварщик",
+      "grade": 7,
+      "brigade_id": 1,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-4",
+      "name": "Кусаинов Ерлан",
+      "role": "worker",
+      "specialty": "Слесарь",
+      "grade": 5,
+      "brigade_id": 1,
+      "shift": "Учебная смена Б",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-5",
+      "name": "Оспанов Марат",
+      "role": "worker",
+      "specialty": "Электрик",
+      "grade": 6,
+      "brigade_id": 1,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-6",
+      "name": "Сейтов Нуржан",
+      "role": "worker",
+      "specialty": "Сварщик",
+      "grade": 7,
+      "brigade_id": 2,
+      "shift": "Учебная смена Б",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-7",
+      "name": "Жумабеков Айбек",
+      "role": "worker",
+      "specialty": "Слесарь",
+      "grade": 5,
+      "brigade_id": 2,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-8",
+      "name": "Тлеубеков Нурлан",
+      "role": "worker",
+      "specialty": "Электрик",
+      "grade": 6,
+      "brigade_id": 2,
+      "shift": "Учебная смена Б",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-9",
+      "name": "Абдрахманов Серик",
+      "role": "worker",
+      "specialty": "Сварщик",
+      "grade": 7,
+      "brigade_id": 2,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-10",
+      "name": "Ермеков Жандос",
+      "role": "worker",
+      "specialty": "Слесарь",
+      "grade": 5,
+      "brigade_id": 2,
+      "shift": "Учебная смена Б",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-11",
+      "name": "Нурпеисов Азамат",
+      "role": "worker",
+      "specialty": "Электрик",
+      "grade": 6,
+      "brigade_id": 2,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-12",
+      "name": "Галиев Тимур",
+      "role": "worker",
+      "specialty": "Сварщик",
+      "grade": 7,
+      "brigade_id": 3,
+      "shift": "Учебная смена Б",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-13",
+      "name": "Ибраев Руслан",
+      "role": "worker",
+      "specialty": "Слесарь",
+      "grade": 5,
+      "brigade_id": 3,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-14",
+      "name": "Калиев Арман",
+      "role": "worker",
+      "specialty": "Электрик",
+      "grade": 6,
+      "brigade_id": 3,
+      "shift": "Учебная смена Б",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-15",
+      "name": "Нургожин Болат",
+      "role": "worker",
+      "specialty": "Сварщик",
+      "grade": 7,
+      "brigade_id": 3,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-16",
+      "name": "Сарсенов Кайрат",
+      "role": "worker",
+      "specialty": "Слесарь",
+      "grade": 5,
+      "brigade_id": 3,
+      "shift": "Учебная смена Б",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": "synthetic-worker-17",
+      "name": "Дюсенов Алмас",
+      "role": "worker",
+      "specialty": "Электрик",
+      "grade": 6,
+      "brigade_id": 3,
+      "shift": "Учебная смена А",
+      "current_status": "free",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    }
+  ],
+  "fault_codes": [
+    {
+      "code": "М-01",
+      "name": "Износ подшипника",
+      "category": "Механические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "М-02",
+      "name": "Повышенная вибрация привода",
+      "category": "Механические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "М-03",
+      "name": "Ослабление крепежа",
+      "category": "Механические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "М-04",
+      "name": "Износ ремня или цепи",
+      "category": "Механические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "М-05",
+      "name": "Недостаток смазки",
+      "category": "Механические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "Э-01",
+      "name": "Обрыв или повреждение кабеля",
+      "category": "Электрические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "Э-02",
+      "name": "Отказ датчика",
+      "category": "Электрические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "Э-03",
+      "name": "Перегорел предохранитель",
+      "category": "Электрические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "Э-04",
+      "name": "Перегрев двигателя",
+      "category": "Электрические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "Г-01",
+      "name": "Течь сальника",
+      "category": "Гидравлика",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "Г-02",
+      "name": "Износ уплотнения",
+      "category": "Гидравлика",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "Г-03",
+      "name": "Засорён фильтр",
+      "category": "Гидравлика",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "Г-04",
+      "name": "Течь масла в стыке",
+      "category": "Гидравлика",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "П-01",
+      "name": "Утечка воздуха",
+      "category": "Пневматика",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "П-02",
+      "name": "Износ манжеты цилиндра",
+      "category": "Пневматика",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "С-01",
+      "name": "Плановая смазка",
+      "category": "Смазка и плановое обслуживание",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "С-02",
+      "name": "Замена масла",
+      "category": "Смазка и плановое обслуживание",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "С-03",
+      "name": "Плановый осмотр",
+      "category": "Смазка и плановое обслуживание",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "М-06",
+      "name": "Износ вала",
+      "category": "Механические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "code": "Э-05",
+      "name": "Ослабление клемм",
+      "category": "Электрические",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    }
+  ],
+  "materials": [
+    {
+      "id": 1,
+      "name": "Подшипник 6314",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 2,
+      "name": "Смазка Литол-24",
+      "unit": "кг",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 3,
+      "name": "Болт М16",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 4,
+      "name": "Болт М20",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 5,
+      "name": "Гайка М20",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 6,
+      "name": "Ремень клиновой",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 7,
+      "name": "Шпонка",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 8,
+      "name": "Кабель ВВГ 3x2.5",
+      "unit": "м",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 9,
+      "name": "Датчик температуры",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 10,
+      "name": "Предохранитель 16А",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 11,
+      "name": "Провод ПВ-3",
+      "unit": "м",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 12,
+      "name": "Сальник 45x65",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 13,
+      "name": "Масло гидравлическое",
+      "unit": "л",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 14,
+      "name": "Уплотнение торцевое",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 15,
+      "name": "Фильтр масляный",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 16,
+      "name": "Прокладка паронитовая",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 17,
+      "name": "Манжета 50",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 18,
+      "name": "Масло индустриальное",
+      "unit": "л",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 19,
+      "name": "Ветошь",
+      "unit": "кг",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 20,
+      "name": "Шайба М16",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 21,
+      "name": "Шайба М20",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 22,
+      "name": "Гайка М16",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 23,
+      "name": "Цепь приводная",
+      "unit": "м",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 24,
+      "name": "Звездочка приводная",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 25,
+      "name": "Муфта соединительная",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 26,
+      "name": "Вал приводной",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 27,
+      "name": "Электрод сварочный",
+      "unit": "кг",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 28,
+      "name": "Контактор",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 29,
+      "name": "Автомат защиты",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 30,
+      "name": "Лампа сигнальная",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 31,
+      "name": "Клемма соединительная",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 32,
+      "name": "Двигатель запасной",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 33,
+      "name": "Шланг гидравлический",
+      "unit": "м",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 34,
+      "name": "Рукав высокого давления",
+      "unit": "м",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 35,
+      "name": "Клапан гидравлический",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 36,
+      "name": "Фильтр воздушный",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 37,
+      "name": "Шланг пневматический",
+      "unit": "м",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 38,
+      "name": "Клапан пневматический",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 39,
+      "name": "Салфетка обтирочная",
+      "unit": "шт",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "id": 40,
+      "name": "Обезжириватель",
+      "unit": "л",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    }
+  ],
+  "work_norms": [
+    {
+      "fault_code": "М-01",
+      "work_type": "Замена подшипника",
+      "norm_minutes": 120,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "М-02",
+      "work_type": "Устранение вибрации привода",
+      "norm_minutes": 150,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "М-03",
+      "work_type": "Подтяжка и замена крепежа",
+      "norm_minutes": 60,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "М-04",
+      "work_type": "Замена приводного ремня",
+      "norm_minutes": 45,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "М-05",
+      "work_type": "Смазка узлов",
+      "norm_minutes": 30,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "М-06",
+      "work_type": "Ремонт вала",
+      "norm_minutes": 240,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "Э-01",
+      "work_type": "Замена повреждённого кабеля",
+      "norm_minutes": 60,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "Э-02",
+      "work_type": "Замена датчика",
+      "norm_minutes": 35,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "Э-03",
+      "work_type": "Замена предохранителя",
+      "norm_minutes": 25,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "Э-04",
+      "work_type": "Устранение перегрева двигателя",
+      "norm_minutes": 120,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "Э-05",
+      "work_type": "Подтяжка клемм",
+      "norm_minutes": 40,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "Г-01",
+      "work_type": "Замена сальника",
+      "norm_minutes": 90,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "Г-02",
+      "work_type": "Замена уплотнения",
+      "norm_minutes": 100,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "Г-03",
+      "work_type": "Замена фильтра",
+      "norm_minutes": 30,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "Г-04",
+      "work_type": "Устранение течи масла",
+      "norm_minutes": 60,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "П-01",
+      "work_type": "Устранение утечки воздуха",
+      "norm_minutes": 40,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "П-02",
+      "work_type": "Замена манжеты цилиндра",
+      "norm_minutes": 80,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "С-01",
+      "work_type": "Плановая смазка узлов",
+      "norm_minutes": 30,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "С-02",
+      "work_type": "Плановая замена масла",
+      "norm_minutes": 60,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    },
+    {
+      "fault_code": "С-03",
+      "work_type": "Плановый осмотр",
+      "norm_minutes": 20,
+      "note": "Учебный норматив для демонстрации. Не измеренный производственный норматив, не срок допуска.",
+      "synthetic": true,
+      "dataset_version": "case-derived-synthetic-v1"
+    }
+  ]
+}

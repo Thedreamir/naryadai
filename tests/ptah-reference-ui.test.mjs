@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+test('Ptah reference layout uses own avatar, draft chips and call control',()=>{const s=fs.readFileSync('src/pages/worker/Assistant.tsx','utf8');assert.match(s,/ptah-chat-header/);assert.match(s,/ptah-avatar.png/);assert.match(s,/setInput\(q.text\)/);assert.match(s,/naryadai:open-hud/)});
+test('call dictation fills editable draft rather than auto asking',()=>{const s=fs.readFileSync('src/components/VoiceAskPanel.tsx','utf8');assert.doesNotMatch(s,/askRef.current\(t\)/);assert.match(s,/setTyped\(cur=>cur\?/);assert.match(s,/ptah-call-avatar/)});

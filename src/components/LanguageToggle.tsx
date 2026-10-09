@@ -1,2 +1,2 @@
 import {useLocale} from '../lib/locale'
-export default function LanguageToggle(){const {locale}=useLocale();return <select aria-label={locale==='kz'?'Тіл':'Язык'} value={locale} onChange={e=>{localStorage.setItem('tekton-language',e.target.value);window.dispatchEvent(new Event('tekton-language'))}} className="language-toggle"><option value="ru">Русский</option><option value="kz">Қазақша</option></select>}
+export default function LanguageToggle(){const {locale,setLocale}=useLocale();return <select aria-label={locale==='kz'?'Тіл':'Язык'} value={locale} onChange={e=>setLocale(e.target.value==='kz'?'kz':'ru')} className="language-toggle"><option value="ru">Русский</option><option value="kz">Қазақша</option></select>}

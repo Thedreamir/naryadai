@@ -1,0 +1,35 @@
+const {chromium}=require('playwright');const {expect}=require('@playwright/test');const fs=require('fs');
+(async()=>{const b=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:390,height:844}});let failures=[],passed=[];function check(ok,label){if(!ok)failures.push(label);else passed.push(label)}
+await p.addInitScript(()=>{window.__speech=[];window.__rec=[];window.__ask=[];class R{constructor(){window.__rec.push(this)}start(){this.onstart?.()}stop(){this.onend?.()}abort(){this.aborted=true}}window.SpeechRecognition=R;window.SpeechSynthesisUtterance=class{constructor(t){this.text=t}};Object.defineProperty(window,'speechSynthesis',{value:{cancel(){},speak(u){window.__speech.push(u.text);u.onend?.()}}})});
+await p.goto('http://127.0.0.1:5173/tests/voice-browser/harness.html');await p.waitForSelector('textarea');
+check(await p.getByRole('button',{name:'Надиктовать голосом'}).isDisabled(),'mic gated by consent');check(await p.evaluate(()=>window.__rec.length===0),'no recognition constructed before click');
+await p.getByRole('checkbox').nth(0).check();await p.getByRole('button',{name:'Надиктовать голосом'}).click();await p.evaluate(()=>{const r=Object.assign([{transcript:'Проверен запуск.'}],{isFinal:true});window.__rec[0].onresult({results:[r],resultIndex:0})});await expect(p.locator('textarea')).toHaveValue(/Проверен запуск/);check(true,'final transcription appended');
+await p.getByRole('button',{name:'Остановить диктовку'}).click();await p.getByRole('button',{name:'Надиктовать голосом'}).click();await p.evaluate(()=>window.__rec[1].onerror({error:'not-allowed'}));await expect(p.getByText('Доступ к микрофону запрещён.',{exact:false}).first()).toBeVisible();check(true,'permission error visible with text fallback');
+await p.locator('textarea').fill('Ручной текст остаётся доступен.');check((await p.locator('textarea').inputValue()).startsWith('Ручной'),'manual fallback editable');
+check(await p.getByRole('button',{name:'Озвучить подсказку'}).isDisabled(),'master speech gated by consent');await p.getByRole('checkbox').nth(1).check();await p.getByRole('button',{name:'Озвучить подсказку'}).click();check(await p.evaluate(()=>window.__speech.length===1&&window.__speech[0].includes('решает мастер')),'master explicit click speaks rule hint');
+await p.screenshot({path:'./evidence/voice/mobile-ru.png',fullPage:true});check(await p.evaluate(()=>document.documentElement.scrollWidth<=390),'RU mobile no horizontal overflow');
+await p.evaluate(()=>{localStorage.setItem('tekton-language','kz');window.dispatchEvent(new Event('tekton-language'))});await p.waitForTimeout(100);await p.getByRole('button',{name:'Дауыспен енгізу',exact:true}).click();check(await p.evaluate(()=>window.__rec.at(-1).lang==='kk-KZ'),'Kazakh requests kk-KZ');await p.getByRole('button',{name:'Дауыспен енгізуді тоқтату'}).click();await p.screenshot({path:'./evidence/voice/mobile-kz.png',fullPage:true});check(await p.evaluate(()=>document.documentElement.scrollWidth<=390),'KZ mobile no horizontal overflow');
+// VoiceAskPanel (AI-вызов): consent gate, dictation asks, typed fallback.
+await p.evaluate(()=>{localStorage.setItem('tekton-language','ru');window.dispatchEvent(new Event('tekton-language'))});await p.waitForTimeout(100);
+const panel=p.locator('#askpanel');const base=await p.evaluate(()=>window.__rec.length);
+check(await panel.getByRole('button',{name:'Начать голосовой вопрос'}).isDisabled(),'ask mic gated by consent');
+await panel.getByRole('checkbox').check();await panel.getByRole('button',{name:'Начать голосовой вопрос'}).click();
+check(await p.evaluate(i=>window.__rec[i]&&window.__rec[i].lang==='ru-RU',base),'ask dictation requests ru-RU');
+await p.evaluate(i=>{const r=Object.assign([{transcript:'Какой срок?'}],{isFinal:true});window.__rec[i].onresult({results:[r],resultIndex:0})},base);
+await expect(panel.getByText('Какой срок?')).toBeVisible();await expect(panel.getByText('проверочный ответ')).toBeVisible();check(true,'voice question auto-asked and answered');
+check(await p.evaluate(()=>window.__ask.includes('Какой срок?')),'ask received voice text');
+await expect(panel.getByRole('button',{name:'Начать голосовой вопрос'})).toBeVisible();check(true,'session stops after one delivered question');
+await panel.getByRole('button',{name:'Начать голосовой вопрос'}).click();await p.evaluate(()=>window.__rec.at(-1).onerror({error:'not-allowed'}));
+await expect(panel.getByText('Доступ к микрофону запрещён.',{exact:false})).toBeVisible();check(true,'ask permission error visible');
+await panel.getByLabel('Вопрос текстом').fill('Срок по наряду 5');await panel.getByRole('button',{name:'Отправить вопрос'}).click();
+await expect(panel.getByText('проверочный ответ')).toBeVisible();check(await p.evaluate(()=>window.__ask.includes('Срок по наряду 5')),'typed fallback asks without mic');
+await p.evaluate(()=>{(window).__askDelay=500});
+await panel.getByRole('button',{name:'Начать голосовой вопрос'}).click();
+await p.evaluate(()=>{const r=Object.assign([{transcript:'Первый вопрос'}],{isFinal:true});window.__rec.at(-1).onresult({results:[r],resultIndex:0})});
+await p.waitForTimeout(50);
+check(await panel.getByRole('button',{name:'Начать голосовой вопрос'}).isDisabled(),'mic locked while answer in flight');
+await p.waitForTimeout(700);await p.evaluate(()=>{(window).__askDelay=0});
+await expect(panel.getByText('проверочный ответ')).toBeVisible();check(true,'answer arrives after busy window');
+await p.screenshot({path:'./evidence/voice/mobile-ask-ru.png',fullPage:true});check(await p.evaluate(()=>document.documentElement.scrollWidth<=390),'ask panel no horizontal overflow');
+await p.evaluate(()=>{delete window.SpeechRecognition;delete window.webkitSpeechRecognition;localStorage.setItem('tekton-language','kz');window.dispatchEvent(new Event('tekton-language'))});await p.waitForTimeout(50);await p.evaluate(()=>{localStorage.setItem('tekton-language','ru');window.dispatchEvent(new Event('tekton-language'))});await expect(p.getByText('Браузер не поддерживает диктовку.',{exact:false}).first()).toBeVisible();check(true,'unsupported browser fallback visible');await p.screenshot({path:'./evidence/voice/mobile-fallback.png',fullPage:true});await p.setViewportSize({width:320,height:720});check(await p.evaluate(()=>document.documentElement.scrollWidth<=320),'320px fallback no horizontal overflow');await p.screenshot({path:'./evidence/voice/mobile-320.png',fullPage:true});
+fs.writeFileSync('./evidence/voice/browser-tests.json',JSON.stringify({passed,failures,scope:'Mocked Web Speech API in local component harness, not acoustic/device validation'},null,2));await b.close();if(failures.length)throw Error(failures.join(', '));console.log('Browser checks: '+passed.length+' passed')})().catch(e=>{console.error(e);process.exit(1)});

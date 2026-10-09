@@ -1,0 +1,28 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {checkPriority,validateCheckConfig} from '../src/lib/check-priority.mjs'
+const at=Date.parse('2026-10-08T18:30:00Z'),DAY=86400000
+const row=(id,ago=10,extra={})=>({id,equipment_id:1,kind:'unplanned',status:'closed',created_at:new Date(at-ago*DAY).toISOString(),closed_at:new Date(at-(ago-1)*DAY).toISOString(),closure:{fault_code:'M-02'},...extra})
+const run=(rows,config={},time=at)=>checkPriority(rows,1,config,time)
+test('empty history is insufficient, never healthy',()=>assert.equal(run([]).status,'insufficient'))
+test('adjacent same-code pairs yield explicit evidence',()=>{const r=run([row(3,2),row(1,10),row(2,6)]);assert.equal(r.status,'review');assert.equal(r.pairCount,2);assert.deepEqual(r.pairs.map(p=>[p.firstOrderId,p.secondOrderId,p.gapDays]),[[1,2,4],[2,3,4]])})
+test('no all-to-all inflated pairs',()=>assert.equal(run([row(1,5),row(2,4),row(3,3),row(4,2)]).pairCount,3))
+test('planned work is excluded',()=>assert.equal(run([row(1,5),row(2,3,{kind:'planned'})]).pairCount,0))
+test('cancelled work is excluded',()=>assert.equal(run([row(1,5),row(2,3,{cancelled:true})]).pairCount,0))
+test('open work is excluded',()=>assert.equal(run([row(1,5),row(2,3,{status:'in_progress'})]).pairCount,0))
+test('different equipment never pairs',()=>assert.equal(run([row(1,5),row(2,3,{equipment_id:2})]).pairCount,0))
+test('different codes never pair',()=>assert.equal(run([row(1,5),row(2,3,{closure:{fault_code:'M-03'}})]).pairCount,0))
+test('missing code/date/closure do not manufacture pair',()=>{const r=run([row(1),row(2,3,{closure:null}),row(3,3,{created_at:'bad'}),row(4,3,{closed_at:null})]);assert.equal(r.missingCount,3);assert.equal(r.pairCount,0)})
+test('duplicate IDs rejected as ambiguous',()=>{const r=run([row(1,10),row(1,7),row(2,5)]);assert.equal(r.missingCount,2);assert.equal(r.pairCount,0)})
+test('closure before creation rejected',()=>assert.equal(run([row(1,3,{closed_at:new Date(at-4*DAY).toISOString()})]).missingCount,1))
+test('not yet closed at as-of excluded (no future leakage)',()=>assert.equal(run([row(1,2),row(2,1,{closed_at:new Date(at+DAY).toISOString()})]).pairCount,0))
+test('future creations excluded',()=>assert.equal(run([row(1,2),row(2,-1)]).pairCount,0))
+test('history boundary is inclusive',()=>assert.equal(run([row(1,90),row(2,89)]).pairCount,1))
+test('history beyond boundary excluded',()=>assert.equal(run([row(1,91),row(2,89)]).pairCount,0))
+test('repeat window inclusive, beyond rejected',()=>{assert.equal(run([row(1,10),row(2,3)]).pairCount,1);assert.equal(run([row(1,10.01),row(2,3)]).pairCount,0)})
+test('configurable threshold and window change verdict',()=>{const rows=[row(1,15),row(2,5)];assert.equal(run(rows).status,'below_threshold');assert.equal(run(rows,{repeatWindowDays:14,pairThreshold:1}).status,'review')})
+test('string numeric equipment IDs match',()=>assert.equal(run([row(1,5,{equipment_id:'1'}),row(2,3)]).pairCount,1))
+test('deterministic without mutation',()=>{const rows=[row(2,3),row(1,5)];const before=structuredClone(rows);assert.deepEqual(run(rows),run([...rows].reverse()));assert.deepEqual(rows,before)})
+test('never emits probability/confidence/failure claim',()=>{const r=run([row(1,5),row(2,3)]);assert.equal(r.label,'Приоритет проверки');assert.ok(!('probability'in r));assert.ok(!('confidence'in r))})
+test('invalid configs fail loudly',()=>{for(const config of [{pairThreshold:0},{pairThreshold:1.5},{repeatWindowDays:NaN},{lookbackDays:-1},{repeatWindowDays:31,lookbackDays:30}]) assert.throws(()=>validateCheckConfig(config),RangeError)})
+test('invalid input/as-of fails loudly',()=>{assert.throws(()=>run(null),TypeError);assert.throws(()=>run([],{},NaN),TypeError)})

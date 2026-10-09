@@ -1,0 +1,2 @@
+import{test}from'node:test';import assert from'node:assert/strict';import fs from'node:fs';
+test('autosave scoped to actor order, no safety restoration',()=>{const s=fs.readFileSync('src/pages/worker/OrderDetail.tsx','utf8');assert.match(s,/saveDraft\(actor.id,Number\(id\)/);assert.match(s,/Сохранено на этом устройстве/);assert.match(s,/setDecl\(\[false,false\]\);setDeclPost\(false\)/);assert.match(s,/Сохранить и закрыть/);assert.match(s,/Удалить черновик/);assert.doesNotMatch(s,/loadDraft.*setDecl\(d/)});

@@ -1,0 +1,57 @@
+/* Visual-system layer. Keep brand amber and status labels; do not alter role flows. */
+:root {
+  --color-bg: #F7F5F0;
+  --color-ink: #222320;
+  --color-muted: #5C605B;
+  --color-accent: #14613D;
+  --color-danger: #B5362D;
+  --color-warn: #875000;
+  --color-info: #08675D;
+}
+:root {
+  --tk-bg: #F7F5F0; --tk-card: #FFFFFF; --tk-sub: #F1EFE9;
+  --tk-border: #7D8278; --tk-ink: #222320; --tk-muted: #5C605B;
+  /* Text colors are separate from filled signal buttons, which keep white/black ink. */
+  --tk-amber: #875000; --tk-green: #14613D; --tk-red: #B5362D;
+  --tk-blue: #245BB5; --tk-focus: #875000;
+}
+body.theme-light {
+  --tk-bg: #F7F5F0; --tk-card: #FFFFFF; --tk-sub: #F1EFE9;
+  --tk-border: #7D8278; --tk-ink: #222320; --tk-muted: #5C605B;
+  --tk-amber: #875000; --tk-green: #14613D; --tk-red: #B5362D;
+  --tk-blue: #245BB5; --tk-focus: #875000;
+}
+body.theme-dark {
+  --tk-bg: #191A18; --tk-card: #252723; --tk-sub: #1D1F1C;
+  --tk-border: #73786D; --tk-ink: #F7F5F0; --tk-muted: #BAC0B5;
+  --tk-amber: #F5AE32; --tk-green: #73D3A0; --tk-red: #FF9287;
+  --tk-blue: #9ABFFF; --tk-focus: #F5AE32;
+}
+.text-tk-amber {color:var(--tk-amber)}
+.text-tk-green {color:var(--tk-green)}
+.text-tk-red {color:var(--tk-red)}
+.text-tk-blue {color:var(--tk-blue)}
+/* Body background includes keyboard/overscroll space, not only the mounted shell. */
+html:has(body.theme-dark),html.telegram-surface:has(body.theme-dark) {background:#191A18}
+html:has(body.theme-light),html.telegram-surface:has(body.theme-light) {background:#F7F5F0}
+body {color:var(--color-ink)}
+.worker-workspace .worker-tab-active > span {color:var(--tk-amber)!important}
+.worker-workspace .worker-tab-active:not(.worker-ai-tab) {background:color-mix(in srgb,var(--tk-amber) 12%,transparent)}
+.worker-workspace .worker-home-permit strong {color:var(--tk-amber)}
+.worker-workspace .worker-alerts:has(.bg-tk-red) summary {color:var(--tk-red)}
+body.theme-light .worker-workspace .visual-tag {background:#E8ECE5;color:var(--tk-ink)}
+body.theme-light .worker-workspace .visual-explain {border-color:var(--tk-border);color:var(--tk-ink)}
+/* Keep a visible focus ring across roles and preserve glove-sized existing controls. */
+:where(button,a,input,textarea,select,summary):focus-visible {
+  outline:3px solid var(--tk-focus,#875000);outline-offset:3px;
+}
+.tk-input:focus {border-color:var(--tk-focus)}
+body.theme-dark .settings-inactive {color:var(--tk-ink)!important;background:var(--tk-card)!important;border-color:var(--tk-border)!important}
+body.theme-light .settings-inactive {color:var(--tk-ink)!important;background:var(--tk-card)!important;border-color:var(--tk-border)!important}
+
+.tk-input::placeholder {color:var(--tk-muted);opacity:1}
+body.theme-light .tk-sub {border-color:var(--tk-border)}
+.worker-workspace button:focus-visible,.worker-workspace a:focus-visible,
+.tekton-demo-dialog button:focus-visible,.tekton-demo-launch:focus-visible {
+  outline-color:var(--tk-focus);
+}

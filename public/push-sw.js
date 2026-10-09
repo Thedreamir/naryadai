@@ -5,7 +5,10 @@ self.addEventListener('push', (event) => {
   try { data = event.data ? event.data.json() : {}; } catch (e) { data = {}; }
   event.waitUntil(self.registration.showNotification(data.title || 'НарядAI', {
     body: data.body || '', tag: data.tag || undefined,
-    icon: '/icon-192.png', badge: '/icon-192.png'
+    icon: '/icon-192.png', badge: '/icon-192.png',
+    requireInteraction: data.priority === 'emergency',
+    vibrate: data.priority === 'emergency' ? [250,100,250,100,500] : [150],
+    data: { order_id: data.order_id || null, priority: data.priority || 'normal' }
   }));
 });
 self.addEventListener('notificationclick', (event) => {

@@ -1,0 +1,3 @@
+import{test}from'node:test';import assert from'node:assert/strict';import{SOUND_KEY,soundEnabled,setSoundEnabled,playForegroundTone}from'../src/lib/foreground-sound.mjs';
+test('foreground sound off by default and opt-in revocable',()=>{const x=new Map(),s={getItem:k=>x.get(k),setItem:(k,v)=>x.set(k,v)};assert.equal(soundEnabled(s),false);setSoundEnabled(true,s);assert.equal(x.get(SOUND_KEY),'1');assert.equal(soundEnabled(s),true);setSoundEnabled(false,s);assert.equal(soundEnabled(s),false)});
+test('unsupported audio honestly rejects',async()=>{await assert.rejects(playForegroundTone({AudioCtor:null}),/не поддерживается/)});

@@ -24,6 +24,7 @@ function read(f:Blob){return new Promise<string>(res=>{const r=new FileReader();
 export default function OrderDetail({actor}:{actor:Actor}){const {id}=useParams();return <OrderDetailForOrder key={actor.id+':'+id} actor={actor}/>}
 function OrderDetailForOrder({actor}:{actor:Actor}){
   const {id}=useParams(); const nav=useNavigate()
+  const [intakeStep,setIntakeStep]=useState(0)
   const [reviewNotice,setReviewNotice]=useState('');const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false); const [reasonFor,setReasonFor]=useState<null|'rejected'|'paused'>(null)
   const [otherReason,setOtherReason]=useState('')
   const [permitKind,setPermitKind]=useState(''); const [permitNote,setPermitNote]=useState('')
@@ -72,10 +73,10 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
     go('completed',undefined,{works,fault_code:fault,norm_work_type:normWorkType||null,materials:materialRows,photos:after,safety_declarations:[...preDecls,{phase:'post_work',text:DECL_POST,confirmed:declPost}]})}
   const addPh=async(f:File|null|undefined)=>{if(!f)return
     try{const clean=await sanitizePhoto(f);const url=await read(clean);setAfter(p=>[...p,url])}catch(e){setErr('Фото не отправлено: '+(e as Error).message)}}
-  const steps=['Безопасность','Отчёт','Фото']
+  const steps=['Безопасность','Что сделано','Фото после']
   const stepOk=[allDecl,works.trim().length>=12&&!!fault,(!needPhoto||after.length>0)]
   const feedback=workerFeedback(o,st.events||[],st.work_norms||[])
-  return <div className="worker-order-detail space-y-3">{o.evidence_unavailable&&<p role="alert" className="tk-card p-3 text-sm">Доказательства недоступны. Это не означает, что фото или подтверждений нет. Обновите данные.</p>}{captureOpen&&<PhotoCapture reference={masterBefore[0]} onClose={()=>setCaptureOpen(false)} onCapture={async f=>{const clean=await sanitizePhoto(f);const url=await read(clean);setAfter([url])}}/>}{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.<button className="tk-touch tk-sub w-full mt-2" onClick={load}>Обновить данные</button></div>}
+  return <div className="worker-order-detail worker-guided-flow space-y-4">{o.evidence_unavailable&&<p role="alert" className="tk-card p-3 text-sm">Доказательства недоступны. Это не означает, что фото или подтверждений нет. Обновите данные.</p>}{captureOpen&&<PhotoCapture reference={masterBefore[0]} onClose={()=>setCaptureOpen(false)} onCapture={async f=>{const clean=await sanitizePhoto(f);const url=await read(clean);setAfter([url])}}/>}{st.offline&&<div role="status" className="tk-card p-3 text-xs text-tk-amber">Офлайн · личный снимок от {new Date(st.cachedAt).toLocaleString('ru')}. Данные могут быть устаревшими. Статусы/допуски онлайн; отчёт можно сохранить черновиком.<button className="tk-touch tk-sub w-full mt-2" onClick={load}>Обновить данные</button></div>}
     <button className="text-xs font-bold inline-flex items-center gap-1" style={{color:'var(--tk-muted)'}} onClick={()=>nav(-1)}><ArrowLeft size={19}/>Назад</button>
     <div className="tk-card p-3.5 space-y-2.5">
       <div className="worker-order-priority-row flex items-center justify-between">
@@ -89,8 +90,9 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
       {err&&!wiz&&<div role="alert" className="text-xs text-tk-red font-bold">{err}</div>}
     </div>
     {['closed','rejected'].includes(o.status)||o.cancelled?<div className="tk-card p-3"><span>{o.status==='closed'?'Наряд закрыт':'Наряд завершён без исполнения'}</span><p className="text-sm">{o.closed_at?'Закрытие: '+new Date(o.closed_at).toLocaleString('ru',{timeZone:'Asia/Almaty'}):'Время закрытия не записано.'}</p><p className="text-xs">Плановый срок: {new Date(o.deadline).toLocaleString('ru',{timeZone:'Asia/Almaty'})}</p></div>:<div className="order-deadline-tile tk-card p-3"><DeadlineProgress deadline={o.deadline} issuedAt={o.created_at} status={o.status} cancelled={o.cancelled} now={Date.now()}/></div>}<div className="order-equipment-chip"><Package size={20}/>{o.equipment}</div>
+    {['issued','queued','accepted','in_progress','paused','rework'].includes(o.status)&&<section className="worker-flow-progress tk-card p-4" aria-label="Этапы выполнения"><div className="worker-flow-step-title">{o.status==='issued'||o.status==='queued'?'Примите назначение':o.status==='accepted'?(intakeStep===0?'Шаг 1 из 4 · Безопасность':'Шаг 2 из 4 · Фото до'):'Шаг 3 из 4 · Работа'}</div><div className="worker-flow-track">{['Безопасность','Фото до','Работа','Фото после'].map((label,i)=><div key={label} className={i<=(o.status==='accepted'?intakeStep:['issued','queued'].includes(o.status)?-1:2)?'is-current':''}><span>{i+1}</span><small>{label}</small></div>)}</div></section>}
     {o.status==='issued'&&<button className="incoming-primary tk-touch w-full bg-tk-amber" disabled={!online||st.offline||busy} onClick={()=>go('accepted')}>{o.status==='issued'?'Принять назначение':'Записать допуск'}</button>}
-    <details className="order-before-row tk-card p-3 space-y-2"><summary><span className="flex items-center gap-2"><Camera size={20}/>Фото до / приёмка</span><span>{masterBefore.length?'Открыть':intakeAllowed?'Добавить':'Нет фото'}</span></summary>
+    {(o.status!=='accepted'||intakeStep===1)&&<details open={o.status==='accepted'?true:undefined} className="order-before-row tk-card p-4 space-y-3"><summary><span className="flex items-center gap-2"><Camera size={20}/>Фото до / приёмка</span><span>{masterBefore.length?'Открыть':intakeAllowed?'Добавить':'Нет фото'}</span></summary>
       {masterBefore.length>0&&<div className="flex gap-2 overflow-x-auto no-scrollbar">{masterBefore.map((p,i)=><img key={i} src={p} className="h-32 rounded-lg" alt="Фото до"/>)}</div>}
       {masterBefore.length===0&&<div className="text-[0.6875rem] font-bold" style={{color:'var(--tk-muted)'}}>Фото до отсутствует.</div>}
       {intakeAllowed&&<div>
@@ -105,7 +107,7 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
         {p.phase==='before_intake'?'Фото до (приёмка)':'Снято после начала работ (статус: '+(p.status_at_upload||'?')+')'} · получено сервером {new Date(p.server_received_at).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
       </div>)}</div>}
       {intakeLate.length>0&&<div className="flex gap-2 overflow-x-auto no-scrollbar">{intakeLate.map((p:any,i:number)=>p.url&&<img key={i} src={p.url} className="h-24 rounded-lg opacity-80" alt="Снято после начала работ"/>)}</div>}
-    </details>
+    </details>}
     {o.permit_kind&&<div className="tk-card p-3 text-xs font-bold"><span className="text-tk-green">{o.permit_kind==='not_required'?'Допуск не требуется':'Допуск подтверждён'}</span><span style={{color:'var(--tk-muted)'}}>{o.permit_note?' · '+o.permit_note:''}</span></div>}
     {reasonFor&&<div className="tk-card p-3.5 space-y-2 border-tk-amber"><label className="block text-sm">Причина своими словами<textarea className="tk-input w-full p-3" value={otherReason} onChange={e=>setOtherReason(e.target.value)} placeholder="Для варианта Другая причина"/></label><VoiceButton onText={text=>setOtherReason(previous=>previous?previous+' '+text:text)}/>
       <div className="text-[0.8125rem] font-black uppercase tracking-wide">{reasonFor==='rejected'?'Причина отказа':'Причина паузы'}</div>
@@ -125,7 +127,7 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
         {o.status==='issued'&&<button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={!online||st.offline||busy} onClick={()=>go('queued','В очередь после текущего')}><Clock size={19}/>В очередь</button>}
         <button className="tk-touch tk-sub text-tk-red uppercase inline-flex items-center justify-center gap-1.5" disabled={!online||st.offline||busy} onClick={()=>setReasonFor('rejected')}><Ban size={19}/>Не могу</button>
       </div></details>}
-    {(o.status==='accepted'||(o.status==='in_progress'&&recordedPre.length<DECLS.length))&&<div className="tk-card p-3.5 space-y-2.5">
+    {((o.status==='accepted'&&intakeStep===0)||(o.status==='in_progress'&&recordedPre.length<DECLS.length))&&<div className="tk-card p-3.5 space-y-2.5">
       <div className="text-[0.8125rem] font-black uppercase tracking-wide">Перед началом работ</div>
       <div className="bg-tk-red/10 border border-tk-red/40 rounded-lg p-2.5 text-[0.6875rem] flex gap-2">
         <TriangleAlert size={22} className="text-tk-red shrink-0 mt-0.5"/>
@@ -136,7 +138,7 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
         <span className="text-xs font-bold leading-snug">{SHORT_DECLS[i]}</span>
       </label>)}
 
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={!online||st.offline||busy||startBusy||!startDecl.slice(0,DECLS.length).every(Boolean)} onClick={async()=>{
+      {o.status==='accepted'?<button className="tk-touch worker-flow-primary bg-tk-amber w-full" disabled={!startDecl.slice(0,DECLS.length).every(Boolean)||!online||st.offline} onClick={()=>{setIntakeStep(1);window.scrollTo(0,0)}}>Далее · фото до<ArrowRight size={24}/></button>:      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={!online||st.offline||busy||startBusy||!startDecl.slice(0,DECLS.length).every(Boolean)} onClick={async()=>{
         setStartBusy(true);setErr('')
         try{
           if(o.status==='accepted'){
@@ -147,11 +149,23 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
           }
         }catch(e){setErr((e as Error).message)}finally{setStartBusy(false)}
       }}><Play size={22}/>{startBusy?'Фиксация…':o.status==='accepted'?'Подтвердить и начать работу':'Зафиксировать (после начала)'}</button>
+}
     </div>}
+    {o.status==='accepted'&&intakeStep===1&&<section className="tk-card p-4 space-y-3"><p>Фото до можно снять сейчас. Если его нет, это будет явно отмечено в отчёте. Фото не подтверждает безопасность оборудования.</p><button className="tk-touch worker-flow-primary bg-tk-green text-white w-full" disabled={!online||st.offline||busy||startBusy||!startDecl.slice(0,DECLS.length).every(Boolean)} onClick={async()=>{
+        setStartBusy(true);setErr('')
+        try{
+          if(o.status==='accepted'){
+            if(!o.permit_kind){setAcceptOpen(true);return}await H.startWork(o.id,o.version,DECLS)
+            await load();window.scrollTo(0,0)
+          }else{
+            await H.recordDeclarations(o.id,'pre_work_late',DECLS);await load()
+          }
+        }catch(e){setErr((e as Error).message)}finally{setStartBusy(false)}
+      }}>Далее · начать работу<Play size={24}/></button><button className="tk-touch tk-sub w-full" onClick={()=>{setIntakeStep(0);window.scrollTo(0,0)}}>Назад · безопасность</button></section>}
     {o.status==='queued'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase disabled:opacity-40 inline-flex items-center justify-center gap-2" disabled={!online||st.offline||busy} onClick={()=>go('accepted')}><Check size={22}/>Принять из очереди</button>}
     {o.status==='in_progress'&&<>
-      <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={!online||st.offline||busy} onClick={()=>setReasonFor('paused')}><Pause size={19}/>Пауза</button>
-      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={19}/>Сдать наряд №{o.id} на проверку</button></>}
+      <details className="order-more-actions"><summary>Другие действия</summary><button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={!online||st.offline||busy} onClick={()=>setReasonFor('paused')}><Pause size={19}/>Пауза</button></details>
+      <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={19}/>Работа выполнена · фото и отчёт</button></>}
     {o.status==='paused'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase inline-flex items-center justify-center gap-2" disabled={!online||st.offline||busy} onClick={()=>go('in_progress')}><Play size={22}/>Продолжить</button>}
     {(o.ai_result||['completed','ai_review'].includes(o.status))&&<AiDecisionNotice/>}
     {reviewNotice&&<div role="status" className="tk-card p-4">{reviewNotice}</div>}
@@ -164,8 +178,8 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
       <span className="text-[0.625rem] font-black px-2 py-0.5 rounded uppercase tk-sub">Закрыт</span>
       {o.ai_result?.human_score&&<div className="text-sm font-bold">Оценка мастера: {o.ai_result.human_score} / 5</div>}
       {o.closure?.works&&<div className="text-xs" style={{color:'var(--tk-muted)'}}>{o.closure.works}</div>}<section aria-label="Отчёт исполнителю" className="space-y-2"><h3 className="font-bold">Отчёт исполнителю</h3><p className="text-xs">Сводка по записанным фактам · правила, не языковая модель</p><h4>Что подтверждено</h4>{feedback.good.map((s,i)=><p className="text-xs" key={i}>{s}</p>)}<h4>Что проверить или улучшить</h4>{feedback.improve.map((s,i)=><p className="text-xs" key={i}>{s}</p>)}<p className="text-xs">{feedback.timeText}</p><p className="text-xs">{feedback.normText}</p></section></div>}
-    <div className="tk-card p-3"><div className="text-[0.6875rem] font-black uppercase tracking-wider mb-1 inline-flex items-center gap-1.5" style={{color:'var(--tk-muted)'}}><History size={22}/>Журнал</div>
-      {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[0.6875rem] py-1 border-t first:border-0" style={{color:'var(--tk-muted)',borderColor:'var(--tk-border)'}}>{e.actor} · {eventLabel(e.new_status)} · {new Date(e.created_at).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</div>
+    <details className="tk-card p-4 worker-flow-journal"><summary>Журнал наряда</summary><div className="text-[0.6875rem] font-black uppercase tracking-wider mb-1 inline-flex items-center gap-1.5" style={{color:'var(--tk-muted)'}}><History size={22}/>Журнал</div>
+      {st.events.filter((e:any)=>e.order_id===o.id).map((e:any)=><div key={e.id} className="text-[0.6875rem] py-1 border-t first:border-0" style={{color:'var(--tk-muted)',borderColor:'var(--tk-border)'}}>{e.actor} · {eventLabel(e.new_status)} · {new Date(e.created_at).toLocaleString('ru',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{e.reason?' · '+e.reason:''}</div>)}</details>
     {acceptOpen&&<div className="worker-report-wizard permit-accept-sheet fixed inset-0 z-50 flex items-end justify-center" style={{background:'rgba(0,0,0,.5)'}}><div className="w-full max-w-md p-4 space-y-4"><div className="sheet-drag-handle"/><div className="flex items-center justify-between"><h3>Допуск</h3><button className="wizard-help" onClick={()=>setAcceptOpen(false)} aria-label="Закрыть допуск"><X size={20}/></button></div>    {!o.permit_kind&&<div className="tk-card p-3.5 space-y-2.5">
       
       <div className="text-[0.6875rem]" style={{color:'var(--tk-muted)'}}>Отметьте допуск перед началом — запись уходит в журнал.</div>
@@ -184,7 +198,7 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
             <h3 className="wizard-title">Отчёт №{o.id}</h3>
             <button onClick={closeReport} aria-label="Закрыть отчёт" className="w-12 h-12 tk-sub flex items-center justify-center rounded-lg"><X size={19}/></button>
           </div>
-          <div className="wizard-step-label">Шаг {step+1} из 3 · {steps[step]}</div><div className="flex gap-1.5 wizard-step-bars">
+          <div className="wizard-step-label">Закрытие · шаг {step+1} из 3 · {steps[step]}</div><div className="flex gap-1.5 wizard-step-bars">
             {steps.map((s,i)=><div key={s} className="flex-1 text-center">
               <div className={cn("h-1.5 rounded-full mb-1",i<=step?'bg-tk-amber':'')} style={i<=step?undefined:{background:'var(--tk-border)'}}/>
               <span className={cn("text-[0.5625rem] font-black uppercase",i===step?'text-tk-amber':'')} style={i===step?undefined:{color:'var(--tk-muted)'}}>{s}</span>
@@ -225,7 +239,7 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
             </div>
             <div>
               <div className="text-[0.6875rem] font-black uppercase mb-1" style={{color:'var(--tk-muted)'}}>Шифр неисправности</div>
-              <div className="fault-recent-chips">{st.fault_codes.slice(0,2).map((f:any)=><button type="button" aria-pressed={fault===f.code} onClick={()=>setFault(f.code)} key={f.code}>{f.code} · {f.name}</button>)}<button type="button" onClick={()=>setFaultSheet(v=>!v)}>Все коды</button></div>{faultSheet&&<div className="fault-code-sheet" role="dialog" aria-label="Шифр неисправности">{st.fault_codes.map((f:any)=><button type="button" key={f.code} onClick={()=>{setFault(f.code);setFaultSheet(false)}}>{f.code} · {f.name}</button>)}</div>}
+              <select aria-label="Шифр неисправности" className="tk-input w-full" value={fault} onChange={e=>setFault(e.target.value)}><option value="">Выберите шифр</option>{st.fault_codes.map((f:any)=><option key={f.code} value={f.code}>{f.code} · {f.name}</option>)}</select>
             </div>
             <details className="report-materials"><summary>Материалы ({materialRows.length}) +</summary>
               <div className="text-[0.6875rem] font-black uppercase mb-1 flex items-center gap-1" style={{color:'var(--tk-muted)'}}><Package size={22}/>Материалы (необязательно)</div>

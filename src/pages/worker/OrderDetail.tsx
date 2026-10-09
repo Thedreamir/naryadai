@@ -1,3 +1,4 @@
+import AiDecisionNotice from '../../components/AiDecisionNotice'
 import DeadlineProgress from '../../components/DeadlineProgress'
 import {workerFeedback} from '../../lib/worker-feedback.mjs'
 import PhotoCapture from '../../components/PhotoCapture'
@@ -23,7 +24,7 @@ function read(f:Blob){return new Promise<string>(res=>{const r=new FileReader();
 export default function OrderDetail({actor}:{actor:Actor}){const {id}=useParams();return <OrderDetailForOrder key={actor.id+':'+id} actor={actor}/>}
 function OrderDetailForOrder({actor}:{actor:Actor}){
   const {id}=useParams(); const nav=useNavigate()
-  const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false); const [reasonFor,setReasonFor]=useState<null|'rejected'|'paused'>(null)
+  const [reviewNotice,setReviewNotice]=useState('');const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false); const [reasonFor,setReasonFor]=useState<null|'rejected'|'paused'>(null)
   const [otherReason,setOtherReason]=useState('')
   const [permitKind,setPermitKind]=useState(''); const [permitNote,setPermitNote]=useState('')
   const closeMode=useRef(false)
@@ -44,7 +45,7 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
   const closeReport=()=>{if(works.trim()||fault||materialRows.length||after.length)setCloseDraft(true);else setWiz(false)}
   const openWiz=()=>{closeMode.current=false;setCloseDraft(false);setErr('');setDraftNote('');setWiz(true);setStep(0);setDecl([false,false]);setDeclPost(false);setWorks('');setFault('');setNormWorkType('');setMaterials('');setMaterialRows([]);setAfter([]);const d=loadDraft(actor.id,Number(id));if(d){setWorks(d.works);setFault(d.fault);setNormWorkType(d.normWorkType||'');setMaterialRows(d.materials);setAfter(d.after);setDraftNote('Черновик восстановлен. Подтверждения безопасности заново, версия и статус проверяются сервером при отправке.')}}
   const go=async(status:string,reason?:string,closure?:any)=>{setBusy(true);setErr('')
-    try{if(!navigator.onLine||st?.offline)throw Error('Нет связи: сохраните черновик. Статус не изменён.');await H.transition(o.id,{status,version:o.version,reason,closure});if(status==='completed'){closeMode.current=true;clearDraft(actor.id,o.id)}setWiz(false);await load();window.scrollTo(0,0)}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
+    try{if(!navigator.onLine||st?.offline)throw Error('Нет связи: сохраните черновик. Статус не изменён.');const receipt=await H.transition(o.id,{status,version:o.version,reason,closure});if(receipt?.review_pending)setReviewNotice(receipt.review_message);if(status==='completed'){closeMode.current=true;clearDraft(actor.id,o.id)}setWiz(false);await load();window.scrollTo(0,0)}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
   if(err&&!st) return <div className="tk-card p-4 text-tk-red">{err}</div>
   if(!st) return <div className="py-10 text-center" style={{color:'var(--tk-muted)'}}>Загрузка…</div>
   const o=st.orders.find((x:any)=>x.id===Number(id))
@@ -118,10 +119,10 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
       </div>
       <button className="text-[0.6875rem] font-bold uppercase" style={{color:'var(--tk-muted)'}} onClick={()=>setReasonFor(null)}>Отмена</button>
     </div>}
-    {o.status==='issued'&&<details className="order-more-actions"><summary>Подробности</summary>
+    {['issued','queued'].includes(o.status)&&<details className="order-more-actions"><summary>Подробности</summary>
       
       <div className="grid grid-cols-2 gap-2">
-        <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={!online||st.offline||busy} onClick={()=>go('queued','В очередь после текущего')}><Clock size={19}/>В очередь</button>
+        {o.status==='issued'&&<button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={!online||st.offline||busy} onClick={()=>go('queued','В очередь после текущего')}><Clock size={19}/>В очередь</button>}
         <button className="tk-touch tk-sub text-tk-red uppercase inline-flex items-center justify-center gap-1.5" disabled={!online||st.offline||busy} onClick={()=>setReasonFor('rejected')}><Ban size={19}/>Не могу</button>
       </div></details>}
     {(o.status==='accepted'||(o.status==='in_progress'&&recordedPre.length<DECLS.length))&&<div className="tk-card p-3.5 space-y-2.5">
@@ -152,11 +153,13 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
       <button className="tk-touch tk-sub uppercase inline-flex items-center justify-center gap-1.5" disabled={!online||st.offline||busy} onClick={()=>setReasonFor('paused')}><Pause size={19}/>Пауза</button>
       <button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase text-base inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={19}/>Сдать наряд №{o.id} на проверку</button></>}
     {o.status==='paused'&&<button className="tk-touch bg-tk-green text-white w-full border border-emerald-600 uppercase inline-flex items-center justify-center gap-2" disabled={!online||st.offline||busy} onClick={()=>go('in_progress')}><Play size={22}/>Продолжить</button>}
-    {['completed','ai_review'].includes(o.status)&&<div className="tk-card p-4 text-center font-black text-tk-blue text-sm">На проверке у мастера</div>}
+    {(o.ai_result||['completed','ai_review'].includes(o.status))&&<AiDecisionNotice/>}
+    {reviewNotice&&<div role="status" className="tk-card p-4">{reviewNotice}</div>}
+    {['completed','ai_review'].includes(o.status)&&<div className="tk-card p-4 text-center font-black text-tk-blue text-sm">Отчёт сдан. Проверка и окончательное решение за мастером.</div>}
     {o.status==='rework'&&<div className="tk-card p-4 space-y-1.5 border-tk-red">
       <div className="font-black text-tk-red text-sm flex items-center gap-2"><TriangleAlert size={19}/>На доработке</div>
       {o.ai_result?.reason&&<div className="text-xs" style={{color:'var(--tk-muted)'}}>Проверка ИИ: {o.ai_result.reason}</div>}
-      <button className="tk-touch bg-tk-amber text-black w-full border border-amber-600 uppercase inline-flex items-center justify-center gap-2" onClick={openWiz}><SendHorizontal size={22}/>Сдать повторно</button></div>}
+      <button className="tk-touch bg-tk-amber text-black w-full border border-amber-600 uppercase inline-flex items-center justify-center gap-2" disabled={!online||st.offline||busy} onClick={()=>go('in_progress')}><Play size={22}/>Начать доработку</button></div>}
     {o.status==='closed'&&<div className="tk-card p-3.5 space-y-1.5">
       <span className="text-[0.625rem] font-black px-2 py-0.5 rounded uppercase tk-sub">Закрыт</span>
       {o.ai_result?.human_score&&<div className="text-sm font-bold">Оценка мастера: {o.ai_result.human_score} / 5</div>}
@@ -261,3 +264,4 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
     </div>}
   </div>
         }
+// Reviewed frontend release.

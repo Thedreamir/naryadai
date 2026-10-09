@@ -49,7 +49,7 @@ function OrderDetailForOrder({actor}:{actor:Actor}){
   if(err&&!st) return <div className="tk-card p-4 text-tk-red">{err}</div>
   if(!st) return <div className="py-10 text-center" style={{color:'var(--tk-muted)'}}>Загрузка…</div>
   const o=st.orders.find((x:any)=>x.id===Number(id))
-  if(!o||o.assignee_id!==actor.id) return <div className="tk-card p-4">Наряд не найден или назначен другому исполнителю.</div>
+  if(!o||o.assignee_id!==actor.id) return <div className="tk-card p-4 space-y-3" role="status"><h1 className="font-bold">Наряд недоступен для этой учётной записи</h1><p>Вы вошли как {actor.name}. Этот наряд не найден в доступных вам данных. Он может быть назначен другому исполнителю.</p>{st.offline&&<p>Сейчас нет связи: данные на этом устройстве могут быть устаревшими.</p>}<p>Если вы открыли ссылку из Telegram, проверьте, что вошли в учётную запись исполнителя, которому выдан наряд. Telegram и PWA могут сохранять разные входы.</p><button className="tk-touch tk-sub w-full" onClick={load}>Обновить данные</button><button className="tk-touch tk-sub w-full" onClick={async()=>{setBusy(true);try{await H.logout();location.reload()}catch(e){setErr((e as Error).message);setBusy(false)}}} disabled={busy}>Сменить учётную запись</button>{err&&<p role="alert">{err}</p>}</div>
   const needPhoto=o.kind==='unplanned'
   const intake:any[]=Array.isArray(o.intake_photos)?o.intake_photos:[]
   const intakeBefore=intake.filter((p:any)=>p.phase==='before_intake')

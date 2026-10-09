@@ -1,0 +1,27 @@
+SYNTHETIC BENCHMARK - PROVISIONAL LABEL AGREEMENT
+48 AI-generated, correlated synthetic pairs; 7 labels owner-arbitrated from previews; 41 rubric-applied by an assistant and unverified by a human. Measures agreement with provisional labels, NOT field accuracy or safety clearance.
+complete provisional-label agreement
+accept iff both defect_visible and tools_left are false and score is 4 or 5; reject if either flag true or score <=2; score 3 or any null -> abstain; invalid/missing separate.
+Cases: 48; binary labels: 48; needs_human excluded: 0; valid model responses: 48; attempted: 48
+Positive class: accept (repaired). FP is a critical false acceptance.
+Truth / prediction       accept reject abstain missing-or-invalid
+actual accept            25 0 0 0
+actual reject            5 15 3 0
+Standard accuracy (TP+TN)/(TP+TN+FP+FN): 88.9% (40/45), Wilson 95% 76.5% to 95.2%
+Defect-detection recall TN/(TN+FP), binary decisions only: 75.0% (15/20), Wilson 95% 53.1% to 88.8%
+Defect-detection recall over all 23 negative labels: 65.2% (15/23), Wilson 95% 44.9% to 81.2%
+Accuracy over all binary-label cases, abstentions/missing not correct: 83.3% (40/48), Wilson 95% 70.4% to 91.3%
+Precision (accept): 83.3% (25/30), Wilson 95% 66.4% to 92.7%
+Recall (accept; includes abstained/missing positives): 100.0% (25/25), Wilson 95% 86.7% to 100.0%
+Coverage: 93.8% (45/48), Wilson 95% 83.2% to 97.9%
+Selective accuracy on binary decisions only: 88.9% (40/45), Wilson 95% 76.5% to 95.2%
+CRITICAL FALSE ACCEPTS (missed tools / temporary fixes or tape / mismatch / other unsafe evidence)
+syn_pair_22: mismatched_equipment - Before shows blue electric motor; after shows hose manifold block - different equipment
+syn_pair_36: temporary_fix - Pipe joint wrapped in red tape secured with zip ties
+syn_pair_39: temporary_fix - Domestic yellow plastic tap fitted on industrial pipeline
+syn_pair_40: temporary_fix - Motor resting on wooden blocks instead of proper mounting
+syn_pair_41: temporary_fix - Orange plastic construction netting tied over fan opening as improvised guard
+EXCLUDED NEEDS_HUMAN
+95% Wilson binomial intervals. Synthetic pairs are correlated and labels unverified, so intervals do not establish generalization or account for label error.
+Four mismatched-equipment pairs are intentionally counted as negative challenge cases, not matched repair pairs. The schema has no explicit mismatch field; report exposes missed mismatch as a critical false accept.
+No automatic acceptance, safety certification, or production changes.

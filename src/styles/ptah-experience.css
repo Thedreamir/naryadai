@@ -53,3 +53,31 @@ body.glove-mode .worker-workspace .worker-report-wizard button,
 body.glove-mode .worker-workspace .worker-order-detail summary {
   min-height: 56px !important;
 }
+
+/* Guided worker flow: one main action, large touch controls, saved theme preserved. */
+.worker-guided-flow .tk-touch{min-height:64px;padding:16px;font-size:16px;line-height:1.35;border-radius:16px;text-transform:none;white-space:normal}
+.worker-guided-flow .worker-flow-primary,.worker-guided-flow .incoming-primary{min-height:76px;font-size:19px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:12px}
+.worker-guided-flow .worker-flow-step-title{font-size:19px;font-weight:800;margin-bottom:16px}
+.worker-guided-flow .worker-flow-track{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.worker-flow-track>div{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--tk-muted)}
+.worker-flow-track span{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--tk-sub);border:1px solid var(--tk-border);font-weight:800}
+.worker-flow-track .is-current span{background:var(--tk-amber);color:#17201c;border-color:var(--tk-amber)}
+.worker-flow-track small{font-size:12px;line-height:1.2;text-align:center}
+.worker-guided-flow .tk-card p,.worker-guided-flow .tk-card label span{font-size:15px;line-height:1.5}
+.worker-guided-flow input[type=checkbox]{width:28px;height:28px;flex-shrink:0}
+.worker-guided-flow .order-before-row summary,.worker-guided-flow .order-more-actions summary,.worker-flow-journal summary{min-height:56px;display:flex;align-items:center;font-size:16px;font-weight:700}
+.worker-guided-flow .worker-report-wizard .tk-input{min-height:56px;font-size:16px;padding:14px}
+.worker-guided-flow .worker-report-wizard .wizard-title{font-size:21px}
+.worker-guided-flow .worker-report-wizard .wizard-step-label{font-size:17px;line-height:1.4}
+.worker-guided-flow .worker-report-wizard .wizard-footer .tk-touch{min-height:64px;font-size:16px}
+.worker-guided-flow .worker-report-wizard .wizard-step-bars span{font-size:11px}
+.worker-guided-flow .worker-report-wizard .photo-capture-action{min-height:96px;font-size:18px}
+.worker-guided-flow .worker-report-wizard .wizard-help{min-width:48px;min-height:48px}
+.worker-guided-flow .permit-accept-sheet .w-full.max-w-md{background:var(--tk-card);border-radius:24px 24px 0 0}
+.worker-order-detail.worker-guided-flow .tk-touch{min-height:64px!important;padding:16px!important;font-size:16px!important;line-height:1.35!important}
+.worker-order-detail.worker-guided-flow .worker-flow-primary,.worker-order-detail.worker-guided-flow .incoming-primary,.worker-order-detail.worker-guided-flow>button.bg-tk-green{min-height:76px!important;font-size:19px!important}
+.worker-order-detail.worker-guided-flow .worker-report-wizard .tk-touch{min-height:64px!important;font-size:16px!important}
+.worker-order-detail.worker-guided-flow .worker-report-wizard .photo-capture-action{min-height:96px!important;font-size:18px!important}
+.worker-order-detail.worker-guided-flow .worker-report-wizard textarea,.worker-order-detail.worker-guided-flow .worker-report-wizard select{font-size:16px!important;min-height:56px!important}
+.worker-guided-flow .worker-report-wizard .wizard-footer{position:relative}
+.worker-guided-flow .worker-report-wizard .photo-footer>button:first-child{position:static!important;inset:auto!important;margin-bottom:8px;width:100%}

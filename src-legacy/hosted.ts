@@ -1,4 +1,4 @@
-import {readOrdersAndEvents} from '../src/lib/order-read.mjs'
+import {readOrdersAndEvents,readReviewQueue} from '../src/lib/order-read.mjs'
 import {sanitizeDataUrl} from '../src/lib/photo-sanitize'
 import {clearAllDrafts} from '../src/lib/report-draft'
 // Hosted Supabase data layer. Same shapes the local /api server returns.
@@ -43,6 +43,13 @@ async function uid(): Promise<string> {
   const {data} = await supabase!.auth.getUser()
   if (!data.user) throw new Error('Сессия истекла. Войдите снова.')
   return data.user.id
+}
+
+// Local session supplies identity only; PostgREST verifies the token and RLS on every write.
+async function sessionUid():Promise<string>{
+ const {data,error}=await supabase!.auth.getSession();const session=data.session
+ if(error||!session?.user?.id||!session.expires_at||session.expires_at*1000<=Date.now())throw Error('Сессия истекла. Войдите снова.')
+ return session.user.id
 }
 
 async function stateOnline() {
@@ -94,6 +101,23 @@ async function stateOnline() {
     sections: sections.data||[], equipment: Object.values(eqById), fault_codes: faults.data||[], materials: materials.data||[],
     notifications: notifications.data||[], work_norms: norms.data||[], backend: 'Supabase · тестовый проект (синтетические данные)'}
 }
+
+// Issue uses the same order/history slice and permissions without unrelated evidence fetches.
+export async function issueState(){
+ const s=supabase!;const myId=await sessionUid()
+ const [emp,orderData,equipment,sections,permits]=await Promise.all([
+  s.from('employees').select('id,name,role,specialty,on_shift,email,is_active,brigade,grade,shift_name'),
+  readOrdersAndEvents(s),s.from('equipment').select('*'),s.from('sections').select('*'),s.from('employee_permits').select('*')
+ ])
+ for(const r of [emp,equipment,sections,permits])if(r.error)throw Error(r.error.message)
+ const employees=emp.data||[],actor=employees.find(e=>e.id===myId)
+ if(!actor)throw Error('У этой учётной записи нет карточки сотрудника')
+ const byId=Object.fromEntries(employees.map(e=>[e.id,e]));const secById=Object.fromEntries((sections.data||[]).map(x=>[x.id,x.name]))
+ const eq=(equipment.data||[]).map(x=>({...x,section:secById[x.section_id]||''}));const eqById=Object.fromEntries(eq.map(x=>[x.id,x]))
+ return {actor,employees,orders:orderData.orders.map(o=>({...o,equipment:eqById[o.equipment_id]?.name||'—',section:eqById[o.equipment_id]?.section||'—',assignee:byId[o.assignee_id]?.name||'—'})),
+  events:orderData.events.map(e=>({...e,actor:byId[e.actor_id]?.name||'—'})),equipment:eq,sections:sections.data||[],permits:permits.data||[]}
+}
+export async function reviewQueue(){return readReviewQueue(supabase!)}
 
 export async function state(){
  const {data}=await supabase!.auth.getSession();const user=data.session?.user.id;
@@ -228,7 +252,7 @@ export function reviewArchiveReceipt(userId:string, id:number, version:number) {
 
 export async function createOrder(x: {title:string,kind:string,equipment_id:number,assignee_id:string,priority:string,deadline:string,before_photos?:string[]}) {
   const s = supabase!
-  const myId = await uid()
+  const myId = await sessionUid()
   if((x.before_photos||[]).length>5)throw Error('До 5 фото неисправности');
   const photos:string[]=[];for(const photo of (x.before_photos||[])){if(!/^data:image\/(jpeg|jpg|png|webp);base64,/.test(photo))throw Error('Неверный формат фото');photos.push(await sanitizeDataUrl(photo))}
   const {error} = await s.from('orders').insert({title: x.title, kind: x.kind, equipment_id: x.equipment_id,

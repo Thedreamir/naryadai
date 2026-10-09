@@ -28,6 +28,7 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
     {to:'/settings',icon:Brain,label:'Telegram'},
     {to:'/report', icon:BarChart3, label:'Отчёт и рейтинг'},
     ...(import.meta.env.VITE_KNOWLEDGE_PREVIEW==='true'?[{to:'/knowledge',icon:Brain,label:'Загрузка знаний'}]:[]),
+    ...(actor.role==='admin'?[{to:'/catalog',icon:Brain,label:'Справочники'}]:[]),
     {to:'/memory', icon:Brain, label:'Память ремонтов', badge:memoryCount},
   ]
   return <div className="workspace master-workspace min-h-screen flex bg-bg">

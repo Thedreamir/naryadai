@@ -1,6 +1,8 @@
+import {parseVoiceFields,type VoiceDraft} from '../../lib/voice-fields.mjs'
+import {selectExecutors} from '../../lib/executor-selection.mjs'
 import VoiceButton from '../worker/VoiceButton'
 import {issueValidation} from '../../lib/issue-validation.mjs'
-import {workerLoad,submissionStats} from '../../lib/dispatch-hints.mjs'
+import {workerLoad} from '../../lib/dispatch-hints.mjs'
 import {useLocale} from '../../lib/locale'
 import {Explain,WorkSteps} from '../../components/VisualBlocks'
 import {sanitizePhoto} from '../../lib/photo-sanitize'
@@ -13,33 +15,15 @@ import type {Actor} from '../../App'
 export default function Issue({actor}:{actor:Actor}){
   const {t}=useLocale();const nav=useNavigate()
   const [st,setSt]=useState<any>(null); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
+  const [requiredSpecialty,setRequiredSpecialty]=useState('');const [requiredPermit,setRequiredPermit]=useState('');
+  const [voiceTranscript,setVoiceTranscript]=useState('');const [voiceDraft,setVoiceDraft]=useState<VoiceDraft|null>(null);
   const [title,setTitle]=useState(''); const [eq,setEq]=useState(()=>new URLSearchParams(location.search).get('equipment')||''); const [assignee,setAssignee]=useState('')
   const [section,setSection]=useState('');const [kind,setKind]=useState('unplanned');const [before,setBefore]=useState<string[]>([]);const [photoBusy,setPhotoBusy]=useState(false)
   const [photoCamera,setPhotoCamera]=useState(false);const [priority,setPriority]=useState('normal'); const [hours,setHours]=useState(2)
   useEffect(()=>{H.state().then(data=>{setSt(data);const requested=new URLSearchParams(location.search).get('equipment');const selected=(data as any).equipment.find((x:any)=>String(x.id)===requested);if(selected)setSection(String(selected.section));else if(requested)setEq('')}).catch(e=>setErr(e.message))},[])
   if(!st) return <div className="text-muted py-10">{t('Загрузка…')}</div>
   const workers=st.employees.filter((e:any)=>e.role==='worker')
-  // Rule-based candidate hint (PDF 5.1.3): availability + experience on this equipment + on-time share.
-  // Not a model verdict; master decides. Never auto-assigns.
-  // Two dispatch modes (TZ 5.1.3): manual pick below, or rule-based auto-pick (top-2, explainable).
-  // Criteria: availability, experience on this equipment, on-time share, rework count, valid permits.
-  // "Ptah advises, never decides": the master confirms every assignment. Nothing auto-assigns.
-  const cands=(()=>{if(!eq)return []
-    const permitsByW:Record<string,any[]>={}
-    for(const p of (st.permits||[])) (permitsByW[p.employee_id]=permitsByW[p.employee_id]||[]).push(p)
-    const reworkByW:Record<string,number>={}
-    for(const ev of (st.events||[])) if(ev.new_status==='rework'){const o=st.orders.find((x:any)=>x.id===ev.order_id); if(o) reworkByW[o.assignee_id]=(reworkByW[o.assignee_id]||0)+1}
-    return st.employees.filter((e:any)=>e.role==='worker'&&e.on_shift&&e.is_active!==false).map((w:any)=>{
-      const load=workerLoad(st.orders,w.id);const inWork=load.active;const q=load.queue;const review=load.review
-      const closedAll=st.orders.filter((o:any)=>o.assignee_id===w.id&&!o.cancelled&&o.status==='closed')
-      const onEq=closedAll.filter((o:any)=>String(o.equipment_id)===String(eq))
-      const otPct=submissionStats(closedAll,st.events||[]).pct
-      const rw=reworkByW[w.id]||0
-      const perms=(permitsByW[w.id]||[]).map((p:any)=>({...p,expired:new Date(p.valid_until)<new Date()}))
-      const avail=inWork?2:q||review?1:0
-      const score=(2-avail)*100+(onEq.length*10)+((otPct||0))-(rw*15)
-      return {w,inWork,q,review,onEq:onEq.length,otPct,rw,perms,avail,score,ok:perms.some((p:any)=>!p.expired)}
-    }).sort((a:any,b:any)=>((b.ok?1:0)-(a.ok?1:0))||b.score-a.score)})()
+  const cands=selectExecutors(st,eq,{specialty:requiredSpecialty,permit:requiredPermit})
   const eligible=cands.filter((c:any)=>c.ok).slice(0,2)
   const refused=cands.filter((c:any)=>!c.ok)
   const memoryHint=(()=>{if(!eq)return null
@@ -63,15 +47,19 @@ export default function Issue({actor}:{actor:Actor}){
     <form onSubmit={submit} className="space-y-4">
       <Card className="space-y-4">
         <label className="block"><span className="text-[13px] font-medium text-muted">{t('Проблема и работы')}</span>
-          <div className="report-work-field issue-work-field"><textarea required className="mt-1 w-full min-h-28 p-4 rounded-[14px] border border-border bg-surface text-[16px]" placeholder={t('Что нужно исправить?')} value={title} onChange={e=>setTitle(e.target.value)}/><VoiceButton onText={text=>setTitle(prev=>prev?prev+' '+text:text)}/></div></label>
+          <div className="report-work-field issue-work-field"><textarea required className="mt-1 w-full min-h-28 p-4 rounded-[14px] border border-border bg-surface text-[16px]" placeholder={t('Что нужно исправить?')} value={title} onChange={e=>setTitle(e.target.value)}/><VoiceButton onText={text=>{setTitle(prev=>prev?prev+' '+text:text);setVoiceDraft(parseVoiceFields(text,{mode:'issue',equipment:st.equipment,sections:st.sections.map((s:any)=>s.name)}))}}/></div></label>
+        <details className="border rounded p-3"><summary>Разобрать диктовку в поля (черновик)</summary><textarea aria-label="Текст диктовки для полей" className="w-full min-h-24 border p-3" value={voiceTranscript} onChange={e=>setVoiceTranscript(e.target.value)}/><button type="button" className="min-h-14 border rounded p-3" onClick={()=>setVoiceDraft(parseVoiceFields(voiceTranscript,{mode:'issue',equipment:st.equipment,sections:st.sections.map((s:any)=>s.name)}))}>Разобрать черновик</button></details>
+        {voiceDraft&&<Card><h3>Поля из диктовки: черновик</h3><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(voiceDraft.fields,null,2)}</pre><p className="text-xs">Не распознано: {voiceDraft.unresolved.length}. Только черновик, проверьте поля. Исполнитель не назначается.</p><button type="button" className="min-h-14 border rounded p-3" onClick={()=>{const f=voiceDraft.fields;if(f.title)setTitle(f.title);if(f.section)setSection(f.section);if(f.equipmentId){setEq(f.equipmentId);const e=st.equipment.find((x:any)=>String(x.id)===String(f.equipmentId));if(e)setSection(e.section);setAssignee('')}if(f.kind)setKind(f.kind);if(f.priority)setPriority(f.priority);if(f.hours)setHours(f.hours);setVoiceDraft(null)}}>Применить к черновику</button></Card>}
         <label className="block"><span className="text-[13px] font-medium text-muted">{t('Участок')}</span><select aria-label={t("Участок")} className={input} value={section} onChange={e=>{setSection(e.target.value);setEq('');setAssignee('')}}><option value="">{t("Все участки")}</option>{[...new Set(st.equipment.map((x:any)=>String(x.section)))].map((name:any)=><option key={name} value={name}>{name}</option>)}</select></label>
         <label className="block"><span className="text-[13px] font-medium text-muted">{t('Тип работ')}</span><select aria-label={t("Тип работ")} className={input} value={kind} onChange={e=>setKind(e.target.value)}><option value="unplanned">{t('Внеплановый')}</option><option value="planned">{t('Плановый')}</option></select></label>
         <label className="block"><span className="text-[13px] font-medium text-muted">{t('Оборудование')}</span>
           <select aria-label={t("Оборудование")} required className={"mt-1 "+input} value={eq} onChange={e=>{setEq(e.target.value);const selected=st.equipment.find((x:any)=>String(x.id)===e.target.value);if(selected)setSection(String(selected.section));setAssignee('')}}>
             <option value="">{t('Выбрать…')}</option>
             {st.equipment.filter((x:any)=>!section||String(x.section)===section).map((x:any)=><option key={x.id} value={x.id}>{x.name} · {x.section}</option>)}</select></label>
+        <label className="block">Специальность для подсказки<select aria-label="Специальность для подсказки" className={input} value={requiredSpecialty} onChange={e=>setRequiredSpecialty(e.target.value)}><option value="">Не указана: подсказка недоступна</option>{[...new Set(workers.map((w:any)=>w.specialty).filter(Boolean))].map((s:any)=><option key={s}>{s}</option>)}</select></label>
+        <p className="text-xs">{requiredPermit?'Подсказка проверяет только выбранный допуск. Право выполнять конкретную работу подтверждает мастер.':'Допуск не выбран: подсказка не проверяет право выполнять конкретную работу.'}</p><label className="block">Допуск для подсказки (если требуется)<select aria-label="Допуск для подсказки" className={input} value={requiredPermit} onChange={e=>setRequiredPermit(e.target.value)}><option value="">Не выбран</option>{[...new Set((st.permits||[]).map((p:any)=>p.permit))].map((s:any)=><option key={s}>{s}</option>)}</select></label>
         {eligible.length>0&&<Card className="border-primary/40 bg-primary/5 !p-3.5 space-y-2">
-          <div className="text-[12px] font-semibold text-muted uppercase">{t('Подбор по правилам · решает мастер')}</div><p className="text-[13px]">Допуск найден; соответствие работе не проверено.</p>
+          <div className="text-[12px] font-semibold text-muted uppercase">{t('Подбор по правилам · решает мастер')}</div><p className="text-[13px]">Специальность выбирает мастер. Учёт оценок на этом узле; соответствие конкретным работам проверяет мастер.</p>
           {eligible.map((c:any,i:number)=>(<div key={c.w.id} className="space-y-1 pb-2 border-b border-border/50 last:border-0 last:pb-0">
             <div className="flex items-center justify-between gap-3">
               <div className="text-[14px]"><b>{i+1}. {c.w.name}</b> · {c.w.specialty||'—'}{c.w.brigade?' · '+c.w.brigade:''}</div>
@@ -79,6 +67,7 @@ export default function Issue({actor}:{actor:Actor}){
             </div>
             <div className="text-[12px] text-muted">
               {c.inWork?t('Занят: наряд')+' #'+c.inWork.id:c.q?t('В очереди')+' '+c.q:c.review?t('На проверке')+' '+c.review:t('Свободен')}
+              <span>{c.reason}</span>
               {c.onEq?` · ${c.onEq} закрытых на этом узле`:' · на этом узле не работал'}
               {c.otPct!==null?` · в срок ${c.otPct}%`:''}
               {c.rw?` · переделок ${c.rw}`:''}
@@ -87,9 +76,9 @@ export default function Issue({actor}:{actor:Actor}){
               {c.perms.map((p:any)=><span key={p.id} className={"inline-block mr-2 px-2 py-0.5 rounded-full "+(p.expired?'bg-danger/15 text-danger':'bg-surface text-muted')}>{p.permit} {p.expired?'· истёк':'до '+p.valid_until}</span>)}
             </div>}
           </div>))}
-          <Explain title={t('Почему эти исполнители')}>{t('Доступность, опыт на узле и сроки. Допуск найден; соответствие работе не проверено. Финальный выбор за мастером.')}</Explain>
+          <Explain title={t('Почему эти исполнители')}>{t('Доступность, опыт на узле и сроки. Специальность выбирает мастер. Учёт оценок на этом узле; соответствие конкретным работам проверяет мастер. История ограничена загруженным срезом, это не полный рейтинг предприятия. Финальный выбор за мастером.')}</Explain>
         </Card>}
-        {refused.length>0&&<Card className="!p-3 text-[12px] text-muted">{t('Не в подборе: нет действующего допуска')} · {refused.map((c:any)=>c.w.name).join(', ')}. {t('Мастер проверяет допуск перед назначением.')}</Card>}
+        {refused.length>0&&<Card className="!p-3 text-[12px] text-muted">{t('Не в подборе')} · {refused.map((c:any)=>c.w.name+': '+c.reason).join('; ')}. {t('Мастер проверяет допуск перед назначением.')}</Card>}
         {memoryHint&&<Card className="!p-3 text-[13px]">На этом узле <b>{memoryHint} нарядов за 30 дней</b> — проверьте причину повторов перед постановкой следующего.</Card>}
         {stockHint.length>0&&<Card className="!p-3 text-[13px] text-muted">Часто расходуется на этом узле: {stockHint.join(', ')}. Складские остатки не ведутся (дорожная карта: 1С).</Card>}
         <label className="block"><span className="text-[13px] font-medium text-muted">{t('Исполнитель')}</span>

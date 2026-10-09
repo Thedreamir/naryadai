@@ -1,3 +1,4 @@
+import {currentSummary} from '../../lib/manager-summary.mjs'
 import {shiftAdvisory} from '../../lib/shift-advisory.mjs'
 import {equipmentDowntime} from '../../lib/equipment-downtime.mjs'
 import {useLocale} from '../../lib/locale'
@@ -38,9 +39,8 @@ export default function Handover({actor}:{actor:Actor}){
   const start=new Date(date+'T'+(shift==='day'?'08:00:00':'20:00:00')+'+05:00');const end=new Date(start.getTime()+12*3600000);const inScope=st.orders.filter((o:any)=>!section||o.section===section);const hiddenN=inScope.filter((o:any)=>isTechnicalTitle(o.title)).length;const scoped=inScope.filter((o:any)=>!presentation||!isTechnicalTitle(o.title))
   const downtime=equipmentDowntime(st.equipment_state_events??null,{since:start.getTime(),until:Math.min(end.getTime(),Date.now()),equipmentIds:st.equipment.filter((e:any)=>!section||e.section===section).map((e:any)=>e.id)})
   const advisory=shiftAdvisory(scoped,now)
-  const active=scoped.filter((o:any)=>!o.cancelled&&ACTIVE_STATUSES.includes(o.status))
-  const review=scoped.filter((o:any)=>['completed','ai_review'].includes(o.status))
-  const overdue=active.filter((o:any)=>new Date(o.deadline).getTime()<now)
+  const current=currentSummary(scoped,now)
+  const {active,review,overdue}=current
   const closed=scoped.filter((o:any)=>o.status==='closed'&&withinInstant(o.closed_at,start.getTime(),end.getTime())); const scored=closed.filter((o:any)=>o.ai_result?.human_score);
   const byW=st.employees.filter((e:any)=>e.role==='worker').map((w:any)=>({w,list:active.filter((o:any)=>o.assignee_id===w.id)})).filter((x:any)=>x.list.length)
   return <div className="space-y-4 max-w-3xl print:p-0">

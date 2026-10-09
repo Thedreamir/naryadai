@@ -80,7 +80,7 @@ function drawTable(cur: Cursor, table: DocTable) {
   cur.y += 4
 }
 
-export function reportDocToPdf(doc: ReportDoc, fonts: ReportFonts): Uint8Array {
+export function reportDocToPdf(doc: Pick<ReportDoc,'title'|'subtitle'|'disclaimer'|'generatedAt'|'sections'>, fonts: ReportFonts): Uint8Array {
   const pdf = new jsPDF({unit: 'mm', format: 'a4', compress: true})
   registerFonts(pdf, fonts)
   const cur = new Cursor(pdf)

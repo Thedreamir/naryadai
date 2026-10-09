@@ -1,3 +1,4 @@
+import '../styles/glove-mode.css'
 import {createContext,useContext,useEffect,useState,type ReactNode} from 'react'
 type Theme='dark'|'light'|'system'; type Scale='100'|'130'|'160'
 type Prefs={theme:Theme;scale:Scale;glove:boolean;setTheme:(t:Theme)=>void;setScale:(s:Scale)=>void;setGlove:(g:boolean)=>void}

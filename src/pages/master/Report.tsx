@@ -1,3 +1,11 @@
+import {downtimeReport} from '../../lib/downtime-report.mjs'
+import {humanScore} from '../../lib/human-score.mjs'
+import {materialReport} from '../../lib/material-report.mjs'
+import {leaderKpis} from '../../lib/leader-kpis.mjs'
+import {shiftReportCounts} from '../../lib/shift-report-counts.mjs'
+import BrigadeRatingChart from '../../components/BrigadeRatingChart'
+import {customBounds,matchesScope,scopeIds,dayBuckets} from '../../lib/report-scope.mjs'
+import {anomalyExplanation} from '../../lib/anomaly-explanation.mjs'
 import SyntheticAiSummary from '../../components/SyntheticAiSummary'
 import {useLocale} from '../../lib/locale'
 import {Explain,RatingFactors} from '../../components/VisualBlocks'
@@ -36,28 +44,34 @@ const GREEN='#16402F', ACC='#1F9D63', WARN='#C77E1F', RED='#D23B3B', MUT='#B9B9B
 export default function Report({actor}:{actor:Actor}){
   const {t,locale}=useLocale()
 
-  const [anomalyKind,setAnomalyKind]=useState('all'); const [brigade,setBrigade]=useState('all');
+  const [anomalyKind,setAnomalyKind]=useState('all');
+  const [scope,setScope]=useState({section:'',equipment:'',worker:'',brigade:''});const [custom,setCustom]=useState(false);const [customStart,setCustomStart]=useState('');const [customEnd,setCustomEnd]=useState('');const [periodError,setPeriodError]=useState('');
   const [days,setDays]=useState<PeriodDays>(savedPeriod); const [bounds,setBounds]=useState(()=>periodBounds(savedPeriod()))
   const [refusals,setRefusals]=useState<any[]>([]); const [reviewError,setReviewError]=useState(''); const [reviewBusy,setReviewBusy]=useState(false); const [notes,setNotes]=useState<Record<number,string>>({})
   const refreshRefusals=()=>H.refusalReviews().then(setRefusals).catch(e=>setReviewError(e.message))
-  const decide=async(eventId:number,classification:'justified'|'unjustified')=>{setReviewBusy(true);setReviewError('');try{await H.reviewRefusal(eventId,classification,notes[eventId]||'');await refreshRefusals();setBounds(periodBounds(days))}catch(e){setReviewError((e as Error).message);await refreshRefusals()}finally{setReviewBusy(false)}}
+  const decide=async(eventId:number,classification:'justified'|'unjustified')=>{setReviewBusy(true);setReviewError('');try{await H.reviewRefusal(eventId,classification,notes[eventId]||'');await refreshRefusals();setBounds({...bounds})}catch(e){setReviewError((e as Error).message);await refreshRefusals()}finally{setReviewBusy(false)}}
   const [st,setSt]=useState<any>(null); const [rt,setRt]=useState<any[]|null>(null); const [an,setAn]=useState<any[]|null>(null)
   const [reportOrders,setReportOrders]=useState<any[]>([]);const [loadError,setLoadError]=useState('');const [loading,setLoading]=useState(true)
   useEffect(()=>{let active=true;setLoading(true);setLoadError('');setRt(null);setAn(null);setRefusals([]);
-    Promise.all([H.state(),H.closedReportOrders(bounds.since,bounds.until),H.ratings(bounds.since,bounds.until).catch(()=>null),H.anomalies(bounds.since,bounds.until).catch(()=>null),H.refusalReviews().catch(()=>[])])
+    H.state().then(state=>Promise.all([Promise.resolve(state),H.closedReportOrders(bounds.since,bounds.until),H.ratings(bounds.since,bounds.until,scopeIds(scope,state)).catch(()=>null),H.anomalies(bounds.since,bounds.until,scopeIds(scope,state)).catch(()=>null),H.refusalReviews().catch(()=>[])]))
       .then(([state,orders,rating,anomaly,refusal])=>{if(active){setReportOrders(orders);setSt(state);setRt(rating);setAn(anomaly);setRefusals(refusal)}}).catch(e=>{if(active)setLoadError(e.message)}).finally(()=>{if(active)setLoading(false)});
     return()=>{active=false}
-  },[bounds])
-  const shownRatings=(rt||[]).filter(r=>brigade==='all'||st?.employees.find((e:any)=>e.id===r.worker_id)?.brigade===brigade);
+  },[bounds,scope])
+  const scopedCurrent=st?st.orders.filter((o:any)=>matchesScope(o,scope,st.employees)):[];
+  const materialModel=materialReport(scopedCurrent,{since:bounds.since,until:bounds.until});const kpiModel=leaderKpis(scopedCurrent,st?.events||[],{since:Date.parse(bounds.since),until:Date.parse(bounds.until),employees:st?.employees||[]});const countModel=shiftReportCounts(st?.orders||[],st?.events||[],bounds,scope,st?.employees||[],Date.now());
+  const downtimeModel=downtimeReport(st?.equipment_state_events||null,{since:Date.parse(bounds.since),until:Date.parse(bounds.until),equipmentIds:st?.equipment.filter((e:any)=>(!scope.section||e.section===scope.section)&&(!scope.equipment||String(e.id)===scope.equipment)).map((e:any)=>e.id)||[]});
+  const selectedOrders=reportOrders.filter(o=>matchesScope(o,scope,st?.employees||[]));
+  const shownRatings=rt||[];
   const shownAnomalies=(an||[]).filter(a=>anomalyKind==='all'||a.kind===anomalyKind);
   const exportAnomalies=()=>{const text=reportCsv(['Тип','Объект','Факты','Рекомендация','Начало окна','Конец окна'],shownAnomalies.map(a=>[a.kind,a.subject,a.facts,a.recommendation,bounds.since,bounds.until]));const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='tekton-synthetic-anomalies.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
-  const download=(kind:'orders'|'ratings')=>{if(loading||loadError||!st||(kind==='ratings'&&rt===null))return;const text=kind==='orders'?closedOrderCsv(reportOrders,bounds):ratingCsv(shownRatings,bounds);const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='tekton-synthetic-'+kind+'-'+bounds.until.slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+  const download=(kind:'orders'|'ratings')=>{if(loading||loadError||!st||(kind==='ratings'&&rt===null))return;const text=kind==='orders'?closedOrderCsv(selectedOrders,bounds):ratingCsv(shownRatings,bounds);const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='tekton-synthetic-'+kind+'-'+bounds.until.slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
   const [richBusy,setRichBusy]=useState(''); const [richErr,setRichErr]=useState('')
   const downloadRich=async(kind:'orders'|'ratings',format:'xlsx'|'pdf')=>{
     if(loading||loadError||!st||(kind==='ratings'&&rt===null)||richBusy)return
     setRichBusy(kind+format); setRichErr('')
     try{
-      const doc=kind==='orders'?closedOrdersDoc(reportOrders,bounds):ratingDoc(shownRatings,bounds)
+      const doc=kind==='orders'?closedOrdersDoc(selectedOrders,bounds):ratingDoc(shownRatings,bounds)
+      doc.subtitle+=' · Фильтры: участок '+(scope.section||'все')+'; оборудование '+(scope.equipment||'все')+'; исполнитель '+(scope.worker||'все')+'; бригада '+(scope.brigade||'все');
       const stamp=bounds.until.slice(0,10)
       if(format==='xlsx'){downloadBytes(`tekton-synthetic-${kind}-${stamp}.xlsx`,buildXlsx(sheetsFromDoc(doc)),XLSX_MIME)}
       else{const fonts=await loadReportFonts();downloadBytes(`tekton-synthetic-${kind}-${stamp}.pdf`,reportDocToPdf(doc,fonts),PDF_MIME)}
@@ -66,38 +80,38 @@ export default function Report({actor}:{actor:Actor}){
   }
   const data=useMemo(()=>{
     if(!st) return null
-    const closed=reportOrders.filter((o:any)=>o.status==='closed'&&within(o.closed_at,bounds))
-    const buckets: Record<string,number>={}
-    for(let i=days;i>=0;i--){const d=new Date(Date.now()-i*86400000);buckets[d.toLocaleDateString(locale==='kz'?'kk-KZ':'ru-RU',{day:'numeric',month:'short'})]=0}
-    closed.forEach((o:any)=>{const k=new Date(o.closed_at).toLocaleDateString(locale==='kz'?'kk-KZ':'ru-RU',{day:'numeric',month:'short'});if(k in buckets)buckets[k]++})
-    const byDay=Object.entries(buckets).map(([d,n])=>({day:d,count:n}))
-    const statuses=[['Закрытые',closed.length,GREEN],['Активные',st.orders.filter((o:any)=>ACTIVE_STATUSES.includes(o.status)).length,ACC],['На проверке',st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)).length,WARN]]
+    const closed=selectedOrders.filter((o:any)=>o.status==='closed'&&within(o.closed_at,bounds))
+    const byDay=dayBuckets(bounds,closed)
+    const statuses=[['Активные',st.orders.filter((o:any)=>matchesScope(o,scope,st.employees)&&ACTIVE_STATUSES.includes(o.status)).length,ACC],['На проверке',st.orders.filter((o:any)=>matchesScope(o,scope,st.employees)&&['completed','ai_review'].includes(o.status)).length,WARN]]
       .filter(x=>x[1] as number>0).map(([name,value,color])=>({name:t(String(name)),value,color}))
-    const scored=closed.filter((o:any)=>o.ai_result?.human_score)
+    const scored=closed.filter((o:any)=>humanScore(o.ai_result?.human_score)!==null)
     const ratings=st.employees.filter((e:any)=>e.role==='worker').map((w:any)=>{
       const ws=scored.filter((o:any)=>o.assignee_id===w.id)
-      const avg=ws.length?(ws.reduce((a:number,o:any)=>a+o.ai_result.human_score,0)/ws.length):null
+      const avg=ws.length?(ws.reduce((a:number,o:any)=>a+humanScore(o.ai_result?.human_score)!,0)/ws.length):null
       return {name:w.name,closed:closed.filter((o:any)=>o.assignee_id===w.id).length,avg}
     }).filter((r:any)=>r.closed>0)
     return {byDay,statuses,ratings,scoredCount:scored.length,closedCount:closed.length}
-  },[st,reportOrders,bounds,days,locale])
+  },[st,reportOrders,bounds,days,locale,scope])
   if(!st||!data) return <div role={loadError?'alert':'status'} className="text-muted py-10">{loadError||t("Загрузка…")}</div>
   return <div className="space-y-4">{import.meta.env.VITE_SYNTHETIC_AI_PREVIEW==='true'&&<SyntheticAiSummary bounds={bounds}/>}
     <div><h1 className="text-[26px] font-bold">{t("Отчёт и рейтинг")}</h1>
-      <div className="text-[13px] text-muted">{t("Отчёт по учебному набору · не аттестация")}</div><label className="text-[13px] flex gap-2 items-center mt-2">{t("Период")} <select aria-label={t("Период отчёта")} value={days} onChange={e=>{const d=Number(e.target.value) as PeriodDays;setDays(d);setPeriod(d);setBounds(periodBounds(d))}} className="border border-border rounded-[10px] p-2">{[7,30,90].map(n=><option key={n} value={n}>{n} {t("дней")}</option>)}</select></label><Explain title={t("Границы периода и источники")}>{new Date(bounds.since).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU')} - {new Date(bounds.until).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU')} {t("· Asia/Almaty. Закрытия и оценки по дате закрытия; сигналы по дате выдачи. Очереди - текущий срез.")}</Explain></div>
-    <label className="block text-sm">{t("Бригада рейтинга")} <select aria-label={t("Бригада рейтинга")} value={brigade} onChange={e=>setBrigade(e.target.value)} className="border rounded p-2"><option value="all">{t("Все бригады")}</option>{[...new Set((st.employees||[]).map((e:any)=>e.brigade).filter(Boolean))].map((b:any)=><option key={b} value={b}>{b}</option>)}</select></label>
+      <div className="text-[13px] text-muted">{t("Отчёт по учебному набору · не аттестация")}</div><label className="text-[13px] flex gap-2 items-center mt-2">{t("Период")} <select aria-label={t("Период отчёта")} value={custom?'custom':days} onChange={e=>{if(e.target.value==='custom'){setCustom(true);return;}setCustom(false);setPeriodError('');const d=Number(e.target.value) as PeriodDays;setDays(d);setPeriod(d);setBounds(periodBounds(d))}} className="border border-border rounded-[10px] p-2">{[1,7,30,90].map(n=><option key={n} value={n}>{n} {t("дней")}</option>)}<option value="custom">{t('Произвольный период')}</option></select></label><Explain title={t("Границы периода и источники")}>{new Date(bounds.since).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU',{timeZone:'Asia/Almaty'})} - {new Date(bounds.until).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU',{timeZone:'Asia/Almaty'})} {t("· Asia/Almaty. Закрытия и оценки по дате закрытия; сигналы по дате выдачи. Очереди - текущий срез.")}</Explain></div>
+    
     <div className="flex flex-wrap gap-2"><Button disabled={loading||!!loadError} onClick={()=>download('orders')}>{t("CSV закрытых нарядов")}</Button><Button variant="outline" disabled={loading||!!loadError||rt===null} onClick={()=>download('ratings')}>{t("CSV рейтинга")}</Button><Button variant="outline" disabled={loading||!!loadError||!!richBusy} onClick={()=>downloadRich('orders','xlsx')}>{t("XLSX закрытых нарядов")}</Button><Button variant="outline" disabled={loading||!!loadError||!!richBusy} onClick={()=>downloadRich('orders','pdf')}>{t("PDF закрытых нарядов")}</Button><Button variant="outline" disabled={loading||!!loadError||rt===null||!!richBusy} onClick={()=>downloadRich('ratings','xlsx')}>{t("XLSX рейтинга")}</Button><Button variant="outline" disabled={loading||!!loadError||rt===null||!!richBusy} onClick={()=>downloadRich('ratings','pdf')}>{t("PDF рейтинга")}</Button></div>
     <div className="text-[12px] text-muted">{t("CSV/XLSX/PDF за выбранный период, UTF-8, кириллица встроена в PDF. Только явные поля отчёта, без фото-ссылок, контактов и текста ремонта.")}</div>
     {richErr&&<p role="alert" className="text-[12px] text-danger">{richErr}</p>}
     {loading&&<p role="status" className="text-[13px] text-muted">{t("Обновление периода… экспорт временно отключён.")}</p>}
     {loadError&&<p role="alert" className="text-[13px] text-danger">{loadError} {t("· экспорт отключён: данные не обновлены.")}</p>}
     <div className="grid grid-cols-2 gap-4">
-      <Card><div className="font-semibold text-[15px] mb-3">{t("Закрытия за")} {days} {t("дней (скользящее окно)")}</div>
+      {custom&&<Card><label className="block">{t('Начало (Asia/Almaty)')}<input aria-label={t('Начало периода')} type="datetime-local" className="border p-3 w-full" value={customStart} onChange={e=>setCustomStart(e.target.value)}/></label><label className="block">{t('Конец, не включительно')}<input aria-label={t('Конец периода')} type="datetime-local" className="border p-3 w-full" value={customEnd} onChange={e=>setCustomEnd(e.target.value)}/></label><Button onClick={()=>{try{setBounds(customBounds(customStart,customEnd));setPeriodError('')}catch(e){setPeriodError((e as Error).message)}}}>{t('Применить период')}</Button><p className="text-xs">{bounds.since&&new Date(bounds.since).toLocaleString('ru-RU',{timeZone:'Asia/Almaty'})} - {bounds.until&&new Date(bounds.until).toLocaleString('ru-RU',{timeZone:'Asia/Almaty'})} (Asia/Almaty)</p>{periodError&&<p role="alert">{periodError}</p>}</Card>}
+    {loading&&<p role="status">{t('Загружается новый срез; экспорт временно недоступен.')}</p>}
+    <Card><h2>{t('Общие фильтры отчёта')}</h2>{(['section','equipment','worker','brigade'] as const).map(key=>{const options=key==='section'?st.sections.map((s:any)=>[s.name,s.name]):key==='equipment'?st.equipment.filter((e:any)=>!scope.section||e.section===scope.section).map((e:any)=>[String(e.id),e.name]):key==='worker'?st.employees.filter((e:any)=>e.role==='worker').map((e:any)=>[e.id,e.name]):[...new Set(st.employees.map((e:any)=>e.brigade).filter(Boolean))].map(s=>[s,s]);const name={section:'Участок отчёта',equipment:'Оборудование отчёта',worker:'Исполнитель отчёта',brigade:'Бригада отчёта'}[key];return <label key={key} className="block mt-2">{name}<select aria-label={name} className="border p-3 w-full" value={scope[key]} onChange={e=>setScope(s=>({...s,[key]:e.target.value,...(key==='section'?{equipment:''}:{})}))}><option value="">{t('Все')}</option>{options.map(([v,label]:any)=><option key={v} value={v}>{label}</option>)}</select></label>})}<p className="text-xs mt-2">{t('Фильтры применяются к закрытиям, рейтингу и сигналам на сервере; активные очереди остаются текущим срезом. История бригад не фиксируется: фильтр использует текущую принадлежность.')}</p></Card>
+    <Card><div className="font-semibold text-[15px] mb-3">{t("Закрытия за")} {custom?'выбранный период':days+' дней (скользящее окно)'}</div>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data.byDay}><XAxis dataKey="day" fontSize={11} tickLine={false}/><YAxis allowDecimals={false} fontSize={11} tickLine={false} width={24}/>
             <Tooltip/><Bar isAnimationActive={false} dataKey="count" fill={GREEN} radius={[6,6,0,0]}/></BarChart>
         </ResponsiveContainer></Card>
-      <Card><div className="font-semibold text-[15px] mb-3">{t("Закрытия периода и текущие очереди")}</div>
+      <Card><div className="font-semibold text-[15px] mb-3">{t("Текущие очереди (не итоги периода)")}</div>
         <ResponsiveContainer width="100%" height={200}>
           <PieChart><Pie isAnimationActive={false} data={data.statuses} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
             {data.statuses.map((s:any)=><Cell key={s.name} fill={s.color}/>)}</Pie><Tooltip/></PieChart>
@@ -128,19 +142,23 @@ export default function Report({actor}:{actor:Actor}){
           <td className="font-bold text-[16px]">{nums.length?Math.round((nums as number[]).reduce((a,c)=>a+c,0)/nums.length*10)/10:'—'}</td>
           <td className="text-[12px] text-muted">{(arr as any[]).length}</td></tr>})}</tbody></table></div>
     </Card>}
-    <Card><h2 className="font-semibold text-[15px] mb-2">{t("Причины отказов: проверка мастером")}</h2>
+    <Card><h2>{t('Срез событий по доступной истории')}</h2><p>{t('Выдано')}: {countModel.counts.issued.orders} · {t('Сдано исполнителем')}: {countModel.counts.completed.orders} · {t('Отклонено')}: {countModel.counts.refused.orders}</p><p className="text-xs">{t('Неполная загруженная история; эти числа не гарантируют полный отчёт смены. Текущая загрузка отдельно от событий периода.')}</p></Card>
+    <Card><h2>{t('Реакция и исполнение по событиям')}</h2><p>{t('Медиана реакции, мин')}: {kpiModel.overall.reaction_median_min??'—'} ({kpiModel.overall.reaction_samples})</p><p>{t('Медиана принятие → сдача, мин')}: {kpiModel.overall.completion_median_min??'—'} ({kpiModel.overall.completion_samples})</p><p className="text-xs">{t('Включает паузы и доработки. Не простой оборудования, не трудоёмкость. Нет подтверждённых событий = нет метрики.')}</p></Card>
+    <Card><h2>{t('Материалы по доступной истории')}</h2>{materialModel.rows.map((r:any)=><p key={r.name+r.unit}>{r.name}: {r.total} {r.unit}</p>)}<p>{t('Исключено строк с неизвестной единицей или количеством')}: {materialModel.counts.lines_excluded}</p><p className="text-xs">{t('Единицы не конвертируются. Неполная загруженная история, не полный складской отчёт.')}</p></Card>
+    <Card><h2>{t('Простои: отдельные события оборудования')}</h2><p>{t('Всего минут')}: {downtimeModel.total_minutes??'—'}</p><p className="text-xs">{t('Нет полного baseline = нет общего итога. Наряды и паузы работников не равны простою. Фильтры исполнителя/бригады не применимы к состоянию оборудования.')}</p>{downtimeModel.rows.map((r:any)=><p key={r.equipment_id}>#{r.equipment_id}: {r.total_minutes??'—'} {t('мин')} · {r.covered?t('базовая запись есть'):t('базовая запись отсутствует')}</p>)}</Card>
+    <BrigadeRatingChart ratings={rt} employees={st.employees} brigade={scope.brigade||null} loading={loading} error={!!loadError}/><Card><h2 className="font-semibold text-[15px] mb-2">{t("Причины отказов: проверка мастером")}</h2>
       <p className="text-[12px] text-muted mb-3">{t("Исходная причина и автор события неизменны. Неизвестные причины исключают фактор отказов, пока мастер не подтвердит решение. Объём рейтинга - приближение относительно лучшего исполнителя за период, не норматив трудоёмкости.")}</p>
       {reviewError&&<p role="alert" className="text-danger text-[13px]">{reviewError}</p>}
       <div className="space-y-3">{refusals.filter(e=>within(e.created_at,bounds)&&e.reason && !['no_materials','no_permit','busy_emergency','wrong_specialty','unjustified'].includes(e.reason.split(':')[0])).map(e=><div key={e.id} data-refusal-event={e.id} className="border border-border rounded-[12px] p-3">
         <div className="text-[13px] font-medium">{t("Событие #")}{e.id} {t("· наряд #")}{e.order_id} · {st.employees.find((x:any)=>x.id===e.actor_id)?.name||e.actor_id}</div>
         <div className="text-[13px] mt-1">{t("Исходная причина:")} {e.reason}</div>
-        <div className="text-[12px] text-muted">{new Date(e.created_at).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU')} {t("· источник: журнал отказов")}</div>
-        {e.review?<div className="text-[13px] mt-2">{t("Решение мастера:")} {e.review.classification==='justified'?t("Оправдан"):t("Неоправдан")} · {e.review.note}<div className="text-muted text-[12px]">{st.employees.find((x:any)=>x.id===e.review.reviewer_id)?.name||e.review.reviewer_id} · {new Date(e.review.reviewed_at).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU')}</div></div>:
+        <div className="text-[12px] text-muted">{new Date(e.created_at).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU',{timeZone:'Asia/Almaty'})} {t("· источник: журнал отказов")}</div>
+        {e.review?<div className="text-[13px] mt-2">{t("Решение мастера:")} {e.review.classification==='justified'?t("Оправдан"):t("Неоправдан")} · {e.review.note}<div className="text-muted text-[12px]">{st.employees.find((x:any)=>x.id===e.review.reviewer_id)?.name||e.review.reviewer_id} · {new Date(e.review.reviewed_at).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU',{timeZone:'Asia/Almaty'})}</div></div>:
           actor.role==='master'||actor.role==='admin'?<div className="mt-2 space-y-2"><input aria-label={t("Основание решения")} className="w-full border border-border rounded-[10px] p-3" placeholder={t("Основание решения (не менее 3 символов)")} value={notes[e.id]||''} onChange={x=>setNotes({...notes,[e.id]:x.target.value})}/><div className="flex gap-2"><Button disabled={reviewBusy||(notes[e.id]||'').trim().length<3} onClick={()=>decide(e.id,'justified')}>{t("Подтвердить причину")}</Button><Button variant="outline" disabled={reviewBusy||(notes[e.id]||'').trim().length<3} onClick={()=>decide(e.id,'unjustified')}>{t("Отказ неоправдан")}</Button></div></div>:<div className="text-[12px] text-muted">{t("Ожидает решения мастера. Руководителю доступен только просмотр.")}</div>}
       </div>)}</div>
       {refusals.filter(e=>within(e.created_at,bounds)&&e.reason && !['no_materials','no_permit','busy_emergency','wrong_specialty','unjustified'].includes(e.reason.split(':')[0])).length===0&&<p className="text-muted text-[13px]">{t("Спорных причин нет.")}</p>}
     </Card>
-    <Card><div className="font-semibold text-[15px] mb-2">{t("Аномалии и рекомендации (")}{days} {t("дней)")}</div>
+    <Card><div className="font-semibold text-[15px] mb-2">{t("Аномалии и рекомендации (")}{custom?'выбранный период)':days+' дней)'}</div>
       <div className="text-[12px] text-muted mb-3">{t("Правила и статистика по истории учебного набора, не вывод ИИ-модели. Каждый сигнал — повод для анализа, не доказанная закономерность; закономерности заложены в учебный набор данных для демонстрации.")}</div>
       <p className="text-sm mb-3">{t("Заложенные учебные паттерны: повторы шифра на одном оборудовании; поломки после ППР; расход материала выше обычного; концентрация нарядов на оборудовании.")}</p><p className="text-xs mb-3">{t("Окно выдачи:")} {new Date(bounds.since).toLocaleString('ru-RU')} - {new Date(bounds.until).toLocaleString('ru-RU')} {t("(конец не включён), Алматы. Пара повторов: по справочнику шифров, по умолчанию 7 дней.")}</p>
       <label className="block mb-2 text-sm">{t("Тип сигнала")} <select aria-label={t("Тип сигнала")} value={anomalyKind} onChange={e=>setAnomalyKind(e.target.value)} className="border rounded p-2">{['all','top_equipment','repeat_fault','post_pm_failure','material_outlier'].map(k=><option value={k} key={k}>{k==='all'?t("Все сигналы"):k}</option>)}</select></label><Button disabled={loading||an===null} onClick={exportAnomalies}>{t("CSV сигналов")}</Button>
@@ -148,7 +166,7 @@ export default function Report({actor}:{actor:Actor}){
         {shownAnomalies.map((a:any,i:number)=><div key={i} className="border border-border rounded-[12px] p-3">
           <div className="text-[13px] font-semibold">{{top_equipment:t("Топ проблемного оборудования"),repeat_fault:t("Повторная неисправность"),post_pm_failure:t("Поломки после ППР"),material_outlier:t("Аномальный расход материала")}[a.kind as string]||a.kind} · {a.subject}</div>
           <div className="text-[12px] text-muted">{a.facts}</div>
-          <div className="text-[12px] mt-0.5">{a.recommendation}</div>
+          <div className="text-[12px] mt-0.5 anomaly-explanation">{anomalyExplanation(a,bounds).answer}</div>
         </div>)}
         {an&&shownAnomalies.length===0&&<div className="text-[13px] text-muted">{t("Сигналов за период не найдено")}</div>}
         {an===null&&<div className="text-[13px] text-muted">{t("Аналитика недоступна")}</div>}

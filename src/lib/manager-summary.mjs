@@ -1,7 +1,8 @@
 const activeStatuses=new Set(['issued','queued','accepted','in_progress','paused','rework'])
 export function currentSummary(orders,now=Date.now()) {
-  const active=orders.filter(o=>activeStatuses.has(o.status))
-  return {active,overdue:active.filter(o=>Number.isFinite(Date.parse(o.deadline))&&Date.parse(o.deadline)<now),review:orders.filter(o=>['completed','ai_review'].includes(o.status)),inWork:active.filter(o=>o.status==='in_progress')}
+  const current=orders.filter(o=>!o.cancelled)
+  const active=current.filter(o=>activeStatuses.has(o.status))
+  return {active,overdue:active.filter(o=>Number.isFinite(Date.parse(o.deadline))&&Date.parse(o.deadline)<now),review:current.filter(o=>['completed','ai_review'].includes(o.status)),inWork:active.filter(o=>o.status==='in_progress')}
 }
 export function workerLoad(employees,orders,now=Date.now()) {
   const current=currentSummary(orders,now)

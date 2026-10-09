@@ -49,7 +49,7 @@ async function stateOnline() {
   const s = supabase!
   const myId = await uid()
   const [emp, orderData, equipment, sections, faults, materials, notifications, norms] = await Promise.all([
-    s.from('employees').select('id,name,role,specialty,on_shift,email,is_active,brigade'),
+    s.from('employees').select('id,name,role,specialty,on_shift,email,is_active,brigade,grade,shift_name'),
     readOrdersAndEvents(s),
     s.from('equipment').select('*'),
     s.from('sections').select('*'),
@@ -259,7 +259,7 @@ export async function report(since?: string, until?: string) {
   if (error) throw new Error(error.message)
   const {data: ratingsView, error: e2} = await s.from('employee_ratings').select('*')
   if (e2) throw new Error(e2.message)
-  const {data: emps} = await s.from('employees').select('id,name,role,specialty,on_shift,email,is_active,brigade').eq('role','worker')
+  const {data: emps} = await s.from('employees').select('id,name,role,specialty,on_shift,email,is_active,brigade,grade,shift_name').eq('role','worker')
   const fullById: Record<string,any> = {}; (ratingsView||[]).forEach(r=>fullById[r.id]=r)
   const byAssignee: Record<string,any> = {}
   for (const r of rows||[]) {
@@ -414,16 +414,16 @@ export async function recordDeclarations(orderId: number, phase: string, texts: 
   if (error) throw new Error(translateError(error.message))
 }
 
-export async function ratings(since: string, until: string) {
+export async function ratings(since: string, until: string, scope:any={}) {
   const s = supabase!
-  const {data, error} = await s.rpc('worker_rating', {since, until})
+  const {data, error} = await s.rpc('worker_rating_scoped', {since, until,p_section:scope.sectionId??null,p_equipment:scope.equipmentId??null,p_worker:scope.workerId??null,p_brigade:scope.brigade??null})
   if (error) throw new Error(error.message)
   return data as any[]
 }
 
-export async function anomalies(since: string, until: string) {
+export async function anomalies(since: string, until: string, scope:any={}) {
   const s = supabase!
-  const {data, error} = await s.rpc('anomaly_report', {since, until})
+  const {data, error} = await s.rpc('anomaly_report_scoped', {since, until,p_section:scope.sectionId??null,p_equipment:scope.equipmentId??null,p_worker:scope.workerId??null,p_brigade:scope.brigade??null})
   if (error) throw new Error(error.message)
   return data as any[]
 }
@@ -463,7 +463,7 @@ export async function reviewKnowledge(id:number,action:string,version:number,not
 // Report-specific complete, bounded, ordered pagination. Never reuse the latest-600 queue.
 export async function closedReportOrders(since:string,until:string){
  const s=supabase!;const lo=Date.parse(since),hi=Date.parse(until);
- if(!Number.isFinite(lo)||!Number.isFinite(hi)||lo>=hi||hi-lo>91*86400000)throw Error('Недопустимый период отчёта');
+ if(!Number.isFinite(lo)||!Number.isFinite(hi)||lo>=hi||hi-lo>366*86400000)throw Error('Недопустимый период отчёта');
  const [eq,sec,emp]=await Promise.all([s.from('equipment').select('id,name,section_id'),s.from('sections').select('id,name'),s.from('employees').select('id,name')]);
  for(const r of [eq,sec,emp])if(r.error)throw Error(r.error.message);
  const equipment=new Map((eq.data||[]).map(x=>[x.id,x])),sections=new Map((sec.data||[]).map(x=>[x.id,x.name])),employees=new Map((emp.data||[]).map(x=>[x.id,x.name]));
@@ -479,3 +479,7 @@ export async function closedReportOrders(since:string,until:string){
 export async function manualMasterDecision(id:number,version:number,decision:'close'|'rework',score:number|null,reason:string,failure:string){const {data,error}=await supabase!.rpc('manual_master_decision',{p_id:id,p_version:version,p_decision:decision,p_score:score,p_reason:reason,p_failure:failure});if(error)throw Error(translateError(error.message));return data}
 
 export async function recordEquipmentState(equipmentId:number,state:string,reason:string){const{data,error}=await supabase!.rpc('record_equipment_state',{p_equipment:equipmentId,p_state:state,p_reason:reason});if(error)throw Error(error.message);return data}
+
+export async function catalogState(){const {data,error}=await supabase!.rpc('catalog_state');if(error)throw Error(error.message);return data;}
+export async function catalogRecord(entity:string,id:string){const {data,error}=await supabase!.rpc('catalog_read',{p_entity:entity,p_id:id});if(error)throw Error(error.message);return data;}
+export async function catalogWrite(entity:string,action:string,id:string,data:any,revision:string|null){const {data:result,error}=await supabase!.rpc('catalog_write',{p_entity:entity,p_action:action,p_id:id,p_data:data,p_expected:revision});if(error)throw Error(error.message);return result;}

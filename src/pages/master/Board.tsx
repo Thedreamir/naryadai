@@ -1,3 +1,4 @@
+import {classifyKanbanOrder} from '../../lib/kanban-groups.mjs'
 import {crewWork} from '../../lib/crew-work.mjs'
 import {useLocale} from '../../lib/locale'
 import {awaitingWorkOverdue} from '../../lib/deadline-state.mjs'
@@ -42,13 +43,14 @@ export default function Board({actor}:{actor:Actor}){
     const q=mine.filter((o:any)=>['issued','queued','accepted'].includes(o.status)).length
     const stt=work?{tone:'amber',label:(work.status==='paused'?t('пауза'):t('в работе'))+' #'+work.id+(!w.on_shift?' · '+t('не на смене'):'')}:!w.on_shift?{tone:'gray',label:t('не на смене')}:q?{tone:'primary',label:t('очередь {count}').replace('{count}',()=>String(q))}:{tone:'teal',label:t('свободен')}
     return {...w,stt,active:mine.length}})
+  const displayGroup=(o:any)=>{const c=classifyKanbanOrder(o,now);return c.included?c.displayGroup:null}
   const KCOLS:[string,string,(o:any)=>boolean][]=[
-    ['issued','Выданные',(o:any)=>o.status==='issued'],
-    ['queued','В очереди',(o:any)=>o.status==='queued'],
-    ['accepted','Принятые',(o:any)=>o.status==='accepted'],
-    ['work','В работе',(o:any)=>['in_progress','paused','rework'].includes(o.status)],
-    ['review','Выполненные',(o:any)=>['completed','ai_review'].includes(o.status)],
-    ['overdue','Просроченные',(o:any)=>awaitingWorkOverdue(o,now)],
+    ['issued','Выданные',(o:any)=>displayGroup(o)==='issued'],
+    ['queued','В очереди',(o:any)=>displayGroup(o)==='queued'],
+    ['accepted','Принятые',(o:any)=>displayGroup(o)==='accepted'],
+    ['work','В работе',(o:any)=>displayGroup(o)==='work'],
+    ['review','Выполненные',(o:any)=>displayGroup(o)==='review'],
+    ['overdue','Просроченные',(o:any)=>displayGroup(o)==='overdue'],
   ]
   return <div className="board space-y-5">
     <div className="flex items-end justify-between"><div><h1 className="text-[26px] font-bold">{t("Наряды смены")}</h1>
@@ -72,15 +74,16 @@ export default function Board({actor}:{actor:Actor}){
     {filterOpen&&<div className="workspace-sheet-backdrop" onClick={()=>setFilterOpen(false)}><section className="workspace-sheet" role="dialog" aria-modal="true" aria-label={t("Фильтры нарядов")} onClick={e=>e.stopPropagation()}><h2>{t("Фильтры нарядов")}</h2><button autoFocus className="sheet-close" onClick={()=>setFilterOpen(false)}>{t("Закрыть")}</button><label>{t("Статус")}<select aria-label={t("Статус")} value={f} onChange={e=>setF(e.target.value)}>{FILTERS.map(([k,l])=><option value={k} key={k}>{t(l)}</option>)}</select></label><label>{t("Участок")}<select aria-label={t("Участок")} value={section} onChange={e=>{setSection(e.target.value);setEquipment('all')}}><option value="all">{t("Все участки")}</option>{[...new Set(visible.map((o:any)=>String(o.section)))].map((x:any)=><option value={x} key={x}>{x}</option>)}</select></label><label>{t("Оборудование")}<select aria-label={t("Оборудование фильтр")} value={equipment} onChange={e=>setEquipment(e.target.value)}><option value="all">{t("Всё оборудование")}</option>{st.equipment.filter((x:any)=>section==='all'||String(x.section)===section).map((x:any)=><option value={String(x.id)} key={x.id}>{x.name}</option>)}</select></label><label>{t("Исполнитель")}<select aria-label={t("Исполнитель фильтр")} value={worker} onChange={e=>setWorker(e.target.value)}><option value="all">{t("Все исполнители")}</option>{st.employees.filter((x:any)=>x.role==='worker').map((x:any)=><option value={x.id} key={x.id}>{x.name}</option>)}</select></label><label>{t("Приоритет")}<select aria-label={t("Приоритет")} value={priority} onChange={e=>setPriority(e.target.value)}><option value="all">{t("Все")}</option><option value="normal">{t("Обычный")}</option><option value="high">{t("Высокий")}</option><option value="emergency">{t("Аварийный")}</option><option value="planned">{t("Плановый")}</option></select></label><button onClick={()=>{setF('all');setSection('all');setPriority('all');setEquipment('all');setWorker('all')}}>{t("Сбросить")}</button><button className="filter-apply" onClick={()=>setFilterOpen(false)}>{t("Показать")} {list.length} {t("нарядов")}</button></section></div>}
     <div className="board-filter-tabs flex gap-2 items-center flex-wrap">{FILTERS.map(([k,l])=><button key={k} onClick={()=>setF(k)} className={cn('h-10 px-4 rounded-full text-[14px] font-semibold',f===k?'bg-primary text-primary-ink':'bg-surface border border-border')}>{t(l)}</button>)}
       <button onClick={()=>setView(view==='list'?'kanban':'list')} className="h-10 px-4 rounded-full text-[14px] font-semibold bg-surface border border-border ml-auto">{view==='list'?t("Канбан"):t("Список")}</button></div>
+    <button className="mobile-filter-button !flex" onClick={()=>setView(view==='list'?'kanban':'list')}>{view==='list'?t('Канбан'):t('Список')}</button>
     {view==='list'?<div className="grid grid-cols-2 gap-3">
       {list.map((o:any)=><Link to={'/orders/'+o.id} key={o.id}><Card className="space-y-1 hover:border-primary/40 transition">
         <div className="flex items-center justify-between"><span className="text-[12px] text-muted">#{o.id} · {o.section}</span><Badge tone={statusOf(o.status).tone as any}>{t(statusOf(o.status).label)}</Badge></div>
         <div className="order-card-title font-semibold text-[15px]">{o.title}</div>
         <div className="text-[12px] text-muted">{o.equipment} · {o.assignee} {t("· срок")} {new Date(o.deadline).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}{awaitingWorkOverdue(o,now)?t(" · просрочен"):''}</div>
       </Card></Link>)}
-    </div>:<div className="grid grid-cols-3 gap-3 items-start">
+    </div>:<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start" data-kanban>
       {KCOLS.map(([k,label,match])=>{const col=scoped.filter((o:any)=>{if(o.status==='closed'||o.status==='rejected')return false;const isOD=awaitingWorkOverdue(o,now);return k==='overdue'?isOD:(!isOD&&match(o))})
-        return <div key={k} className="space-y-2">
+        return <div key={k} data-kanban-group={k} className="space-y-2">
         <div className={cn('text-[12px] font-semibold uppercase tracking-wide',k==='overdue'?'text-warn':'text-muted')}>{t(label)} · {col.length}</div>
         {col.slice(0,12).map((o:any)=><Link to={'/orders/'+o.id} key={k+o.id}><Card className={cn('space-y-1 !p-3 hover:border-primary/40 transition mb-2',k==='overdue'&&'border-warn/50')}>
           <div className="flex items-center justify-between"><span className="text-[11px] text-muted">#{o.id}</span><Badge tone={statusOf(o.status).tone as any}>{t(statusOf(o.status).label)}</Badge></div>

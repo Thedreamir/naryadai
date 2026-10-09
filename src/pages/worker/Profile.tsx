@@ -1,3 +1,4 @@
+import {humanScore} from '../../lib/human-score.mjs'
 import {Link} from 'react-router-dom'
 import {useLocale} from '../../lib/locale'
 import DemoTour from '../../components/DemoTour'
@@ -15,8 +16,8 @@ export default function Profile({actor}:{actor:Actor}){
   useEffect(()=>{H.state().then(setSt).catch(()=>{});H.ratings(bounds.since,bounds.until).then(rs=>setRt((rs||[]).find((r:any)=>r.worker_id===actor.id)||null)).catch(()=>{})},[bounds])
   const mine=st?st.orders.filter((o:any)=>o.assignee_id===actor.id):[]
   const closed=mine.filter((o:any)=>o.status==='closed'&&within(o.closed_at,bounds))
-  const scored=closed.filter((o:any)=>o.ai_result?.human_score)
-  const avg=scored.length?(scored.reduce((a:number,o:any)=>a+o.ai_result.human_score,0)/scored.length).toFixed(1):'—'
+  const scored=closed.filter((o:any)=>humanScore(o.ai_result?.human_score)!==null)
+  const avg=scored.length?(scored.reduce((a:number,o:any)=>a+humanScore(o.ai_result?.human_score)!,0)/scored.length).toFixed(1):'—'
   // Headline uses the same 90-day window as the five-factor rating so the numbers match.
   const hClosed=rt?Number(rt.closed):closed.length
   const hOnTime=rt&&rt.f_ontime!=null&&Number(rt.closed)?Math.round(Number(rt.on_time)/Number(rt.closed)*100):null

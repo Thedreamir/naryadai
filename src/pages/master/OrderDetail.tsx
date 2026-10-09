@@ -1,3 +1,7 @@
+import {orderReportDoc} from '../../lib/order-report-doc.ts'
+import {reportDocToPdf} from '../../lib/report-pdf.ts'
+import {loadReportFonts} from '../../lib/report-font.ts'
+import {downloadBytes,PDF_MIME} from '../../lib/report-download.ts'
 import EvidencePassport from '../../components/EvidencePassport'
 import {useOrderState} from '../../lib/use-order-state'
 import {useLocale} from '../../lib/locale'
@@ -18,6 +22,7 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
   const {id}=useParams(); const nav=useNavigate()
   const {st,error:stateError,refresh}=useOrderState(); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
   const [assignee,setAssignee]=useState(''); const [priority,setPriority]=useState('normal'); const [manageReason,setManageReason]=useState('')
+  const [exportPreview,setExportPreview]=useState<ReturnType<typeof orderReportDoc>|null>(null);const [exportError,setExportError]=useState('');const [exportBusy,setExportBusy]=useState(false);
   const [archiveReceipt,setArchiveReceipt]=useState<any>(null); const [reworkReason,setReworkReason]=useState(''); const [confirmCancel,setConfirmCancel]=useState(false)
   const [manualOpen,setManualOpen]=useState(false);const [manualFailure,setManualFailure]=useState('');const [manualReason,setManualReason]=useState('');const [manualDecision,setManualDecision]=useState<'close'|'rework'>('close');const [score,setScore]=useState(4); const [compare,setCompare]=useState(false)
   const load=async()=>{refresh()}
@@ -29,6 +34,8 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
   const go=async(status:string,reason?:string,extra?:any)=>{setBusy(true);setErr('')
     try{const response=await H.transition(o.id,{status,version:o.version,reason,...extra});if(status==='ai_review')setArchiveReceipt(response);await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
   const manage=async(action:'reassign'|'priority'|'cancel')=>{if(action==='cancel'&&!confirmCancel){setConfirmCancel(true);return};setBusy(true);setErr('');try{await H.manageOrder(o.id,action,{assignee,priority,reason:manageReason});if(action==='cancel')nav('/');else await load()}catch(e){setErr((e as Error).message)}finally{setBusy(false)}}
+  const prepareExport=async()=>{setExportBusy(true);setExportError('');try{const fresh=await H.state();const selected=fresh.orders.find((x:any)=>x.id===o.id);if(!selected||fresh.offline)throw Error('Свежий наряд недоступен');const now=new Date().toISOString();setExportPreview(orderReportDoc(selected,{generatedAt:now,snapshotAsOf:now,events:fresh.events||[],eventsComplete:false}));}catch(e){setExportError((e as Error).message)}finally{setExportBusy(false)}};
+  const exportPdf=async()=>{if(!exportPreview)return;setExportBusy(true);try{const fonts=await loadReportFonts();downloadBytes('tekton-order-'+o.id+'.pdf',reportDocToPdf(exportPreview,fonts),PDF_MIME)}catch(e){setExportError((e as Error).message)}finally{setExportBusy(false)}};
   const receipt=archiveReceipt?.version===o.version?archiveReceipt:H.reviewArchiveReceipt(actor.id,o.id,o.version)
   const presentation=reviewPresentation(o.ai_result,receipt)
   const before:string[]=[...(o.before_photos||[]),...(o.intake_photos||[]).filter((p:any)=>p.phase==='before_intake'&&p.url).map((p:any)=>p.url)]; const after:string[]=(o.closure?.photos)||[]
@@ -37,6 +44,7 @@ export default function MasterOrderDetail({actor}:{actor:Actor}){
     <div><div className="text-[12px] text-muted">{t("НАРЯД #")}{o.id} · {o.section} · {o.assignee}</div>
       <h1 className="text-[24px] font-bold">{o.title}</h1>
       <div className="text-[14px] text-muted">{o.equipment} {t("· срок")} {new Date(o.deadline).toLocaleString(locale==='kz'?'kk-KZ':'ru-RU',{timeZone:'Asia/Almaty',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} {t("· статус:")} {t(statusOf(o.status).label)}</div></div>
+    <Card><Button disabled={exportBusy} onClick={prepareExport}>{t('Подготовить карточку PDF')}</Button><p className="text-xs">{t('Фото: только метаданные, без изображений и ссылок. Перед экспортом проверьте текст.')}</p>{exportError&&<p role="alert">{exportError}</p>}{exportPreview&&<section aria-label={t('Предпросмотр карточки')}><h3>{exportPreview.title}</h3><p>{exportPreview.disclaimer}</p>{exportPreview.sections.map((s,i)=><details key={i}><summary>{s.heading}</summary>{s.lines?.map((line,n)=><p key={n}>{line}</p>)}{s.table&&<div className="overflow-x-auto"><table><tbody>{s.table.rows.map((row,n)=><tr key={n}>{row.map((c,m)=><td key={m} className="p-1">{c}</td>)}</tr>)}</tbody></table></div>}</details>)}<Button disabled={exportBusy} onClick={exportPdf}>{t('Скачать просмотренную карточку PDF')}</Button></section>}</Card>
     <EvidencePassport order={o} events={st.events||[]}/>
     {!['closed','completed','ai_review'].includes(o.status)&&<Card className="space-y-3"><h2 className="font-semibold text-[15px]">{t("Управление нарядом")}</h2><label className="block text-[13px]">{t("Основание")}<input aria-label={t("Основание управления")} className="mt-1 border border-border rounded-[10px] p-3 w-full" value={manageReason} onChange={e=>setManageReason(e.target.value)} placeholder={t("Причина изменения")}/></label>
       {['issued','queued','rejected'].includes(o.status)?<div className="flex gap-2"><select aria-label={t("Новый исполнитель")} className="border border-border rounded-[10px] p-3 flex-1 min-w-0" value={assignee} onChange={e=>setAssignee(e.target.value)}><option value="">{t("Выберите исполнителя")}</option>{st.employees.filter((e:any)=>e.role==='worker'&&e.is_active&&e.id!==o.assignee_id).map((e:any)=><option key={e.id} value={e.id}>{e.name}</option>)}</select><Button disabled={busy||!assignee||manageReason.trim().length<3} onClick={()=>manage('reassign')}>{t("Переназначить")}</Button></div>:<p className="text-[12px] text-muted">{t("Переназначение недоступно после принятия: активная работа не передаётся молча.")}</p>}

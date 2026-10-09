@@ -81,3 +81,4 @@ body.glove-mode .worker-workspace .worker-order-detail summary {
 .worker-order-detail.worker-guided-flow .worker-report-wizard textarea,.worker-order-detail.worker-guided-flow .worker-report-wizard select{font-size:16px!important;min-height:56px!important}
 .worker-guided-flow .worker-report-wizard .wizard-footer{position:relative}
 .worker-guided-flow .worker-report-wizard .photo-footer>button:first-child{position:static!important;inset:auto!important;margin-bottom:8px;width:100%}
+.worker-guided-flow .worker-flow-track small{font-size:10px!important;white-space:nowrap;word-break:normal!important;overflow-wrap:normal!important}

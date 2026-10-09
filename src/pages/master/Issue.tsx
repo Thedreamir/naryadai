@@ -20,8 +20,8 @@ export default function Issue({actor}:{actor:Actor}){
   const [title,setTitle]=useState(''); const [eq,setEq]=useState(()=>new URLSearchParams(location.search).get('equipment')||''); const [assignee,setAssignee]=useState('')
   const [section,setSection]=useState('');const [kind,setKind]=useState('unplanned');const [before,setBefore]=useState<string[]>([]);const [photoBusy,setPhotoBusy]=useState(false)
   const [photoCamera,setPhotoCamera]=useState(false);const [priority,setPriority]=useState('normal'); const [hours,setHours]=useState(2)
-  useEffect(()=>{H.state().then(data=>{setSt(data);const requested=new URLSearchParams(location.search).get('equipment');const selected=(data as any).equipment.find((x:any)=>String(x.id)===requested);if(selected)setSection(String(selected.section));else if(requested)setEq('')}).catch(e=>setErr(e.message))},[])
-  if(!st) return <div className="text-muted py-10">{t('Загрузка…')}</div>
+  useEffect(()=>{H.issueState().then(data=>{setSt(data);const requested=new URLSearchParams(location.search).get('equipment');const selected=(data as any).equipment.find((x:any)=>String(x.id)===requested);if(selected)setSection(String(selected.section));else if(requested)setEq('')}).catch(e=>setErr(e.message))},[])
+  if(!st) return <div className="text-muted py-10" role={err?'alert':'status'}>{err||t('Загрузка…')}</div>
   const workers=st.employees.filter((e:any)=>e.role==='worker')
   const cands=selectExecutors(st,eq,{specialty:requiredSpecialty,permit:requiredPermit})
   const eligible=cands.filter((c:any)=>c.ok).slice(0,2)

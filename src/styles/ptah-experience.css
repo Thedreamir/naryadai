@@ -47,3 +47,9 @@
 .ptah-call-overlay .call-control button.pulse-ring-anim{animation:none!important;transform:none!important;box-shadow:0 0 0 10px color-mix(in srgb,var(--ptah-amber) 16%,transparent)}
 .issue-work-field .report-voice-info{top:10px;right:10px}.issue-work-field textarea{padding-top:58px!important}.issue-work-field .report-voice-mic{background:#D98A1F}.issue-work-field .report-voice-consent{position:relative;z-index:2}
 .issue-work-field .report-voice-consent .tk-touch:first-of-type{background:#D98A1F!important;color:#21170A!important;border:0}.issue-work-field .report-voice-consent .tk-touch{min-height:56px;font-size:16px;border-radius:16px}.issue-work-field~div .visual-steps,.workspace .work-steps{background:var(--color-surface)}
+/* Architecture audit: opt-in glove sizing must win over compact component rules. */
+body.glove-mode .worker-workspace .worker-order-detail button,
+body.glove-mode .worker-workspace .worker-report-wizard button,
+body.glove-mode .worker-workspace .worker-order-detail summary {
+  min-height: 56px !important;
+}

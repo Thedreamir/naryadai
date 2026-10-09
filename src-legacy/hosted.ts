@@ -351,7 +351,7 @@ export function watch(onChange: ()=>void, onStatus?: (live:boolean)=>void) {
 
 export function watchNotifications(onNew: (n:any)=>void) {
   if (!supabase) return ()=>{}
-  const ch = supabase.channel('notifications-live').on('postgres_changes', {event:'INSERT', schema:'public', table:'notifications'}, (p:any)=>onNew(p.new)).subscribe()
+  const ch = supabase.channel('notifications-live-'+crypto.randomUUID()).on('postgres_changes', {event:'INSERT', schema:'public', table:'notifications'}, (p:any)=>onNew(p.new)).subscribe()
   return ()=>{ supabase!.removeChannel(ch) }
 }
 

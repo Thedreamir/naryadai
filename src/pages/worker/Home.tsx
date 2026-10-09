@@ -21,12 +21,12 @@ export default function WorkerHome({actor}:{actor:Actor}){
   return <div className="wo-overview">
     {st.offline&&<div role="status" className="tk-card wo-notice">{t('Офлайн. Данные могут быть устаревшими. Действия и допуски только онлайн.')}</div>}
     {emergency&&<Link to={'/orders/'+emergency.id} className="wo-emergency wo-priority wo-emergency-pinned"><TriangleAlert size={22} aria-hidden="true"/>{t('Аварийный наряд №{id}').replace('{id}',String(emergency.id))}</Link>}
-    {focus?<WorkerTaskCard order={focus} equipment={equipment} focus/>:<section className="tk-card wo-card">
+    {focus?<WorkerTaskCard order={focus} equipment={equipment} focus/>:mine.length===0?<section className="tk-card wo-card">
       <h2 className="wo-task-title">{t(mine.length?'Выберите наряд':'Нарядов пока нет')}</h2>
       <p className="wo-next-note">{t(mine.length?'Порядок работы и допуск подтверждает мастер.':'Новые назначения появятся здесь.')}</p>
       {mine.length>0&&<Link to="/orders" className="wo-primary tk-touch">{t('Выбрать наряд')}</Link>}
-    </section>}
-    {queue.length>0&&<section className="wo-section" aria-label={t('Другие наряды')}><h2>{t(focus?'Другие наряды':'Ваши наряды')} · {queue.length}</h2>{queue.map((o:any)=><WorkerTaskCard key={o.id} order={o} equipment={equipment}/>)}</section>}
+    </section>:null}
+    {queue.length>0&&<section className="wo-section" aria-label={t('Другие наряды')}><h2>{t(focus?'Другие наряды':'Ваши наряды')} · {queue.length}</h2>{queue.map((o:any)=><WorkerTaskCard key={o.id} order={o} equipment={equipment}/>)}</section>:null}
     <details className="worker-alerts tk-card"><summary><TriangleAlert size={20} aria-hidden="true"/><strong>{t('Уведомления')}</strong><span>{alerts.length}</span></summary><div>{alerts.length?alerts.slice(0,5).map((n:any)=><div key={n.id}><p>{n.message}</p><small>{new Date(n.created_at).toLocaleTimeString('ru',{timeZone:'Asia/Almaty',hour:'2-digit',minute:'2-digit'})}</small></div>):<p>{t('Новых уведомлений нет')}</p>}</div></details>
   </div>
 }

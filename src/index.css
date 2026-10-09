@@ -214,3 +214,10 @@ html.telegram-surface:has(body.theme-dark){background:#12161e}html.telegram-surf
   .photo-compare-stage{width:100%;height:min(65dvh,660px);aspect-ratio:auto;}
 }
 @media(max-width:1023px){.workspace-mobile-header .tour-launchers{display:inline-flex!important;flex-shrink:0;gap:4px}.workspace-mobile-header .tour-launchers button{margin-left:0;min-width:44px;height:44px;max-width:52px;padding:0 6px;font-size:13px}.workspace-mobile-header{gap:6px}}
+
+/* Kazakh labels wrap at word boundaries; never clip touch controls. */
+html[lang="kk"] .settings-inactive,html[lang="kk"] .worker-workspace button{overflow-wrap:normal;word-break:normal;hyphens:none;}
+html[lang="kk"] .worker-workspace .text-\[0\.6875rem\] button{font-size:10px;}
+html[lang="kk"] .language-toggle{min-width:88px;max-width:100%;}
+
+html[lang="kk"] .worker-workspace .settings-inactive,html[lang="kk"] .worker-workspace button.border.transition.text-center{font-size:11px;letter-spacing:0;}

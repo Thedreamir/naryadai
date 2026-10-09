@@ -1,47 +1,38 @@
-import {useEffect, useRef, useState} from 'react'
+import '../../styles/ptah-experience.css'
+import {useEffect,useRef,useState} from 'react'
 import {createPortal} from 'react-dom'
 import * as H from '../../lib/data'
-import {PhoneOff, Mic, MicOff} from 'lucide-react'
-import {cn} from '../../lib/utils'
+import VoiceAskPanel from '../../components/VoiceAskPanel'
+import {ArrowLeft} from 'lucide-react'
+import {useLocale} from '../../lib/locale'
 import type {Actor} from '../../App'
-const SR:any=(window as any).SpeechRecognition||(window as any).webkitSpeechRecognition
 export default function VoiceHud({actor}:{actor:Actor}){
-  const [open,setOpen]=useState(false); const [listening,setListening]=useState(false)
-  const [heard,setHeard]=useState(''); const [answer,setAnswer]=useState(''); const [busy,setBusy]=useState(false); const [err,setErr]=useState('')
+  const [open,setOpen]=useState(false);const [seconds,setSeconds]=useState(0)
+  useEffect(()=>{if(!open){setSeconds(0);return}const t=setInterval(()=>setSeconds(n=>n+1),1000);return()=>clearInterval(t)},[open])
   const [orderId,setOrderId]=useState<number|null>(null)
-  const recRef=useRef<any>(null);const dialogRef=useRef<HTMLDivElement>(null)
+  const dialogRef=useRef<HTMLDivElement>(null)
+  const {locale}=useLocale();const kz=locale==='kz'
   useEffect(()=>{const h=()=>setOpen(true);window.addEventListener('naryadai:open-hud',h);return()=>window.removeEventListener('naryadai:open-hud',h)},[])
   useEffect(()=>{if(!open)return
-    setHeard('');setAnswer('');setErr('')
     H.state().then(st=>{const cur=st.orders.find((o:any)=>o.assignee_id===actor.id&&o.status==='in_progress');setOrderId(cur?cur.id:null)}).catch(()=>{})
   },[open,actor.id])
-  useEffect(()=>{if(!open)return;const previous=document.activeElement as HTMLElement|null;dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus();const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){recRef.current?.abort();setListening(false);setOpen(false)}if(e.key==='Tab'){const buttons=[...dialogRef.current?.querySelectorAll<HTMLButtonElement>('button')||[]];if(!buttons.length)return;const first=buttons[0],last=buttons[buttons.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};document.addEventListener('keydown',key);return()=>{document.removeEventListener('keydown',key);recRef.current?.abort();previous?.focus()}},[open]);
-  useEffect(()=>()=>{const r=recRef.current;if(r){r.onresult=null;r.onend=null;r.onerror=null;r.abort()}},[]);
-  const start=()=>{
-    if(!SR){setErr('Распознавание речи недоступно в этом браузере. AI-вызов принимает голос только там, где браузер его поддерживает.');return}
-    const rec=new SR();rec.lang='ru-RU';rec.interimResults=false;recRef.current=rec
-    rec.onresult=async(e:any)=>{const t=e.results[0]?.[0]?.transcript||'';if(!t)return
-      setHeard(t);setBusy(true);setErr('')
-      try{const r=await H.assistantChat(t,orderId??undefined);setAnswer(r.answer)}catch(ex){setErr((ex as Error).message)}finally{setBusy(false)}}
-    rec.onend=()=>setListening(false)
-    rec.onerror=()=>{setListening(false);setErr('Микрофон недоступен или распознавание прервано.')}
-    setListening(true);setHeard('');setAnswer('');try{rec.start()}catch{setListening(false)}
-  }
-  const stop=()=>{recRef.current?.stop();setListening(false)}
+  useEffect(()=>{if(!open)return
+    const previous=document.activeElement as HTMLElement|null
+    const background=document.getElementById('root');const priorInert=background?.inert;const overflow=document.body.style.overflow;if(background)background.inert=true;document.body.style.overflow='hidden'
+    dialogRef.current?.querySelector<HTMLElement>('input,button')?.focus()
+    const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){setOpen(false)}if(e.key==='Tab'){const items=[...dialogRef.current?.querySelectorAll<HTMLElement>('button,input')||[]].filter(el=>!(el as HTMLButtonElement).disabled);if(!items.length)return;const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}}
+    document.addEventListener('keydown',key)
+    return()=>{document.body.style.overflow=overflow;if(background)background.inert=priorInert||false;document.removeEventListener('keydown',key);previous?.focus()}
+  },[open])
   if(!open)return null
-  return createPortal(<div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.92)'}}>
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Голосовой ввод, не телефонный звонок" className="w-full max-w-sm rounded-2xl border p-5 flex flex-col items-center space-y-4" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)'}}>
-      <div className="text-[0.625rem] font-black uppercase tracking-widest text-tk-amber">Голосовой ввод</div>
-      <button aria-label={listening?'Остановить микрофон':'Начать голосовой ввод'} onClick={listening?stop:start} className={cn("w-24 h-24 rounded-full flex items-center justify-center border-4 transition",listening?'bg-tk-amber text-black border-amber-400 pulse-ring-anim':'tk-sub text-tk-amber')}>
-        {listening?<Mic size={34}/>:<MicOff size={30}/>}
-      </button>
-      <div className="flex items-end gap-1 h-11">{listening?[0,1,2,3,4].map(i=><div key={i} className="hud-wave-bar"/>):<div className="text-[0.6875rem] font-bold" style={{color:'var(--tk-muted)'}}>{busy?'Отправляю вопрос…':'Нажмите и говорите'}</div>}</div>
-      <div className="w-full text-[0.625rem] text-center font-bold" style={{color:'var(--tk-muted)'}}>Голос превращается в вопрос — ассистент отвечает текстом, не озвучкой.</div>
-      {heard&&<div className="w-full tk-sub p-2.5 text-xs"><span className="text-[0.5625rem] font-black uppercase block" style={{color:'var(--tk-muted)'}}>Вы сказали</span>{heard}</div>}
-      {busy&&<div className="w-full tk-sub p-2.5 text-xs" style={{color:'var(--tk-muted)'}}>Думаю…</div>}
-      {answer&&<div className="w-full tk-sub p-2.5 text-xs leading-relaxed"><span className="text-[0.5625rem] font-black uppercase block text-tk-amber">Ответ</span>{answer}</div>}
-      {err&&<div className="w-full text-[0.6875rem] text-tk-red font-bold text-center">{err}</div>}
-      <button aria-label="Закрыть голосовой ввод" onClick={()=>{stop();setOpen(false)}} className="w-12 h-12 rounded-full bg-tk-red text-white flex items-center justify-center border border-red-400"><PhoneOff size={19}/></button>
+  const ask=async(text:string)=>{const r=await H.assistantChat(text,orderId??undefined);return r.answer}
+  return createPortal(<div className="ptah-call-overlay fixed inset-0 z-[60] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.92)'}}>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={kz?'Дауыстық енгізу, телефон қоңырауы емес':'Голосовой ввод, не телефонный звонок'} className="voice-hud-panel w-full max-w-sm rounded-2xl border p-5 flex flex-col items-center space-y-4" style={{background:'var(--tk-card)',borderColor:'var(--tk-border)',maxHeight:'calc(100dvh - 32px)',overflowY:'auto'}}>
+      <div className="ptah-call-heading"><button aria-label="Закрыть голосовой ввод" onClick={()=>setOpen(false)}><ArrowLeft size={20}/></button>Ptah AI</div>
+      <time className="ptah-call-timer">{Math.floor(seconds/60)}:{String(seconds%60).padStart(2,'0')}</time>
+      <VoiceAskPanel onAsk={ask} onClose={()=>setOpen(false)}/>
+      <div className="voice-call-caption w-full text-[0.625rem] text-center font-bold" style={{color:'var(--tk-muted)'}}>{kz?'Дауыс сұраққа айналады — көмекші мәтінмен жауап береді, дауыспен емес.':'Ответ придёт текстом'}</div>
+
     </div>
   </div>,document.body)
 }

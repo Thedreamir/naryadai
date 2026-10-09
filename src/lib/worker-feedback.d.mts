@@ -1,0 +1,1 @@
+export function workerFeedback(order:any,events?:any[],norms?:any[]):{score:number|null,good:string[],improve:string[],durationMinutes:number|null,normMinutes:number|null,timeText:string,normText:string,modelParticipated:boolean};

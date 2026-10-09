@@ -1,0 +1,29 @@
+/* Glove mode (lane 02). Opt-in: add class "glove-mode" to <body> (or <html>).
+   Raises touch targets to 56px and enforces a stronger text/border contrast.
+   Does not change layout when the class is absent. */
+:root { --glove-target: 56px; --glove-gap: 8px; }
+
+body.glove-mode :is(button, [role="button"], [role="tab"], [role="menuitem"], summary,
+  a.tk-touch, .tk-touch, input[type="button"], input[type="submit"], input[type="checkbox"] + label,
+  select, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), textarea) {
+  min-height: var(--glove-target);
+}
+body.glove-mode :is(button, [role="button"], [role="tab"], a.tk-touch, .tk-touch) {
+  min-width: var(--glove-target);
+  padding-inline: 16px;
+}
+body.glove-mode :is(input[type="checkbox"], input[type="radio"]) {
+  width: 28px; height: 28px; margin: 14px;
+}
+/* spacing so adjacent targets are not mis-tapped */
+body.glove-mode :is(button, [role="button"], [role="tab"]) + :is(button, [role="button"], [role="tab"]) {
+  margin-inline-start: var(--glove-gap);
+}
+/* contrast: strong ink/muted/border per theme (checked in tests/glove-mode.test.mjs) */
+body.glove-mode.theme-light {
+  --tk-ink: #0B1220; --tk-muted: #334155; --tk-border: #1E293B;
+}
+body.glove-mode.theme-dark {
+  --tk-ink: #F8FAFC; --tk-muted: #CBD5E1; --tk-border: rgba(255,255,255,0.45);
+}
+body.glove-mode :focus-visible { outline: 3px solid var(--color-tk-amber, #D97706); outline-offset: 2px; }

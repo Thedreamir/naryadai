@@ -1,0 +1,16 @@
+export const PERMIT_KINDS:string[];
+export const PERMIT_WINDOW_STATUSES:string[];
+export const PERMIT_NOTE_MIN_LENGTH:number;
+export const REQUIRED_PREWORK_DECLARATIONS:string[];
+export interface PermitRecordCheck{ok:boolean;error?:string}
+export function validatePermitRecord(kind:string,note?:string|null):PermitRecordCheck;
+export function permitWindowOpen(status:string):boolean;
+export function mayStartWork(order:any,declarations:any[]|undefined,actorId:string|number):PermitRecordCheck;
+export function permitExpired(permit:{valid_until?:string},now:number):boolean;
+export interface WorkerPermitStatus{permit:string;status:'valid'|'expired'|'missing'}
+export function checkWorkerPermits(workerPermits:any[]|undefined,requiredPermits:string[]|undefined,now:number):WorkerPermitStatus[];
+export interface TaskPermitRule{class:string;cataloguePermits:string[];keywords:string[]}
+export const TASK_PERMIT_RULES:TaskPermitRule[];
+export interface TaskPermitSuggestion{status:'matched'|'no_rule';permits:string[];matches:{class:string;cataloguePermits:string[];keyword:string}[];advisory:true;note:string}
+export function requiredPermitsForTask(title:string):TaskPermitSuggestion;
+export function orderPermitGate(order:any,declarations:any[]|undefined,actorId:string|number,now?:number):any;

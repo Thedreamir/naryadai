@@ -18,7 +18,7 @@ export default function MasterShell({actor, children}:{actor:Actor, children:Rea
   const [menuOpen,setMenuOpen]=useState(false)
   const [reviewCount,setReviewCount]=useState(0)
   const [memoryCount,setMemoryCount]=useState(0)
-  useEffect(()=>{const update=()=>H.state().then(st=>setReviewCount(st.orders.filter((o:any)=>['completed','ai_review'].includes(o.status)&&(!savedPresentation()||!isTechnicalTitle(o.title))).length)).catch(()=>{});update();window.addEventListener('naryadai:presentation',update);H.repairMemory().then(d=>setMemoryCount((d as any[]).filter(e=>e.status==='candidate').length)).catch(()=>{});return()=>window.removeEventListener('naryadai:presentation',update)},[loc.pathname])
+  useEffect(()=>{const update=()=>H.reviewQueue().then(orders=>setReviewCount(orders.filter((o:any)=>!savedPresentation()||!isTechnicalTitle(o.title)).length)).catch(()=>{});update();window.addEventListener('naryadai:presentation',update);H.repairMemory().then(d=>setMemoryCount((d as any[]).filter(e=>e.status==='candidate').length)).catch(()=>{});return()=>window.removeEventListener('naryadai:presentation',update)},[loc.pathname])
   const items=[
     {to:'/', icon:LayoutGrid, label:'Наряды'},
     {to:'/review', icon:ClipboardCheck, label:'Проверка', badge:reviewCount},

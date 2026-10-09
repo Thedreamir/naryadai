@@ -4,6 +4,10 @@ async function pages(query,pageSize=500,max=Infinity){const data=[];let start=0;
 export async function readOrdersAndEvents(s){
  const [current,history]=await Promise.all([pages(()=>s.from('orders').select('*',{count:'exact'}).eq('cancelled',false).in('status',active).order('id',{ascending:false})),pages(()=>s.from('orders').select('*',{count:'exact'}).eq('cancelled',false).in('status',['closed','rejected']).order('id',{ascending:false}),500,600)]);
  const orders=[...current,...history].sort((a,b)=>b.id-a.id),events=[];
- for(let i=0;i<orders.length;i+=100){const ids=orders.slice(i,i+100).map(o=>o.id);events.push(...await pages(()=>s.from('order_events').select('*',{count:'exact'}).in('order_id',ids).order('id',{ascending:false})))}
+ // Three independent ID chunks at a time; pagination inside each chunk stays serial.
+ for(let i=0;i<orders.length;i+=300){const chunks=[];for(let j=i;j<Math.min(i+300,orders.length);j+=100){const ids=orders.slice(j,j+100).map(o=>o.id);chunks.push(pages(()=>s.from('order_events').select('*',{count:'exact'}).in('order_id',ids).order('id',{ascending:false})))}for(const rows of await Promise.all(chunks))events.push(...rows)}
  return {orders,events:events.sort((a,b)=>b.id-a.id)};
 }
+
+// The sidebar needs only pending-review rows, not the full order/photo graph.
+export async function readReviewQueue(s){return pages(()=>s.from('orders').select('id,title').eq('cancelled',false).in('status',['completed','ai_review']).order('id',{ascending:false}))}

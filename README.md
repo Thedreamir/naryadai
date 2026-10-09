@@ -41,7 +41,7 @@ React и TypeScript отвечают за рабочие экраны. PostgreSQ
 
 В нашем тесте от выдачи наряда до сообщения исполнителю проходило около 3 секунд. Это один замер, а не гарантия.
 
-(Для контекста: в опросе «Битрикс24» сотрудников 200 белорусских компаний, 2024 год, 95% респондентов используют мессенджеры для работы, 85% - ежедневно. Опрос провёл аналитический центр сервиса «Битрикс24». [Источник](https://www.bitrix24.by/press-release/investigations/kak-messendzhery-stali-chastyu-rabochikh-kommunikatsiy-v-belarusi.php).)
+(Для контекста: в опросе «Битрикс24» сотрудников 200 белорусских компаний, 2024 год, 95% используют мессенджеры в работе, из них 85% ежедневно. Опрос провёл аналитический центр сервиса «Битрикс24». [Источник](https://www.bitrix24.by/press-release/investigations/kak-messendzhery-stali-chastyu-rabochikh-kommunikatsiy-v-belarusi.php).)
 
 Бот: [@TektonOSdreamlabs_bot](https://t.me/TektonOSdreamlabs_bot)
 

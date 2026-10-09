@@ -1,12 +1,13 @@
 export function reviewDisplay(result = {}) {
   result = result ?? {};
-  const verdict = {
+  const baseVerdict = {
     accepted: 'Принято',
     accepted_with_remarks: 'Принято с замечаниями',
     accepted_with_notes: 'Принято с замечаниями',
     rework: 'Требует доработки',
     needs_master_review: 'Нужна проверка мастером',
   }[result.verdict] ?? 'Вердикт не распознан';
+  const verdict=result.advisory_only===true?'Рекомендация ИИ: '+baseVerdict:baseVerdict;
   const modern = !!result.layer2 && Object.hasOwn(result.layer2, 'work_match');
   if (modern) {
     const semanticSource = result.layer1?.completeness?.semantic?.source;

@@ -1,4 +1,5 @@
 export function reviewDisplay(result = {}) {
+  result = result ?? {};
   const verdict = {
     accepted: 'Принято',
     accepted_with_remarks: 'Принято с замечаниями',

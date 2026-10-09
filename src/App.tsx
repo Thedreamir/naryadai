@@ -1,3 +1,5 @@
+import TelegramSettings from './components/TelegramSettings'
+import {useLocale} from './lib/locale'
 import {attachTelegramSurface} from './lib/telegram-surface'
 import {lazy,Suspense} from 'react'
 const Knowledge=lazy(()=>import('./pages/master/Knowledge'))
@@ -27,6 +29,7 @@ import Memory from './pages/master/Memory'
 import LeaderHome from './pages/leader/LeaderHome'
 export type Actor = {id:string, email:string, role:string, name:string}
 export default function App(){
+  const {locale}=useLocale();useEffect(()=>{document.documentElement.lang=locale==='kz'?'kk':'ru'},[locale])
   useEffect(()=>attachTelegramSurface(),[])
   const [actor, setActor] = useState<Actor|null>(null)
   const [ready, setReady] = useState(false)
@@ -40,7 +43,7 @@ export default function App(){
   if(!ready) return <div className="min-h-screen grid place-items-center" style={{background:'#12161E',color:'#94A3B8'}}>Загрузка…</div>
   if(!actor) return <Login onLogin={setActor}/>
   if(actor.role==='worker') return <UiPrefsProvider><WorkerShell actor={actor}><Routes><Route path="/" element={<WorkerHome actor={actor}/>}/><Route path="/equipment/:id" element={<Equipment actor={actor}/>}/><Route path="/orders" element={<WorkerOrders actor={actor}/>}/><Route path="/orders/:id" element={<WorkerOrderDetail actor={actor}/>}/><Route path="/current" element={<WorkerHome actor={actor}/>}/><Route path="/assistant" element={<WorkerAssistant actor={actor}/>}/><Route path="/settings" element={<WorkerSettings/>}/><Route path="/report" element={<WorkerProfile actor={actor}/>}/><Route path="/profile" element={<WorkerProfile actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></WorkerShell><VoiceHud actor={actor}/></UiPrefsProvider>
-  if(actor.role==='master'||actor.role==='admin') return <MasterShell actor={actor}><Routes><Route path="/equipment/:id" element={<Equipment actor={actor}/>}/><Route path="/" element={<Board actor={actor}/>}/><Route path="/review" element={<Review actor={actor}/>}/><Route path="/issue" element={<Issue actor={actor}/>}/><Route path="/closed" element={<Closed actor={actor}/>}/><Route path="/handover" element={<Handover actor={actor}/>}/><Route path="/report" element={<Report actor={actor}/>}/><Route path="/knowledge" element={import.meta.env.VITE_KNOWLEDGE_PREVIEW==='true'?<Suspense fallback={<div>Загрузка знаний…</div>}><Knowledge actor={actor}/></Suspense>:<Navigate to="/" replace/>}/><Route path="/memory" element={<Memory actor={actor}/>}/><Route path="/orders/:id" element={<MasterOrderDetail actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></MasterShell>
+  if(actor.role==='master'||actor.role==='admin') return <MasterShell actor={actor}><Routes><Route path="/equipment/:id" element={<Equipment actor={actor}/>}/><Route path="/" element={<Board actor={actor}/>}/><Route path="/review" element={<Review actor={actor}/>}/><Route path="/issue" element={<Issue actor={actor}/>}/><Route path="/settings" element={<TelegramSettings/>}/><Route path="/closed" element={<Closed actor={actor}/>}/><Route path="/handover" element={<Handover actor={actor}/>}/><Route path="/report" element={<Report actor={actor}/>}/><Route path="/knowledge" element={import.meta.env.VITE_KNOWLEDGE_PREVIEW==='true'?<Suspense fallback={<div>Загрузка знаний…</div>}><Knowledge actor={actor}/></Suspense>:<Navigate to="/" replace/>}/><Route path="/memory" element={<Memory actor={actor}/>}/><Route path="/orders/:id" element={<MasterOrderDetail actor={actor}/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></MasterShell>
   if(actor.role==='leader') return <LeaderHome actor={actor}/>
   return <div className="p-6">Роль {actor.role}: интерфейс в разработке (v8). <button className="underline" onClick={()=>{H.logout();location.reload()}}>Выйти</button></div>
 }

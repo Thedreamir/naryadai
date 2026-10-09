@@ -1,0 +1,47 @@
+@import "./styles/ptah-experience.css";
+/* Lane 16: shared mobile safeguards, independent of role-screen redesigns. */
+:root {
+  --mobile-safe-top: env(safe-area-inset-top, 0px);
+  --mobile-safe-left: env(safe-area-inset-left, 0px);
+  --mobile-safe-right: env(safe-area-inset-right, 0px);
+}
+:where(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+body.theme-dark :where(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline-color: #93c5fd;
+}
+.tekton-login {
+  padding-top: max(24px, var(--mobile-safe-top));
+  padding-left: max(20px, var(--mobile-safe-left));
+  padding-right: max(20px, var(--mobile-safe-right));
+}
+/* Telegram provides its own insets; do not add a second copy. */
+html:not(.telegram-surface) .worker-workspace {
+  padding-top: var(--mobile-safe-top);
+  padding-left: var(--mobile-safe-left);
+  padding-right: var(--mobile-safe-right);
+}
+.worker-workspace > main { min-height: 0; min-width: 0; }
+@media (max-width: 1023px) {
+  /* Text fields below 16px trigger focus zoom on iOS. */
+  input:not([type=checkbox]):not([type=radio]), textarea, select {
+    font-size: max(16px, 1rem);
+  }
+}
+/* Existing tab JSX uses inline amber. These scoped overrides preserve dark
+   branding while meeting normal-text contrast on a white/light card. */
+body.theme-light .worker-tab-active,
+body.theme-light .worker-tab-active > span { color: #92400e !important; }
+@media print { .worker-workspace { padding: 0 !important; } }
+
+.fixed.inset-0 > .max-w-sm {max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain}
+.voice-hud-panel > button:last-child {flex-shrink:0;position:sticky;bottom:0}
+.wo-card-top {flex-wrap:wrap;gap:.5rem}.wo-card-top > * {min-width:0;overflow-wrap:anywhere}
+.tk-touch {white-space:normal;overflow-wrap:anywhere;height:auto;min-height:48px}
+
+.fixed.inset-0 > .max-w-sm > button:last-child {position:sticky;bottom:0;flex-shrink:0;background:var(--tk-card,#fff);z-index:2;min-height:48px}
+
+.worker-order-priority-row {display:flex;flex-wrap:wrap;align-items:start;gap:8px}.worker-order-priority-row > span:first-child {flex:1 1 180px;min-width:0;white-space:normal;overflow-wrap:anywhere}.worker-order-number {flex:0 0 auto;white-space:nowrap}
+.tk-touch {padding-block:10px}.tk-touch svg {flex-shrink:0}

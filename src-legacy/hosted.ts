@@ -483,3 +483,8 @@ export async function recordEquipmentState(equipmentId:number,state:string,reaso
 export async function catalogState(){const {data,error}=await supabase!.rpc('catalog_state');if(error)throw Error(error.message);return data;}
 export async function catalogRecord(entity:string,id:string){const {data,error}=await supabase!.rpc('catalog_read',{p_entity:entity,p_id:id});if(error)throw Error(error.message);return data;}
 export async function catalogWrite(entity:string,action:string,id:string,data:any,revision:string|null){const {data:result,error}=await supabase!.rpc('catalog_write',{p_entity:entity,p_action:action,p_id:id,p_data:data,p_expected:revision});if(error)throw Error(error.message);return result;}
+
+export async function confirmAdvisoryOverride(id:number,version:number,score:number,reason:string){
+ const {data,error}=await supabase!.rpc('confirm_advisory_override',{p_id:id,p_version:version,p_score:score,p_reason:reason});
+ if(error)throw Error(translateError(error.message));return data;
+}

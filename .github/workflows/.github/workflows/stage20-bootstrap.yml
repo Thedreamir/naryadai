@@ -1,0 +1,46 @@
+name: Prepare clean Stage20 preview
+on:
+  push:
+    branches: [staging/stage20-overlay-20261009]
+    paths: ['.github/workflows/stage20-bootstrap.yml']
+permissions:
+  contents: write
+jobs:
+  overlay:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frontend overlay and publish only preview branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive=$(find . -maxdepth 1 -name '*stage20-reviewed-overlay.tar.gz' -print -quit)
+          test -n "$archive"
+          printf '%s  %s\n' '2da6224498206b53df1a55a5f44b7883412404df85acc9b7c0c9f2df6a575dff' "$archive" | sha256sum -c -
+          mkdir /tmp/reviewed-overlay
+          python3 - <<'PYVERIFY'
+          import tarfile
+          from pathlib import Path
+          allowed={'src','src-legacy','public','build'}
+          roots={'README.md','package.json','package-lock.json','tsconfig.json','vite.config.ts','index.html'}
+          import glob
+          with tarfile.open(glob.glob('*stage20-reviewed-overlay.tar.gz')[0],'r:gz') as t:
+            for m in t.getmembers():
+              n=m.name.removeprefix('./');p=Path(n)
+              assert not p.is_absolute() and '..' not in p.parts and not m.issym() and not m.islnk()
+              if m.isdir():continue
+              assert m.isfile() and (p.parts[0] in allowed or n in roots)
+              assert '.env' not in n and '.github' not in p.parts and '.agent-build' not in p.parts
+              assert p.suffix.lower() not in {'.mp4','.webm','.mov','.zip','.tgz','.gz'}
+            t.extractall('/tmp/reviewed-overlay',filter='data')
+          PYVERIFY
+          git fetch origin 02110132994da3cc1dbaf8caaa7efdab720fe6b6 --depth=1
+          git switch -c preview/stage20-20261009 02110132994da3cc1dbaf8caaa7efdab720fe6b6
+          cp -a /tmp/reviewed-overlay/. .
+          git add src src-legacy public build README.md package.json package-lock.json tsconfig.json vite.config.ts index.html
+          git config user.name 'Tekton Source'
+          git config user.email 'source@example.invalid'
+          git commit -m 'feat: reviewed Stage20 frontend preview, no database changes'
+          test ! -e .github/workflows/stage20-bootstrap.yml
+          test ! -e stage20-reviewed-overlay.tar.gz
+          git push origin HEAD:refs/heads/preview/stage20-20261009

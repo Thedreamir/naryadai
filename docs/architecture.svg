@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1060" width="1600" height="1060" role="img" aria-labelledby="t d"><title id="t">Архитектура Tekton OS</title><desc id="d">Клиенты Telegram и PWA, серверные функции, облачный PostgreSQL с памятью предприятия, заменяемый слой ИИ и решение мастера.</desc>
+<style>text{font-family:Helvetica,Arial,sans-serif;fill:#25272A} .h{font-size:30px;font-weight:700} .s{font-size:16px;fill:#8A8D91} .l{font-size:15px;font-weight:700;letter-spacing:1.5px;fill:#8A8D91} .b{font-size:21px;font-weight:700} .n{font-size:15px;fill:#8A8D91} .w{fill:#FFFFFF}</style>
+<rect width="1600" height="1060" fill="#F4F1EA"/>
+<text x="60" y="68" class="h">Tekton OS: архитектура</text>
+<text x="60" y="98" class="s">ИИ заменяем. Память предприятия сохраняется и принадлежит предприятию. Решение принимает человек.</text>
+<rect x="60" y="116" width="120" height="4" fill="#D4432B"/>
+<text x="60" y="162" class="l">1 · КЛИЕНТЫ</text>
+<rect x="60" y="176" width="480" height="84" rx="10" fill="#FFFFFF" stroke="#D9D4C9" stroke-width="2"/>
+<text x="300.0" y="216.0" text-anchor="middle" class="b">Telegram</text>
+<text x="300.0" y="242.0" text-anchor="middle" class="n" style="fill:#8A8D91">кнопка открывает тот же экран</text>
+<rect x="560" y="176" width="480" height="84" rx="10" fill="#FFFFFF" stroke="#D9D4C9" stroke-width="2"/>
+<text x="800.0" y="216.0" text-anchor="middle" class="b">PWA исполнителя</text>
+<text x="800.0" y="242.0" text-anchor="middle" class="n" style="fill:#8A8D91">пошаговый наряд</text>
+<rect x="1060" y="176" width="480" height="84" rx="10" fill="#FFFFFF" stroke="#D9D4C9" stroke-width="2"/>
+<text x="1300.0" y="216.0" text-anchor="middle" class="b">Панель мастера</text>
+<text x="1300.0" y="242.0" text-anchor="middle" class="n" style="fill:#8A8D91">выдача, проверка, решение</text>
+<text x="840" y="306" class="l">2 · ФУНКЦИИ ПРОЕКТА (EDGE)</text>
+<rect x="60" y="326" width="200" height="56" rx="10" fill="#FFFFFF" stroke="#D9D4C9" stroke-width="2"/><text x="160" y="360" text-anchor="middle" style="font-size:16px;font-weight:700">telegram-webhook</text>
+<rect x="273" y="326" width="200" height="56" rx="10" fill="#FFFFFF" stroke="#D9D4C9" stroke-width="2"/><text x="373" y="360" text-anchor="middle" style="font-size:16px;font-weight:700">telegram-dispatch</text>
+<rect x="486" y="326" width="200" height="56" rx="10" fill="#FFFFFF" stroke="#D9D4C9" stroke-width="2"/><text x="586" y="360" text-anchor="middle" style="font-size:16px;font-weight:700">send-push</text>
+<rect x="699" y="326" width="200" height="56" rx="10" fill="#FFFFFF" stroke="#D9D4C9" stroke-width="2"/><text x="799" y="360" text-anchor="middle" style="font-size:16px;font-weight:700">review-order</text>
+<rect x="912" y="326" width="200" height="56" rx="10" fill="#FFFFFF" stroke="#D9D4C9" stroke-width="2"/><text x="1012" y="360" text-anchor="middle" style="font-size:16px;font-weight:700">assistant-chat</text>
+<rect x="1125" y="326" width="200" height="56" rx="10" fill="#FFFFFF" stroke="#D9D4C9" stroke-width="2"/><text x="1225" y="360" text-anchor="middle" style="font-size:16px;font-weight:700">shift-summary</text>
+<rect x="1338" y="326" width="200" height="56" rx="10" fill="#FFFFFF" stroke="#D9D4C9" stroke-width="2"/><text x="1438" y="360" text-anchor="middle" style="font-size:16px;font-weight:700">pin-login</text>
+<rect x="48" y="316" width="1504" height="76" rx="12" fill="none" stroke="#8A8D91" stroke-width="1.5" stroke-dasharray="6 6"/>
+<path d="M300 260 V288" stroke="#8A8D91" stroke-width="2"/>
+<path d="M800 260 V288" stroke="#8A8D91" stroke-width="2"/>
+<path d="M1300 260 V288" stroke="#8A8D91" stroke-width="2"/>
+<path d="M300 288 H1300" stroke="#8A8D91" stroke-width="2"/><path d="M800 288 V316" stroke="#8A8D91" stroke-width="2"/><path d="M794 308 L800 316 L806 308" fill="none" stroke="#8A8D91" stroke-width="2"/>
+<text x="60" y="432" class="l">3 · POSTGRESQL ПРОЕКТА (ОБЛАКО) · ДОСТУП ПО РОЛЯМ НА СЕРВЕРЕ (RLS)</text>
+<rect x="60" y="446" width="1480" height="344" rx="14" fill="#FFFFFF" stroke="#25272A" stroke-width="3"/>
+<rect x="84" y="466" width="1432" height="44" rx="8" fill="#25272A"/><text x="800" y="495" text-anchor="middle" class="b w" style="font-size:20px;letter-spacing:2px">ПАМЯТЬ ПРЕДПРИЯТИЯ · ВСЁ СОХРАНЯЕТСЯ · ПРИНАДЛЕЖИТ ПРЕДПРИЯТИЮ</text>
+<rect x="84" y="532" width="272" height="96" rx="10" fill="#F4F1EA" stroke="#D4432B" stroke-width="2.5"/><text x="220" y="574" text-anchor="middle" class="b" style="font-size:20px">История нарядов</text><text x="220" y="602" text-anchor="middle" class="n" style="font-size:14.5px">выдача, исполнение, закрытие</text>
+<rect x="372" y="532" width="272" height="96" rx="10" fill="#F4F1EA" stroke="#D4432B" stroke-width="2.5"/><text x="508" y="574" text-anchor="middle" class="b" style="font-size:20px">Журнал событий</text><text x="508" y="602" text-anchor="middle" class="n" style="font-size:14.5px">кто, что и когда сделал</text>
+<rect x="660" y="532" width="272" height="96" rx="10" fill="#F4F1EA" stroke="#D4432B" stroke-width="2.5"/><text x="796" y="574" text-anchor="middle" class="b" style="font-size:20px">Память ремонтов</text><text x="796" y="602" text-anchor="middle" class="n" style="font-size:14.5px">что ломалось и чем чинили</text>
+<rect x="948" y="532" width="272" height="96" rx="10" fill="#F4F1EA" stroke="#D4432B" stroke-width="2.5"/><text x="1084" y="574" text-anchor="middle" class="b" style="font-size:20px">База знаний</text><text x="1084" y="602" text-anchor="middle" class="n" style="font-size:14.5px">записи проходят ревью человека</text>
+<rect x="1236" y="532" width="272" height="96" rx="10" fill="#F4F1EA" stroke="#D4432B" stroke-width="2.5"/><text x="1372" y="574" text-anchor="middle" class="b" style="font-size:20px">Решения мастера</text><text x="1372" y="602" text-anchor="middle" class="n" style="font-size:14.5px">автор, время, обоснование</text>
+<rect x="84" y="648" width="1432" height="118" rx="10" fill="#F4F1EA" stroke="#D9D4C9" stroke-width="2"/>
+<text x="108" y="680" class="l">ПРАВИЛА НА СЕРВЕРЕ</text>
+<circle cx="114" cy="715" r="5" fill="#D4432B"/><text x="128" y="721" style="font-size:15.5px">Роли и доступ (RLS)</text>
+<circle cx="398" cy="715" r="5" fill="#D4432B"/><text x="412" y="721" style="font-size:15.5px">Допуски и поля закрытия</text>
+<circle cx="682" cy="715" r="5" fill="#D4432B"/><text x="696" y="721" style="font-size:15.5px">Переходы статусов в функциях</text>
+<circle cx="966" cy="715" r="5" fill="#D4432B"/><text x="980" y="721" style="font-size:15.5px">Справочники оборудования</text>
+<circle cx="1250" cy="715" r="5" fill="#D4432B"/><text x="1264" y="721" style="font-size:15.5px">Отчёты, рейтинг, PDF/Excel</text>
+<text x="108" y="750" class="n">Модель не пишет в данные напрямую: результаты проходят через серверные функции.</text>
+<path d="M160 392 V446" stroke="#8A8D91" stroke-width="2"/>
+<path d="M373 392 V446" stroke="#8A8D91" stroke-width="2"/>
+<path d="M586 392 V446" stroke="#8A8D91" stroke-width="2"/>
+<path d="M799 392 V446" stroke="#8A8D91" stroke-width="2"/>
+<path d="M1012 392 V446" stroke="#8A8D91" stroke-width="2"/>
+<path d="M1225 392 V446" stroke="#8A8D91" stroke-width="2"/>
+<path d="M1438 392 V446" stroke="#8A8D91" stroke-width="2"/>
+<text x="60" y="832" class="l">4 · ЗАМЕНЯЕМЫЙ СЛОЙ ИИ И РЕШЕНИЕ ЧЕЛОВЕКА</text>
+<rect x="60" y="846" width="560" height="120" rx="10" fill="#FFFFFF" stroke="#8A8D91" stroke-width="2"/>
+<text x="340.0" y="904.0" text-anchor="middle" class="b">Проверка ИИ (review-order)</text>
+<text x="340.0" y="930.0" text-anchor="middle" class="n" style="fill:#8A8D91">рекомендация и объяснение. Без модели: правила + мастер</text>
+<text x="340" y="990" text-anchor="middle" class="n">Модель задаётся настройками. У модели нет полномочий закрыть наряд.</text>
+<rect x="1000" y="846" width="540" height="120" rx="10" fill="#25272A" stroke="#25272A" stroke-width="2"/>
+<text x="1270.0" y="904.0" text-anchor="middle" class="b w">Решение мастера</text>
+<text x="1270.0" y="930.0" text-anchor="middle" class="n" style="fill:#CFCBC2">окончательно: принять, на доработку, закрыть</text>
+<path d="M580 790 V846" stroke="#D4432B" stroke-width="3"/><path d="M574 838 L580 846 L586 838" fill="none" stroke="#D4432B" stroke-width="3"/>
+<path d="M620 906 H1000" stroke="#D4432B" stroke-width="3"/><path d="M992 900 L1000 906 L992 912" fill="none" stroke="#D4432B" stroke-width="3"/>
+<text x="810" y="894" text-anchor="middle" style="font-size:15px;font-weight:700;fill:#D4432B">рекомендация</text>
+<path d="M1270 846 V790" stroke="#D4432B" stroke-width="3"/><path d="M1264 798 L1270 790 L1276 798" fill="none" stroke="#D4432B" stroke-width="3"/>
+<text x="1284" y="822" style="font-size:15px;font-weight:700;fill:#D4432B">записывается в память</text>
+<text x="60" y="1030" class="n">Сегодня данные хранятся в облачном PostgreSQL проекта. Принцип: память принадлежит предприятию. Развёртывание внутри контура предприятия - направление развития.</text>
+</svg>
